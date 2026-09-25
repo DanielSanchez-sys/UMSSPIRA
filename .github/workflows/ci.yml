@@ -3,7 +3,7 @@ name: Integración Continua UMSSPIRA
 on:
   pull_request:
     # Esto cubre el requisito de "Ambientes Dev/Staging" de la US-1.D
-    branches: [ "main", "develop", "staging" ]
+    branches: [ "main", "develop", "epic*" ]
 
 jobs:
   verificacion-codigo:
