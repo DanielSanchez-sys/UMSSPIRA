@@ -1,0 +1,8 @@
+{
+  "apps/web/**/*.{js,jsx,ts,tsx}": [
+    "pnpm --filter web lint"
+  ],
+  "apps/api/**/*.ts": [
+    "pnpm --filter api lint"
+  ]
+}
