@@ -3,5 +3,5 @@ packages:
   - 'packages/*'
 allowBuilds:
   '@nestjs/core': false
-  '@parcel/watcher': set this to true or false
+  '@parcel/watcher': true
   unrs-resolver: false
