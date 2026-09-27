@@ -78,7 +78,7 @@ pnpm dev
 
 ```bash
 # Backend (NestJS) — apps/api
-pnpm --filter api start:dev
+pnpm --filter api dev
 
 # Frontend (Next.js) — apps/web
 pnpm --filter web dev
