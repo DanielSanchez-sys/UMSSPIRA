@@ -32,7 +32,7 @@ Esto instala las dependencias de **todos** los workspaces (`apps/api`, `apps/web
 
 ## Variables de entorno
 
-Cada app necesita su propio `.env`: 
+El servicio de base de datos usa un archivo `.env` en la raíz del repositorio:
 
 Si crean uno pasan la informacion al grupo 
 para evitar problemas de seguridad.
