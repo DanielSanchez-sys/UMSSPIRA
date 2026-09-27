@@ -60,7 +60,7 @@ hacer cambios en la bd en vscode
 
 
 ```
-docker compose down -v
+docker compose down -v  # WARNING: permanently deletes db_data and all local data; use `docker compose down` to preserve it
 ```
 
 De esta manera puedes volver a crear la bd con el comando inicial de Docker y te dara una bd nueva.
