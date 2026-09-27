@@ -69,7 +69,7 @@ Se recomienda apagar el docker una vez que termines tu trabajo
 
 ## Ejecutar el proyecto
 
-**Todo el monorepo en paralelo** (si se agrega un script raíz `dev` con turbo/concurrently):
+**Todo el monorepo en paralelo:**
 ```bash
 pnpm dev
 ```
