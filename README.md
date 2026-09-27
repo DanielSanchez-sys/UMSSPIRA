@@ -84,8 +84,8 @@ pnpm --filter api dev
 pnpm --filter web dev
 ```
 
-- API por defecto en `http://localhost:3001` (revisar `apps/api/src/main.ts`)
-- Web por defecto en `http://localhost:3000`
+- API por defecto en `http://localhost:3000` (revisar `apps/api/src/main.ts`)
+- Web por defecto en `http://localhost:3001`
 
 
 ## Colección de API (Postman)
