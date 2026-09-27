@@ -44,7 +44,7 @@ de whatsapp.
 ## Levantar servicios locales (Docker)
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 Levanta y crea la base de datos, con esto ya tienen corriendo la base de datos de manera local. 
