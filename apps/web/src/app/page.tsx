@@ -1,6 +1,7 @@
 import React from 'react';
 import { ProgressBar } from '@/shared/components/progress-bar';
 import { formatPercentage, clampPercentage } from '@/shared/utils/percentage';
+import { AffinityCalculator } from '@/shared/components/affinity-calculator';
 import affinityMock from '@/shared/mocks/affinity-vector-mock.json';
 
 export default function Home() {
@@ -8,37 +9,20 @@ export default function Home() {
     <main className="min-h-screen bg-slate-50 p-8 font-sans text-slate-800">
       <div className="max-w-4xl mx-auto space-y-8">
         <header className="border-b border-slate-200 pb-4">
-          <h1 className="text-3xl font-bold text-slate-900">UMSSPIRA - Demostración de Requerimiento #7</h1>
+          <h1 className="text-3xl font-bold text-slate-900">UMSSPIRA - Demostración de Requerimientos #7 y #8</h1>
           <p className="text-slate-600 mt-1">
-            Redondeo de porcentajes recibidos (entero 0-100) y resguardo visual clamp.
+            Manejo de estados de carga/error (HU-8) y redondeo/clamp de porcentajes (HU-7).
           </p>
         </header>
 
-        {/* Sección 1: Datos de Vector de Afinidad (Mock Backend) */}
-        <section className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
-          <h2 className="text-xl font-semibold text-slate-800 flex items-center justify-between">
-            <span>Vector de Afinidad del Graduado</span>
-            <span className="text-xs bg-blue-100 text-blue-700 px-2.5 py-1 rounded-full font-mono">
-              Backend Mock Data
-            </span>
-          </h2>
-          <p className="text-sm text-slate-500">
-            Los porcentajes flotantes recibidos se redondean automáticamente al entero más cercano y se aseguran visualmente.
-          </p>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-            {affinityMock.areas.map((item) => (
-              <div key={item.area} className="p-4 rounded-lg bg-slate-50 border border-slate-100 space-y-2">
-                <div className="text-xs font-mono text-slate-400">Raw DB value: {item.affinity}</div>
-                <ProgressBar label={item.area} value={item.affinity} />
-              </div>
-            ))}
-          </div>
+        {/* Sección 1: Calculador Interactivo con Spinner, Error y Reintento (HU-8) */}
+        <section>
+          <AffinityCalculator />
         </section>
 
-        {/* Sección 2: Pruebas de Resguardo (Clamp & Edge Cases) */}
+        {/* Sección 2: Pruebas de Resguardo (Clamp & Edge Cases - HU-7) */}
         <section className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
-          <h2 className="text-xl font-semibold text-slate-800">Pruebas de Resguardo (Edge Cases & Visual Clamp)</h2>
+          <h2 className="text-xl font-semibold text-slate-800">Pruebas de Resguardo (Edge Cases & Visual Clamp - HU-7)</h2>
           <p className="text-sm text-slate-500">
             Demostración de resguardo ante valores fuera de rango (-15%, 125%) o tipos no válidos (null, NaN).
           </p>

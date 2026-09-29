@@ -26,4 +26,9 @@ async function request<TResponse>(path: string, init?: RequestInit): Promise<TRe
 
 export const apiClient = {
   get: <TResponse>(path: string) => request<TResponse>(path),
+  post: <TResponse, TBody = unknown>(path: string, body?: TBody) =>
+    request<TResponse>(path, {
+      method: 'POST',
+      body: body ? JSON.stringify(body) : undefined,
+    }),
 };
