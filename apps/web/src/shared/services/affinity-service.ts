@@ -1,4 +1,4 @@
-import type { AffinityVectorResponse } from "@umsspira/shared-types";
+import type { AffinityVectorResponse } from '@umsspira/shared-types/src/affinity';
 import { apiClient } from "./api-client";
 import affinityVectorMock from "../mocks/affinity-vector-mock.json";
 
