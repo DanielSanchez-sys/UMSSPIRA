@@ -4,7 +4,7 @@ import React from 'react';
 
 export interface RadarDataPoint {
   area: string;
-  affinity: number; // 0 to 100
+  affinity: number; // Porcentaje entero de 0 a 100
 }
 
 interface RadarChartProps {
@@ -19,22 +19,22 @@ interface RadarChartProps {
 export const RadarChart: React.FC<RadarChartProps> = ({
   data,
   size = 280,
-  accentColor = '#A35139', // Truffle Trouble / terracotta default
+  accentColor = '#A35139', // Color de acento por defecto (Truffle Trouble)
   fillColor = 'rgba(163, 81, 57, 0.25)',
 }) => {
   const center = size / 2;
   const radius = (size - 90) / 2;
   const totalAxes = 6;
 
-  // Grid level ratios (20%, 40%, 60%, 80%, 100%)
+  // Niveles de la rejilla (20%, 40%, 60%, 80%, 100%)
   const gridLevels = [0.2, 0.4, 0.6, 0.8, 1.0];
 
-  // Calculate angle for axis i (top is -90 degrees)
+  // Angulo del eje i: el primer eje apunta hacia arriba (-90 grados)
   const getAngle = (index: number) => {
     return (Math.PI * 2 * index) / totalAxes - Math.PI / 2;
   };
 
-  // Get Cartesian coordinates (x, y)
+  // Coordenadas cartesianas (x, y) de un punto del hexagono
   const getCoordinates = (index: number, ratio: number) => {
     const angle = getAngle(index);
     const r = radius * Math.min(1.0, Math.max(0.0, ratio));
@@ -44,7 +44,7 @@ export const RadarChart: React.FC<RadarChartProps> = ({
     };
   };
 
-  // Build SVG polygon points
+  // Lista de puntos del poligono en formato SVG
   const getPolygonPoints = (ratios: number[]) => {
     return ratios
       .map((ratio, i) => {
@@ -72,13 +72,13 @@ export const RadarChart: React.FC<RadarChartProps> = ({
           </radialGradient>
         </defs>
 
-        {/* Outer Background Hexagon Fill */}
+        {/* Relleno de fondo del hexagono */}
         <polygon
           points={getPolygonPoints(Array(totalAxes).fill(1.0))}
           fill="url(#hexGlow)"
         />
 
-        {/* Concentric Grid Lines */}
+        {/* Rejilla concentrica */}
         {gridLevels.map((level, idx) => (
           <polygon
             key={idx}
@@ -90,7 +90,7 @@ export const RadarChart: React.FC<RadarChartProps> = ({
           />
         ))}
 
-        {/* Radial Spokes */}
+        {/* Radios del eje */}
         {Array.from({ length: totalAxes }).map((_, i) => {
           const outer = getCoordinates(i, 1.0);
           return (
@@ -106,7 +106,7 @@ export const RadarChart: React.FC<RadarChartProps> = ({
           );
         })}
 
-        {/* Data Polygon Fill */}
+        {/* Poligono con los datos */}
         <polygon
           points={dataPointsString}
           fill={fillColor}
@@ -115,7 +115,7 @@ export const RadarChart: React.FC<RadarChartProps> = ({
           className="transition-all duration-500 ease-out"
         />
 
-        {/* Data Vertices Dots */}
+        {/* Vertices del poligono */}
         {data.map((item, i) => {
           const ratio = (item.affinity || 0) / 100;
           const { x, y } = getCoordinates(i, ratio);
@@ -133,21 +133,23 @@ export const RadarChart: React.FC<RadarChartProps> = ({
           );
         })}
 
-        {/* Area Axis Labels Around Hexagon */}
+        {/* Etiquetas de cada eje alrededor del hexagono */}
         {data.map((item, i) => {
           const labelCoords = getCoordinates(i, 1.28);
+          // affinity no finita significa "sin datos": no se muestra un porcentaje inventado
+          const hasScore = Number.isFinite(item.affinity);
           const cleanScore = Math.min(100, Math.max(0, Math.round(item.affinity || 0)));
 
-          let textAnchor: 'middle' | 'start' | 'end' = 'middle';
+          let textAnchor: 'start' | 'middle' | 'end' = 'middle';
           if (labelCoords.x > center + 12) textAnchor = 'start';
           if (labelCoords.x < center - 12) textAnchor = 'end';
 
-          // Abbreviate long names for compact card display
+          // Nombre abreviado para que quepa en la tarjeta
           let shortName = item.area;
           if (shortName.toLowerCase().includes('desarrollo')) shortName = 'Desarrollo';
           else if (shortName.toLowerCase().includes('cloud')) shortName = 'Cloud/DevOps';
-          else if (shortName.toLowerCase().includes('ciencia')) shortName = 'Datos & IA';
-          else if (shortName.toLowerCase().includes('calidad')) shortName = 'QA & Testing';
+          else if (shortName.toLowerCase().includes('ciencia')) shortName = 'Datos e IA';
+          else if (shortName.toLowerCase().includes('calidad')) shortName = 'QA';
           else if (shortName.toLowerCase().includes('ciberseguridad')) shortName = 'Ciberseguridad';
           else if (shortName.toLowerCase().includes('gestion')) shortName = 'Gestión TI';
 
@@ -157,7 +159,7 @@ export const RadarChart: React.FC<RadarChartProps> = ({
                 x={labelCoords.x}
                 y={labelCoords.y - 3}
                 textAnchor={textAnchor}
-                className="text-[10px] font-semibold fill-slate-700 font-sans tracking-tight"
+                className="text-[10px] font-semibold fill-blue-fantastic font-sans tracking-tight"
               >
                 {shortName}
               </text>
@@ -167,7 +169,7 @@ export const RadarChart: React.FC<RadarChartProps> = ({
                 textAnchor={textAnchor}
                 className="text-[10px] font-bold fill-abyssal-blue font-mono"
               >
-                {cleanScore}%
+                {hasScore ? `${cleanScore}%` : '--%'}
               </text>
             </g>
           );
