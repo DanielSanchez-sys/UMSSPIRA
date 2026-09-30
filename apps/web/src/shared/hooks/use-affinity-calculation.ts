@@ -3,19 +3,28 @@ import type { AffinityVectorResponse } from '@umsspira/shared-types/src/affinity
 import { calculateAffinityVector } from '../services/affinity-service';
 
 /**
- * Interface representing the state and methods returned by useAffinityCalculation.
+ * Interfaz que representa el estado y métodos retornados por el hook useAffinityCalculation.
  */
 export interface UseAffinityCalculationReturn {
+  /** Resultado del vector de afinidad o null si no se ha calculado */
   data: AffinityVectorResponse | null;
+  /** Indica si la solicitud de cálculo se encuentra en progreso */
   isLoading: boolean;
+  /** Mensaje de error en caso de fallo o null si la operación fue exitosa */
   error: string | null;
+  /** Función para iniciar la solicitud de cálculo del vector de afinidad */
   calculate: () => Promise<void>;
+  /** Función para reintentar la solicitud de cálculo */
   retry: () => Promise<void>;
+  /** Función para restablecer el estado inicial */
   reset: () => void;
 }
 
 /**
- * Custom React hook for managing affinity vector calculation state, including loading and error handling.
+ * Hook personalizado de React para gestionar el estado del cálculo del vector de afinidad,
+ * incluyendo los estados de carga, manejo de errores y reintento.
+ *
+ * @returns Objeto con los datos del vector de afinidad, estado de carga, error y funciones de control.
  */
 export function useAffinityCalculation(): UseAffinityCalculationReturn {
   const [data, setData] = useState<AffinityVectorResponse | null>(null);

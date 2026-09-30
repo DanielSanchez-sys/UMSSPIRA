@@ -7,6 +7,11 @@ const AFFINITY_CALCULATE_ENDPOINT = '/affinity/calculate';
 // Por defecto se usa el mock a menos que explícitamente se desactive con 'false'
 const USE_AFFINITY_MOCK = process.env.NEXT_PUBLIC_USE_AFFINITY_MOCK !== 'false';
 
+/**
+ * Obtiene el vector de afinidad actual del graduado.
+ *
+ * @returns Promesa con los datos del vector de afinidad.
+ */
 export async function getAffinityVector(): Promise<AffinityVectorResponse> {
   if (USE_AFFINITY_MOCK) {
     return affinityVectorMock as AffinityVectorResponse;
@@ -16,6 +21,8 @@ export async function getAffinityVector(): Promise<AffinityVectorResponse> {
 
 /**
  * Solicita el cálculo del vector de afinidad del graduado.
+ *
+ * @returns Promesa con los datos del vector de afinidad calculado.
  */
 export async function calculateAffinityVector(): Promise<AffinityVectorResponse> {
   if (USE_AFFINITY_MOCK) {
