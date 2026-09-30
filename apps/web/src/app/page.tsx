@@ -1,59 +1,131 @@
-import React from 'react';
-import { ProgressBar } from '@/shared/components/progress-bar';
-import { formatPercentage, clampPercentage } from '@/shared/utils/percentage';
-import { AffinityCalculator } from '@/shared/components/affinity-calculator';
-import affinityMock from '@/shared/mocks/affinity-vector-mock.json';
+'use client';
+
+import React, { useState } from 'react';
+import { SiteHeader } from '@/shared/components/site-header';
+import { NlpSearch, type SearchCandidateResult } from '@/shared/components/nlp-search';
+import { CandidateCard } from '@/shared/components/candidate-card';
+import { EvidenceBreakdown } from '@/shared/components/evidence-breakdown';
+import { GraduateAffinityView } from '@/shared/components/graduate-affinity-view';
+import { Epic2IntegrationDocs } from '@/shared/components/epic2-integration-docs';
+import { SiteFooter } from '@/shared/components/site-footer';
+import candidatesData from '@/shared/mocks/candidates-mock.json';
+import { ChevronLeft, ChevronRight, Users, Sparkles } from 'lucide-react';
 
 export default function Home() {
+  const [activeView, setActiveView] = useState<'recruiter' | 'graduate'>('recruiter');
+  const [candidates, setCandidates] = useState<SearchCandidateResult[]>(
+    candidatesData.candidates as SearchCandidateResult[]
+  );
+  const [selectedGraduateId, setSelectedGraduateId] = useState<string>(
+    candidatesData.candidates[0].graduateId
+  );
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [isSearching, setIsSearching] = useState<boolean>(false);
+
+  // Selected candidate object
+  const selectedCandidate =
+    candidates.find((c) => c.graduateId === selectedGraduateId) || candidates[0];
+
+  const handleSearchCompleted = (results: SearchCandidateResult[], query: string) => {
+    setCandidates(results);
+    setSearchQuery(query);
+    if (results.length > 0) {
+      setSelectedGraduateId(results[0].graduateId);
+    }
+  };
+
   return (
-    <main className="min-h-screen bg-slate-50 p-8 font-sans text-slate-800">
-      <div className="max-w-4xl mx-auto space-y-8">
-        <header className="border-b border-slate-200 pb-4">
-          <h1 className="text-3xl font-bold text-slate-900">UMSSPIRA - Demostración de Requerimientos #7 y #8</h1>
-          <p className="text-slate-600 mt-1">
-            Manejo de estados de carga/error (HU-8) y redondeo/clamp de porcentajes (HU-7).
-          </p>
-        </header>
+    <div className="min-h-screen bg-palladian text-abyssal-blue font-sans flex flex-col justify-between">
+      <div>
+        {/* Top Header Navbar */}
+        <SiteHeader
+          activeView={activeView}
+          onToggleView={(view) => setActiveView(view)}
+        />
 
-        {/* Sección 1: Calculador Interactivo con Spinner, Error y Reintento (HU-8) */}
-        <section>
-          <AffinityCalculator />
-        </section>
+        {/* Main Content Area */}
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
+          {activeView === 'recruiter' ? (
+            /* Modo Buscador (Reclutador) - Mockup 3 */
+            <div className="space-y-10 animate-fadeIn">
+              {/* Section 1: Buscador de Talento y Afinidad Profesional */}
+              <section>
+                <NlpSearch
+                  onSearchCompleted={handleSearchCompleted}
+                  isSearching={isSearching}
+                  setIsSearching={setIsSearching}
+                />
+              </section>
 
-        {/* Sección 2: Pruebas de Resguardo (Clamp & Edge Cases - HU-7) */}
-        <section className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
-          <h2 className="text-xl font-semibold text-slate-800">Pruebas de Resguardo (Edge Cases & Visual Clamp - HU-7)</h2>
-          <p className="text-sm text-slate-500">
-            Demostración de resguardo ante valores fuera de rango (-15%, 125%) o tipos no válidos (null, NaN).
-          </p>
+              {/* Section 2: Comparativa de Egresados & Hexágonos de Afinidad */}
+              <section className="space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-300/60 pb-3">
+                  <div>
+                    <div className="flex items-center space-x-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-truffle-trouble" />
+                      <h3 className="text-lg font-black text-abyssal-blue tracking-tight uppercase">
+                        Comparativa de Egresados & Hexágonos de Afinidad
+                      </h3>
+                    </div>
+                    <p className="text-xs text-slate-600 mt-0.5">
+                      Selecciona un candidato para inspeccionar la trazabilidad de sus materias, actas de grado y diplomas.
+                    </p>
+                  </div>
 
-          <div className="space-y-4 pt-2">
-            <div className="p-4 rounded-lg bg-slate-50 border border-slate-100 space-y-1">
-              <div className="flex justify-between text-xs text-slate-500 mb-1">
-                <span>Entrada: <code className="font-mono text-red-600">-15.5</code> (Valor menor a 0)</span>
-                <span>Procesado: <strong className="font-mono">{formatPercentage(-15.5)}</strong> (Clamped: {clampPercentage(-15.5)})</span>
-              </div>
-              <ProgressBar value={-15.5} label="Valor Negativo (-15.5)" />
+                  <div className="flex items-center space-x-2 self-end sm:self-auto">
+                    <span className="text-xs text-slate-500 font-mono mr-2">
+                      Mostrando 1 - {Math.min(3, candidates.length)} de {candidates.length} candidatos
+                    </span>
+                    <button className="p-1.5 rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 transition-colors">
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <button className="p-1.5 rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 transition-colors">
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* 3 Candidate Cards Grid with Hexágonos */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {candidates.slice(0, 3).map((cand) => (
+                    <CandidateCard
+                      key={cand.graduateId}
+                      graduateId={cand.graduateId}
+                      name={cand.name}
+                      career={cand.career}
+                      graduationYear={cand.graduationYear}
+                      skills={cand.skills}
+                      professionalDescription={cand.professionalDescription}
+                      affinity={cand.affinity}
+                      nlpScore={cand.nlpScore}
+                      featured={cand.featured}
+                      isSelected={selectedGraduateId === cand.graduateId}
+                      areas={cand.areas}
+                      onSelectCandidate={(id) => setSelectedGraduateId(id)}
+                    />
+                  ))}
+                </div>
+              </section>
+
+              {/* Section 3: Expediente Académico y Certificaciones Verificadas */}
+              <section id="evidence-section">
+                <EvidenceBreakdown candidateName={selectedCandidate.name} />
+              </section>
+
+              {/* Section 4: Documentación Técnica de Integración Tarea #32 */}
+              <section>
+                <Epic2IntegrationDocs />
+              </section>
             </div>
-
-            <div className="p-4 rounded-lg bg-slate-50 border border-slate-100 space-y-1">
-              <div className="flex justify-between text-xs text-slate-500 mb-1">
-                <span>Entrada: <code className="font-mono text-amber-600">125.8</code> (Valor mayor a 100)</span>
-                <span>Procesado: <strong className="font-mono">{formatPercentage(125.8)}</strong> (Clamped: {clampPercentage(125.8)})</span>
-              </div>
-              <ProgressBar value={125.8} label="Valor Sobregirado (125.8)" />
-            </div>
-
-            <div className="p-4 rounded-lg bg-slate-50 border border-slate-100 space-y-1">
-              <div className="flex justify-between text-xs text-slate-500 mb-1">
-                <span>Entrada: <code className="font-mono text-purple-600">null / undefined / NaN</code></span>
-                <span>Procesado: <strong className="font-mono">{formatPercentage(null)}</strong> (Clamped: {clampPercentage(null)})</span>
-              </div>
-              <ProgressBar value={null} label="Valor Nulo/Inválido" />
-            </div>
-          </div>
-        </section>
+          ) : (
+            /* Modo Egresado (Mi Afinidad Profesional) - Mockup 1 */
+            <GraduateAffinityView />
+          )}
+        </main>
       </div>
-    </main>
+
+      {/* Footer Banner */}
+      <SiteFooter />
+    </div>
   );
 }
