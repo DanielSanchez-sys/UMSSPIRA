@@ -1,260 +1,190 @@
 'use client';
 
 import React, { useState } from 'react';
-import { AffinityAreaScore } from '@umsspira/shared-types/src/affinity';
+import { AffinityAreaScore } from '@umsspira/shared-types';
+import { clampPercentage, formatPercentage } from '../utils/percentage';
 
-export interface AffinityRadarProps {
-  data?: AffinityAreaScore[];
-  selectedArea?: string | null;
-  onSelectArea?: (areaId: string | null) => void;
-  keywords?: string[];
-  className?: string;
-}
-
-const AREA_LABELS: Record<string, string> = {
-  'software-development': 'Desarrollo de Software',
-  'cloud-devops': 'Cloud & DevOps',
-  'cybersecurity': 'Ciberseguridad',
-  'data-ai': 'Datos e IA',
-  'it-governance': 'Gestión de TI',
-  'infrastructure': 'Infraestructura',
-};
-
-const DEFAULT_AXES = [
+// 1. Contrato estricto: Las 6 áreas en orden exacto
+const AXES_ORDER = [
   'software-development',
   'cloud-devops',
-  'cybersecurity',
   'data-ai',
-  'it-governance',
-  'infrastructure',
-];
+  'quality-assurance',
+  'cybersecurity-networks',
+  'it-management',
+] as const;
 
-export const AffinityRadar: React.FC<AffinityRadarProps> = ({
-  data = [],
-  selectedArea = null,
-  onSelectArea,
-  keywords = [],
-  className = '',
-}) => {
-  const [internalSelected, setInternalSelected] = useState<string | null>(null);
-  const activeArea = selectedArea !== undefined ? selectedArea : internalSelected;
+type AreaId = typeof AXES_ORDER[number];
 
-  const hasData = Boolean(data && data.length > 0);
+const AREA_LABELS: Record<AreaId, string> = {
+  'software-development': 'Desarrollo de Software',
+  'cloud-devops': 'Cloud/DevOps',
+  'data-ai': 'Ciencia de Datos/IA',
+  'quality-assurance': 'QA',
+  'cybersecurity-networks': 'Ciberseguridad',
+  'it-management': 'Gestión TI',
+};
 
-  const normalizedData = DEFAULT_AXES.map((axisId) => {
-    const item = data.find((d) => d.area === axisId || (d as unknown as Record<string, string>).areaId === axisId);
+interface AffinityRadarProps {
+  affinityData?: AffinityAreaScore[];
+}
+
+export default function AffinityRadar({ affinityData = [] }: AffinityRadarProps) {
+  const [selectedArea, setSelectedArea] = useState<string | null>(null);
+
+  if (!affinityData || affinityData.length === 0) {
+    return null; // Ocultar si no hay datos
+  }
+
+  // Mapear los datos al orden fijo y aplicar utilidades de porcentaje
+  const chartData = AXES_ORDER.map((id) => {
+    const found = affinityData.find((a) => a.area === id);
+    const rawValue = found ? found.affinity : 0;
+    
     return {
-      id: axisId,
-      label: AREA_LABELS[axisId] || axisId,
-      affinity: item ? item.affinity : 0,
+      id,
+      label: AREA_LABELS[id],
+      value: clampPercentage(rawValue), // Número para calcular coordenadas en el SVG
+      displayValue: formatPercentage(rawValue), // Texto "XX%" para mostrar en la UI
     };
   });
 
-  const handleAreaClick = (areaId: string) => {
-    const next = activeArea === areaId ? null : areaId;
-    if (onSelectArea) {
-      onSelectArea(next);
-    } else {
-      setInternalSelected(next);
-    }
+  const size = 400;
+  const center = size / 2;
+  const radius = (size / 2) - 60;
+  const angleStep = (Math.PI * 2) / AXES_ORDER.length;
+
+  const getCoordinatesForValue = (value: number, index: number) => {
+    const angle = index * angleStep - Math.PI / 2;
+    const r = (value / 100) * radius;
+    return {
+      x: center + r * Math.cos(angle),
+      y: center + r * Math.sin(angle),
+    };
   };
 
-  const topAreas = [...normalizedData]
-    .sort((a, b) => b.affinity - a.affinity)
-    .filter((a) => a.affinity > 0)
-    .slice(0, 2);
-
-  const size = 360;
-  const center = size / 2;
-  const radius = 120;
-  const totalAxes = DEFAULT_AXES.length;
-  const angleStep = (2 * Math.PI) / totalAxes;
-
-  const points = normalizedData
-    .map((d, i) => {
-      const angle = i * angleStep - Math.PI / 2;
-      const r = (d.affinity / 100) * radius;
-      const x = center + r * Math.cos(angle);
-      const y = center + r * Math.sin(angle);
+  // Puntos del polígono de afinidad
+  const polygonPoints = chartData
+    .map((data, i) => {
+      const { x, y } = getCoordinatesForValue(data.value, i);
       return `${x},${y}`;
     })
     .join(' ');
 
+  const selectedData = chartData.find((d) => d.id === selectedArea);
+
   return (
-    <div className={`w-full max-w-md mx-auto bg-white rounded-2xl p-6 shadow-sm border border-gray-100 ${className}`}>
-      <div className="text-center mb-4">
-        <h3 className="text-lg font-bold text-gray-800">Radar de Afinidad</h3>
-        <p className="text-xs text-gray-500">
-          Evaluación de afinidad técnica para tu perfil de Titulado.
-        </p>
+    <div className="flex flex-col items-center justify-center w-full max-w-md mx-auto p-4">
+      <div className="relative w-full aspect-square">
+        <svg viewBox={`0 0 ${size} ${size}`} className="w-full h-full overflow-visible">
+          {/* Ejes de fondo (telaraña) */}
+          {[20, 40, 60, 80, 100].map((level) => (
+            <polygon
+              key={`grid-${level}`}
+              points={chartData
+                .map((_, i) => {
+                  const { x, y } = getCoordinatesForValue(level, i);
+                  return `${x},${y}`;
+                })
+                .join(' ')}
+              className="fill-none stroke-gray-200 stroke-1"
+            />
+          ))}
+
+          {/* Líneas de los ejes */}
+          {chartData.map((_, i) => {
+            const { x, y } = getCoordinatesForValue(100, i);
+            return (
+              <line
+                key={`axis-${i}`}
+                x1={center}
+                y1={center}
+                x2={x}
+                y2={y}
+                className="stroke-gray-300 stroke-1"
+              />
+            );
+          })}
+
+          {/* Polígono de datos */}
+          <polygon
+            points={polygonPoints}
+            className="fill-blue-500/30 stroke-blue-600 stroke-2 transition-all duration-500"
+          />
+
+          {/* Vértices interactivos */}
+          {chartData.map((data, i) => {
+            const { x, y } = getCoordinatesForValue(data.value, i);
+            const isSelected = selectedArea === data.id;
+
+            return (
+              <g
+                key={`point-${data.id}`}
+                className="cursor-pointer"
+                onClick={() => setSelectedArea(data.id)}
+                style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
+              >
+                {/* Área de clic expandida transparente */}
+                <circle cx={x} cy={y} r={15} fill="transparent" />
+                <circle
+                  cx={x}
+                  cy={y}
+                  r={5}
+                  className={`transition-transform duration-200 ${
+                    isSelected ? 'fill-blue-700 scale-125' : 'fill-blue-500 hover:scale-125'
+                  }`}
+                />
+              </g>
+            );
+          })}
+
+          {/* Etiquetas (Labels) */}
+          {chartData.map((data, i) => {
+            const { x, y } = getCoordinatesForValue(115, i);
+            const isSelected = selectedArea === data.id;
+            
+            return (
+              <text
+                key={`label-${data.id}`}
+                x={x}
+                y={y}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                className={`text-xs md:text-sm font-medium cursor-pointer transition-colors ${
+                  isSelected ? 'fill-blue-700 font-bold' : 'fill-gray-600 hover:fill-blue-500'
+                }`}
+                onClick={() => setSelectedArea(data.id)}
+              >
+                {data.label}
+              </text>
+            );
+          })}
+        </svg>
       </div>
 
-      <div className="relative flex justify-center items-center">
-        {!hasData ? (
-          <div className="py-12 text-center space-y-3">
-            <div className="w-16 h-16 mx-auto bg-orange-50 rounded-full flex items-center justify-center text-orange-500 font-bold text-xl">
-              🎯
+      {/* Sección inferior */}
+      <div className="mt-6 w-full min-h-[100px] bg-slate-50 rounded-lg p-4 flex flex-col items-center justify-center text-center border border-slate-100">
+        <p className="text-xs text-slate-500 font-semibold mb-1 tracking-wider">
+          ÁREA SELECCIONADA (CLICK)
+        </p>
+        {selectedData ? (
+          <>
+            <div className="flex items-center gap-2">
+              <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              <h3 className="text-lg font-bold text-slate-800">{selectedData.label}</h3>
             </div>
-            <p className="text-sm font-medium text-gray-600">
-              Aún no tienes un perfil de afinidad generado.
+            <p className="text-2xl font-black text-blue-600 mt-2">
+              {selectedData.displayValue}
             </p>
-            <button className="px-4 py-2 text-xs font-semibold text-white bg-orange-500 hover:bg-orange-600 rounded-lg transition-colors">
-              Completar perfil
-            </button>
-          </div>
+          </>
         ) : (
-          <svg width={size} height={size} className="overflow-visible">
-            {[0.25, 0.5, 0.75, 1].map((level) => {
-              const gridPoints = DEFAULT_AXES
-                .map((_, i) => {
-                  const angle = i * angleStep - Math.PI / 2;
-                  const r = radius * level;
-                  return `${center + r * Math.cos(angle)},${center + r * Math.sin(angle)}`;
-                })
-                .join(' ');
-              return (
-                <polygon
-                  key={level}
-                  points={gridPoints}
-                  fill="none"
-                  stroke="#e5e7eb"
-                  strokeWidth="1"
-                  strokeDasharray={level === 1 ? 'none' : '3 3'}
-                />
-              );
-            })}
-
-            {normalizedData.map((d, i) => {
-              const angle = i * angleStep - Math.PI / 2;
-              const x2 = center + radius * Math.cos(angle);
-              const y2 = center + radius * Math.sin(angle);
-
-              const labelRadius = radius + 28;
-              const lx = center + labelRadius * Math.cos(angle);
-              const ly = center + labelRadius * Math.sin(angle);
-
-              const isSelected = activeArea === d.id;
-
-              return (
-                <g key={d.id} className="cursor-pointer" onClick={() => handleAreaClick(d.id)}>
-                  <line
-                    x1={center}
-                    y1={center}
-                    x2={x2}
-                    y2={y2}
-                    stroke={isSelected ? '#f97316' : '#d1d5db'}
-                    strokeWidth={isSelected ? '2.5' : '1'}
-                    className="transition-all duration-200"
-                  />
-                  <foreignObject
-                    x={lx - 55}
-                    y={ly - 14}
-                    width="110"
-                    height="32"
-                    className="overflow-visible"
-                  >
-                    <div
-                      className={`text-center text-[11px] leading-tight font-medium px-1 py-0.5 rounded transition-all ${
-                        isSelected
-                          ? 'bg-orange-500 text-white font-bold shadow-sm'
-                          : 'text-gray-600 hover:text-orange-600'
-                      }`}
-                    >
-                      {d.label}
-                    </div>
-                  </foreignObject>
-                </g>
-              );
-            })}
-
-            <polygon
-              points={points}
-              fill="rgba(249, 115, 22, 0.25)"
-              stroke="#f97316"
-              strokeWidth="2"
-              className="transition-all duration-300"
-            />
-
-            {normalizedData.map((d, i) => {
-              const angle = i * angleStep - Math.PI / 2;
-              const r = (d.affinity / 100) * radius;
-              const cx = center + r * Math.cos(angle);
-              const cy = center + r * Math.sin(angle);
-              const isSelected = activeArea === d.id;
-
-              return (
-                <g key={d.id} className="cursor-pointer" onClick={() => handleAreaClick(d.id)}>
-                  <circle cx={cx} cy={cy} r="12" fill="transparent" />
-                  <circle
-                    cx={cx}
-                    cy={cy}
-                    r={isSelected ? 6 : 4}
-                    fill={isSelected ? '#ea580c' : '#f97316'}
-                    stroke="#ffffff"
-                    strokeWidth="2"
-                    className="transition-transform duration-200 hover:scale-125 [transform-box:fill-box] origin-center"
-                  />
-                </g>
-              );
-            })}
-          </svg>
+          <p className="text-sm text-slate-400 mt-2 italic">
+            Selecciona un área en el radar para ver el detalle de afinidad del titulado.
+          </p>
         )}
       </div>
-
-      {hasData && activeArea && (
-        <div className="mt-4 p-2.5 bg-orange-100/70 border border-orange-300 rounded-lg text-center">
-          <span className="text-xs font-bold text-orange-800 tracking-wide uppercase">
-            ÁREA SELECCIONADA (CLICK):{' '}
-            <span className="text-orange-950 font-extrabold">
-              {AREA_LABELS[activeArea] || activeArea}
-            </span>
-          </span>
-        </div>
-      )}
-
-      {hasData && topAreas.length > 0 && (
-        <div className="space-y-4 pt-4 mt-4 border-t border-gray-100">
-          <div className="bg-orange-50/50 p-3.5 rounded-xl border border-orange-100/60">
-            <p className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">
-              Áreas con mayor afinidad identificadas:
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {topAreas.map((area, idx) => (
-                <span
-                  key={area.id}
-                  className={`text-xs px-3 py-1.5 rounded-lg font-medium border transition-all ${
-                    idx === 0
-                      ? 'bg-orange-500 text-white border-orange-500 font-semibold shadow-xs'
-                      : 'bg-gray-800 text-white border-gray-800'
-                  }`}
-                >
-                  {area.label} ({area.affinity}%)
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {hasData && keywords.length > 0 && (
-        <div className="pt-3 border-t border-gray-100">
-          <p className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">
-            Palabras clave más influyentes:
-          </p>
-          <div className="flex flex-wrap gap-1.5">
-            {keywords.map((kw, i) => (
-              <span
-                key={i}
-                className="text-[11px] bg-gray-100 text-gray-700 px-2.5 py-1 rounded-md font-medium"
-              >
-                {kw}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
-};
-
-export default AffinityRadar;
+}
