@@ -12,7 +12,8 @@ export interface SearchCandidateResult {
   professionalDescription: string;
   affinity: number;
   featured: boolean;
-  nlpScore: number;
+  areas?: { area: string; affinity: number }[];
+  nlpScore?: number;
 }
 
 interface NlpSearchProps {
@@ -96,7 +97,7 @@ export const NlpSearch: React.FC<NlpSearchProps> = ({
         return { ...cand, nlpScore };
       });
 
-      results.sort((a, b) => b.nlpScore - a.nlpScore);
+      results.sort((a, b) => (b.nlpScore ?? 0) - (a.nlpScore ?? 0));
       onSearchCompleted(results, jobDescription);
     } finally {
       setIsSearching(false);

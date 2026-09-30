@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { GradCap, Search, Bell, User, Briefcase, Calendar, Users, Award, Home } from 'lucide-react';
+import { Search, Bell, Briefcase, Calendar, Users, Award, Home } from 'lucide-react';
 
 interface SiteHeaderProps {
   activeView?: 'recruiter' | 'graduate';
