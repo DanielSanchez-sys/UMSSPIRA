@@ -9,7 +9,7 @@ export interface UseAffinityCalculationReturn {
   data: AffinityVectorResponse | null;
   isLoading: boolean;
   error: string | null;
-  calculate: (shouldFail?: boolean) => Promise<void>;
+  calculate: () => Promise<void>;
   retry: () => Promise<void>;
   reset: () => void;
 }
@@ -21,15 +21,13 @@ export function useAffinityCalculation(): UseAffinityCalculationReturn {
   const [data, setData] = useState<AffinityVectorResponse | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [lastShouldFail, setLastShouldFail] = useState<boolean>(false);
 
-  const calculate = useCallback(async (shouldFail = false) => {
+  const calculate = useCallback(async () => {
     setIsLoading(true);
     setError(null);
-    setLastShouldFail(shouldFail);
 
     try {
-      const response = await calculateAffinityVector(shouldFail);
+      const response = await calculateAffinityVector();
       setData(response);
     } catch (err) {
       const errorMessage =
@@ -41,8 +39,8 @@ export function useAffinityCalculation(): UseAffinityCalculationReturn {
   }, []);
 
   const retry = useCallback(async () => {
-    await calculate(lastShouldFail);
-  }, [calculate, lastShouldFail]);
+    await calculate();
+  }, [calculate]);
 
   const reset = useCallback(() => {
     setData(null);

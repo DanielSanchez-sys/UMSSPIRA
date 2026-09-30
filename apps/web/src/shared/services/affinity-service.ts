@@ -16,16 +16,11 @@ export async function getAffinityVector(): Promise<AffinityVectorResponse> {
 
 /**
  * Solicita el cálculo del vector de afinidad del graduado.
- * Si debe fallar intencionalmente (para pruebas de UI de error), acepta shouldFail.
  */
-export async function calculateAffinityVector(shouldFail = false): Promise<AffinityVectorResponse> {
+export async function calculateAffinityVector(): Promise<AffinityVectorResponse> {
   if (USE_AFFINITY_MOCK) {
     // Simula retardo de red de 1 segundo para apreciar el spinner de carga
     await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    if (shouldFail) {
-      throw new Error('No se pudo conectar con el servicio de cálculo. Intente nuevamente.');
-    }
 
     return {
       ...affinityVectorMock,
