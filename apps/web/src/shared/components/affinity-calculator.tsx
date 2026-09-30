@@ -16,7 +16,7 @@ export const AffinityCalculator: React.FC = () => {
         <div>
           <h2 className="text-xl font-semibold text-slate-800 flex items-center space-x-2">
             <Calculator className="w-5 h-5 text-blue-600" />
-            <span>Cálculo de Vectores de Afinidad (HU-8)</span>
+            <span>Cálculo de Vectores de Afinidad</span>
           </h2>
           <p className="text-sm text-slate-500 mt-0.5">
             Solicita el cálculo dinámico y gestiona los estados de carga, error y reintento.
