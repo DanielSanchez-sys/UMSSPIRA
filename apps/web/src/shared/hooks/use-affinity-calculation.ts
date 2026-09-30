@@ -2,6 +2,9 @@ import { useState, useCallback } from 'react';
 import type { AffinityVectorResponse } from '@umsspira/shared-types/src/affinity';
 import { calculateAffinityVector } from '../services/affinity-service';
 
+/**
+ * Interface representing the state and methods returned by useAffinityCalculation.
+ */
 export interface UseAffinityCalculationReturn {
   data: AffinityVectorResponse | null;
   isLoading: boolean;
@@ -11,6 +14,9 @@ export interface UseAffinityCalculationReturn {
   reset: () => void;
 }
 
+/**
+ * Custom React hook for managing affinity vector calculation state, including loading and error handling.
+ */
 export function useAffinityCalculation(): UseAffinityCalculationReturn {
   const [data, setData] = useState<AffinityVectorResponse | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
