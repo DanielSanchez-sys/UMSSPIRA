@@ -5,7 +5,7 @@ import * as affinityService from '../services/affinity-service';
 
 jest.mock('../services/affinity-service');
 
-describe('AffinityCalculator Component (HU-8)', () => {
+describe('AffinityCalculator Component', () => {
   const mockCalculateAffinityVector = affinityService.calculateAffinityVector as jest.Mock;
 
   beforeEach(() => {
@@ -15,7 +15,7 @@ describe('AffinityCalculator Component (HU-8)', () => {
   it('muestra el estado inicial con el botón para solicitar cálculo', () => {
     render(<AffinityCalculator />);
 
-    expect(screen.getByText('Cálculo de Vectores de Afinidad (HU-8)')).toBeInTheDocument();
+    expect(screen.getByText('Cálculo de Vectores de Afinidad')).toBeInTheDocument();
     expect(screen.getByText('Solicitar Cálculo de Afinidad')).toBeInTheDocument();
   });
 
