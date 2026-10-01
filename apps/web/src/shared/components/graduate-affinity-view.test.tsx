@@ -78,10 +78,18 @@ describe('GraduateAffinityView', () => {
     expect(screen.getByRole('button', { name: 'Recalcular' })).toBeDisabled();
   });
 
-  it('muestra el estado de error sobre el radar y permite reintentar', async () => {
-    mockRecalculateAffinity.mockRejectedValueOnce(new Error('Network error'));
+  it('muestra el error con el mensaje exacto, conserva el radar anterior y permite reintentar', async () => {
     render(<GraduateAffinityView />);
 
+    // El primer recálculo deja un radar válido en pantalla
+    simulateProfileChange();
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Recalcular' }));
+    await waitFor(() => {
+      expect(screen.getByRole('status')).toBeInTheDocument();
+    });
+    expect(mockRecalculateAffinity).toHaveBeenCalledTimes(1);
+
+    mockRecalculateAffinity.mockRejectedValueOnce(new Error('Network error'));
     simulateProfileChange();
     fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Recalcular' }));
 
@@ -89,14 +97,14 @@ describe('GraduateAffinityView', () => {
       expect(screen.getByRole('alert')).toBeInTheDocument();
     });
     expect(screen.getByText('Error')).toBeInTheDocument();
-    expect(screen.getByText('No se pudo actualizar, vuelve a intentarlo.')).toBeInTheDocument();
+    expect(screen.getByText('No se pudo actualizar tu radar')).toBeInTheDocument();
+
+    // El radar anterior se conserva con sus valores originales
+    expect(screen.getAllByText('85%').length).toBeGreaterThan(0);
 
     // El botón de la tarjeta sigue habilitado y los cambios pendientes se conservan
     expect(screen.getByRole('button', { name: 'Recalcular' })).toBeEnabled();
     expect(screen.queryByText('Recalculando...')).not.toBeInTheDocument();
-
-    // Nunca hubo un radar calculado, así que las etiquetas muestran --%
-    expect(screen.getAllByText('--%')).toHaveLength(6);
 
     // Reintentar repite el recálculo y esta vez termina bien
     fireEvent.click(screen.getByRole('button', { name: 'Reintentar' }));
@@ -105,8 +113,8 @@ describe('GraduateAffinityView', () => {
       expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     });
     expect(screen.getByRole('status')).toBeInTheDocument();
-    expect(mockRecalculateAffinity).toHaveBeenCalledTimes(2);
     expect(screen.getAllByText('85%').length).toBeGreaterThan(0);
+    expect(mockRecalculateAffinity).toHaveBeenCalledTimes(3);
     expect(screen.getByRole('button', { name: 'Recalcular' })).toBeDisabled();
   });
 

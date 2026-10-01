@@ -26,7 +26,7 @@ export const RadarErrorState: React.FC<RadarErrorStateProps> = ({ onRetry, isRet
 
       <h4 className="text-base font-semibold text-abyssal-blue">Error</h4>
       <p className="text-xs font-medium text-truffle-trouble">
-        No se pudo actualizar, vuelve a intentarlo.
+        No se pudo actualizar tu radar
       </p>
 
       <button

@@ -132,7 +132,7 @@ export async function recalculateAffinity(): Promise<AffinityVectorResponse> {
     return (await response.json()) as AffinityVectorResponse;
   } catch (err) {
     if (err instanceof Error && err.name === 'AbortError') {
-      throw new Error('No se pudo actualizar, vuelve a intentarlo.');
+      throw new Error('No se pudo actualizar tu radar');
     }
     throw err;
   } finally {

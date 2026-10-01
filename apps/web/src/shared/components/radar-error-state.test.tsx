@@ -17,8 +17,16 @@ describe('RadarErrorState', () => {
 
     expect(screen.getByRole('alert')).toBeInTheDocument();
     expect(screen.getByText('Error')).toBeInTheDocument();
-    expect(screen.getByText('No se pudo actualizar, vuelve a intentarlo.')).toBeInTheDocument();
+    expect(screen.getByText('No se pudo actualizar tu radar')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Reintentar' })).toBeInTheDocument();
+  });
+
+  it('muestra exactamente el mensaje del criterio de HU-3', () => {
+    render(<RadarErrorState {...defaultProps} />);
+
+    const message = screen.getByText('No se pudo actualizar tu radar');
+
+    expect(message.textContent).toBe('No se pudo actualizar tu radar');
   });
 
   it('ejecuta onRetry al hacer clic en Reintentar', () => {

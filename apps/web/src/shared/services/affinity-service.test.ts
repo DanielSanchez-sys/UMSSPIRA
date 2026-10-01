@@ -150,6 +150,7 @@ describe('recalculateAffinity', () => {
 
   afterEach(() => {
     process.env = originalEnv;
+    jest.useRealTimers();
   });
 
   it('recalcula exitosamente con mock', async () => {
@@ -162,21 +163,47 @@ describe('recalculateAffinity', () => {
     expect(result.calculatedAt).toBeDefined();
   });
 
-  it('lanza error de timeout cuando el servidor tarda más de 7 segundos', async () => {
+  it('aborta a los 7000 ms y lanza el mensaje exacto del criterio', async () => {
     process.env.NEXT_PUBLIC_USE_AFFINITY_MOCK = 'false';
-    global.fetch = jest.fn().mockImplementation(
-      () => new Promise((_, reject) => {
-        setTimeout(() => {
-          const error = new Error('The operation was aborted');
-          error.name = 'AbortError';
-          reject(error);
-        }, 100);
-      }),
+    jest.useFakeTimers();
+
+    const fetchMock = jest.fn().mockImplementation(
+      (_input: unknown, init?: RequestInit) =>
+        new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener('abort', () => {
+            const error = new Error('The operation was aborted');
+            error.name = 'AbortError';
+            reject(error);
+          });
+        }),
     );
+    global.fetch = fetchMock as unknown as typeof fetch;
 
     const { recalculateAffinity } = await import('./affinity-service');
 
-    await expect(recalculateAffinity()).rejects.toThrow('No se pudo actualizar, vuelve a intentarlo.');
+    let settled = false;
+    const pending = recalculateAffinity().finally(() => {
+      settled = true;
+    });
+    const assertion = expect(pending).rejects.toThrow('No se pudo actualizar tu radar');
+
+    await jest.advanceTimersByTimeAsync(6999);
+
+    expect(settled).toBe(false);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    await jest.advanceTimersByTimeAsync(1);
+
+    await assertion;
+    expect(settled).toBe(true);
+  });
+
+  it('lanza error con el estado HTTP cuando la respuesta no es exitosa', async () => {
+    process.env.NEXT_PUBLIC_USE_AFFINITY_MOCK = 'false';
+    global.fetch = jest.fn().mockResolvedValue({ ok: false, status: 503 });
+    const { recalculateAffinity } = await import('./affinity-service');
+
+    await expect(recalculateAffinity()).rejects.toThrow('Error 503 al recalcular afinidad');
   });
 
   it(
