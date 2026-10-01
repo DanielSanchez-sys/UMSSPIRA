@@ -89,7 +89,7 @@ export const NlpSearch: React.FC<NlpSearchProps> = ({
             BUSCADOR DE TALENTO Y AFINIDAD PROFESIONAL
           </h2>
           <p className="text-xs text-slate-600 mt-1 max-w-2xl">
-            Compara competencias de egresados de Sistemas e Informática mediante gráficos de afinidad calculados por NLP y valida sus respaldos académicos y certificaciones oficiales.
+            Compara competencias de titulados de Sistemas e Informática mediante gráficos de afinidad calculados por NLP y valida sus respaldos académicos y certificaciones oficiales.
           </p>
         </div>
 
@@ -99,7 +99,7 @@ export const NlpSearch: React.FC<NlpSearchProps> = ({
             48
           </div>
           <div>
-            <span className="text-xs font-bold text-abyssal-blue block">EGRESADOS</span>
+            <span className="text-xs font-bold text-abyssal-blue block">TITULADOS</span>
             <span className="text-[10px] text-slate-500">Con afinidad y SIS verificado</span>
           </div>
         </div>
