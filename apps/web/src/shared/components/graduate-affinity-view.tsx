@@ -25,7 +25,7 @@ const AREA_ICONS: Record<AffinityArea, React.ElementType> = {
 const AREA_LABELS: Record<AffinityArea, string> = {
   'software-development': 'Desarrollo de Software',
   'cloud-devops': 'Cloud/DevOps e Infraestructura',
-  'data-ai': 'Ciencia de Datos e IA',
+  'data-ai': 'Ciencia de Datos/IA',
   'quality-assurance': 'Aseguramiento de Calidad (QA)',
   'cybersecurity-networks': 'Ciberseguridad y Redes',
   'it-management': 'Gestión de TI',
@@ -43,7 +43,7 @@ export const GraduateAffinityView: React.FC = () => {
   const [candidateAreas, setCandidateAreas] = useState([
     { area: 'Desarrollo de Software', affinity: 95 },
     { area: 'Cloud/DevOps e Infraestructura', affinity: 64 },
-    { area: 'Ciencia de Datos e IA', affinity: 71 },
+    { area: 'Ciencia de Datos/IA', affinity: 71 },
     { area: 'Aseguramiento de Calidad (QA)', affinity: 58 },
     { area: 'Ciberseguridad y Redes', affinity: 42 },
     { area: 'Gestión de TI', affinity: 50 },

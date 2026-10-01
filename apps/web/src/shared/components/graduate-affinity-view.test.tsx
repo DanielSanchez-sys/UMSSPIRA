@@ -5,6 +5,15 @@ import * as affinityService from '../services/affinity-service';
 
 jest.mock('../services/affinity-service');
 
+const EXPECTED_LABELS = [
+  'Desarrollo de Software',
+  'Cloud/DevOps e Infraestructura',
+  'Ciencia de Datos/IA',
+  'Aseguramiento de Calidad (QA)',
+  'Ciberseguridad y Redes',
+  'Gestión de TI',
+];
+
 describe('GraduateAffinityView', () => {
   const mockGetAffinityConfig = affinityService.getAffinityConfig as jest.Mock;
   const mockRecalculateAffinity = affinityService.recalculateAffinity as jest.Mock;
@@ -163,5 +172,24 @@ describe('GraduateAffinityView', () => {
     expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Añadir' })).not.toBeInTheDocument();
     expect(mockGetAffinityConfig).toHaveBeenCalledTimes(1);
+  });
+
+  it('muestra las 6 etiquetas visibles en orden fijo con "Ciencia de Datos/IA"', () => {
+    render(<GraduateAffinityView />);
+
+    // Se acota al resumen: el radar usa nombres abreviados y repetiría "Gestión de TI"
+    const summarySection = screen.getByText('Resumen de tu afinidad').parentElement?.parentElement;
+    expect(summarySection).not.toBeNull();
+
+    const labels = EXPECTED_LABELS.map((label) =>
+      within(summarySection as HTMLElement).getByText(label),
+    );
+
+    labels.forEach((label, index) => {
+      expect(label).toBeInTheDocument();
+      if (index === 0) return;
+      const previous = labels[index - 1];
+      expect(previous.compareDocumentPosition(label) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
   });
 });
