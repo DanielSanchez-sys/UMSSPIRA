@@ -206,3 +206,30 @@ describe('recalculateAffinity', () => {
     15000,
   );
 });
+
+describe('convivencia con la épica', () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    jest.resetModules();
+    process.env = { ...originalEnv };
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+
+  it('mantiene calculateAffinityVector sin parámetros junto a las funciones nuevas', async () => {
+    process.env.NEXT_PUBLIC_USE_AFFINITY_MOCK = 'true';
+    const service = await import('./affinity-service');
+
+    expect(service.calculateAffinityVector.length).toBe(0);
+
+    const vector = await service.calculateAffinityVector();
+
+    expect(vector.areas.map((item) => item.area)).toEqual(AREAS_ORDER);
+    expect(typeof service.getAffinityConfig).toBe('function');
+    expect(typeof service.saveAffinityConfig).toBe('function');
+    expect(typeof service.recalculateAffinity).toBe('function');
+  });
+});
