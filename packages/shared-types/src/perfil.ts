@@ -11,3 +11,10 @@ export interface CrearExperienciaLaboralDto {
   // Sin fecha de fin = trabajo actual
   fechaFin?: string;
 }
+
+export interface CrearCertificacionDto {
+  nombre: string;
+  entidadEmisora: string;
+  grado: string;
+  anioEmision: number;
+}
