@@ -1,6 +1,7 @@
 import { Transform } from 'class-transformer';
 import { IsInt, IsNotEmpty, IsString, MaxLength, Min } from 'class-validator';
 import { CrearCertificacionDto as CrearCertificacionContrato } from '@umsspira/shared-types';
+import { AnioNoFuturo } from '../validators/anio-no-futuro.validator';
 
 const recortar = ({ value }) => (typeof value === 'string' ? value.trim() : value);
 
@@ -26,5 +27,6 @@ export class CrearCertificacionDto implements CrearCertificacionContrato {
   @IsNotEmpty({ message: 'El año de emisión es obligatorio' })
   @IsInt({ message: 'El año de emisión debe ser un número entero' })
   @Min(1000, { message: 'El año de emisión debe tener 4 dígitos' })
+  @AnioNoFuturo({ message: 'El año de emisión no puede ser mayor al año actual' })
   anioEmision: number;
 }
