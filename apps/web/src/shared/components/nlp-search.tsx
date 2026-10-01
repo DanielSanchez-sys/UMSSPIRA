@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Search, Sparkles, Cpu, RefreshCw, Zap, Award } from 'lucide-react';
+import type { RadarDataPoint } from './radar-chart';
 
 export interface SearchCandidateResult {
   graduateId: string;
@@ -12,8 +13,8 @@ export interface SearchCandidateResult {
   professionalDescription: string;
   affinity: number;
   featured: boolean;
-  areas?: { area: string; affinity: number }[];
   nlpScore?: number;
+  areas?: RadarDataPoint[];
 }
 
 interface NlpSearchProps {
