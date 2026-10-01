@@ -3,3 +3,11 @@ export interface CrearFormacionAcademicaDto {
   titulo: string;
   anioEgreso: number;
 }
+
+export interface CrearExperienciaLaboralDto {
+  empresa: string;
+  cargo: string;
+  fechaInicio: string;
+  // Sin fecha de fin = trabajo actual
+  fechaFin?: string;
+}
