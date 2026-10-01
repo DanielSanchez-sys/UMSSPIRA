@@ -1,11 +1,29 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
+import { CandidateCard } from './candidate-card';
+import type { SearchCandidateResult } from './nlp-search';
 
-export default function CandidateCarousel() {
-  // States for pagination (Waiting for Dajhana's JSON data)
-  const [currentPage, setCurrentPage] = useState(1);
-  const totalCandidates = 48; // Mock number based on Figma
+interface CandidateCarouselProps {
+  candidates: SearchCandidateResult[];
+  onSelectCandidate: (graduateId: string) => void;
+  selectedGraduateId?: string;
+  searchQuery?: string;
+}
+
+export const CandidateCarousel: React.FC<CandidateCarouselProps> = ({
+  candidates = [],
+  onSelectCandidate,
+  selectedGraduateId,
+}) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const itemsPerPage = 3;
+  const totalCandidates = candidates.length || 48; // Usa 48 si no hay datos aún
+  const maxIndex = Math.max(0, candidates.length - itemsPerPage);
+
+  const handlePrev = () => setCurrentIndex((prev) => Math.max(0, prev - 1));
+  const handleNext = () => setCurrentIndex((prev) => Math.min(maxIndex, prev + 1));
+  const visibleCandidates = candidates.slice(currentIndex, currentIndex + itemsPerPage);
 
   return (
     <div className="w-full max-w-7xl mx-auto p-6 bg-[#F8F9FA]">
@@ -34,51 +52,62 @@ export default function CandidateCarousel() {
           <input
             type="text"
             placeholder="Buscar por tecnología o habilidad (ej. React, Python, Cloud)..."
-            className="flex-1 border border-gray-300 rounded-md px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 border border-gray-300 rounded-md px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
           />
-          <button className="bg-[#E65100] text-white px-6 py-2 rounded-md font-medium hover:bg-orange-700 transition">
+          <button className="bg-[#FFB162] text-[#1B2632] px-6 py-2 rounded-md font-semibold hover:bg-orange-400 transition shadow-sm">
             Buscar
           </button>
-        </div>
-        <div className="mt-3 flex gap-2">
-          <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded border">Senior Full Stack, Cloud & Microservicios</span>
         </div>
       </div>
 
       {/* Carousel Controls & Pagination */}
       <div className="flex justify-between items-center mb-4">
         <span className="text-sm font-medium text-gray-700">
-          Mostrando 1-3 de {totalCandidates} candidatos
+          Mostrando {currentIndex + 1}-{Math.min(currentIndex + itemsPerPage, totalCandidates)} de {totalCandidates} titulados
         </span>
         <div className="flex gap-2">
-          <button className="p-2 border border-gray-300 rounded-md hover:bg-gray-100 disabled:opacity-50">
+          <button 
+            onClick={handlePrev}
+            disabled={currentIndex === 0}
+            className="p-2 border border-gray-300 rounded-md hover:bg-gray-100 disabled:opacity-50"
+          >
             &lt; 
           </button>
-          <button className="p-2 border border-gray-300 rounded-md hover:bg-gray-100">
+          <button 
+            onClick={handleNext}
+            disabled={currentIndex >= maxIndex}
+            className="p-2 border border-gray-300 rounded-md hover:bg-gray-100 disabled:opacity-50"
+          >
             &gt; 
           </button>
         </div>
       </div>
 
-      {/* Candidate Cards Container */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        
-        {/* Placeholder Card 1 */}
-        <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm flex flex-col items-center justify-center min-h-[300px]">
-          <p className="text-gray-400 text-sm">Esperando el JSON de Dajhana...</p>
-        </div>
-
-        {/* Placeholder Card 2 (Hidden on mobile) */}
-        <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hidden md:flex flex-col items-center justify-center min-h-[300px]">
-          <p className="text-gray-400 text-sm">Esperando el JSON de Dajhana...</p>
-        </div>
-
-        {/* Placeholder Card 3 (Hidden on mobile) */}
-        <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hidden md:flex flex-col items-center justify-center min-h-[300px]">
-          <p className="text-gray-400 text-sm">Esperando el JSON de Dajhana...</p>
-        </div>
-
+      {/* Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {candidates.length > 0 ? (
+          visibleCandidates.map((candidate) => (
+            <div key={candidate.graduateId}>
+              <CandidateCard
+                graduateId={candidate.graduateId}
+                name={candidate.name}
+                career={candidate.career}
+                graduationYear={candidate.graduationYear}
+                skills={candidate.skills}
+                professionalDescription={candidate.professionalDescription}
+                affinity={candidate.affinity}
+                nlpScore={candidate.nlpScore}
+                featured={candidate.featured}
+                onSelectCandidate={onSelectCandidate}
+              />
+            </div>
+          ))
+        ) : (
+          <div className="col-span-3 bg-white border border-gray-200 rounded-lg p-8 shadow-sm flex flex-col items-center justify-center">
+            <p className="text-gray-500 text-sm font-medium">No hay candidatos disponibles</p>
+          </div>
+        )}
       </div>
     </div>
   );
-}
+};
