@@ -2,10 +2,7 @@
 
 import { useState } from 'react';
 import { X } from 'lucide-react';
-import {
-  ExpedientesTable,
-  type GraduateRecord,
-} from '../../../../../shared/components/expedientes-table';
+import { ExpedientesTable, type GraduateRecord } from '@/modules/reports/components/expedientes-table';
 
 // TODO: reemplazar MOCK_DATA por la respuesta del endpoint y mapearla al tipo GraduateRecord.
 const MOCK_DATA: GraduateRecord[] = [
@@ -148,34 +145,6 @@ const MOCK_DATA: GraduateRecord[] = [
     reviewDate: '10/04/2024',
     status: 'Observado',
     rejectionReason: 'El formulario de registro debe estar firmado por el solicitante.',
-  },
-  {
-    id: 11,
-    registrationNumber: 'EXP-2024-011',
-    fullName: 'Daniela Paola Camacho Aguilar',
-    sisCode: '201908416',
-    phone: '70129876',
-    email: 'daniela.camacho@example.com',
-    admissionDate: '11/02/2019',
-    graduationDate: '15/12/2023',
-    studyDuration: '4 años, 10 meses',
-    reviewDate: '12/04/2024',
-    status: 'Verificado',
-    rejectionReason: '',
-  },
-  {
-    id: 12,
-    registrationNumber: 'EXP-2024-012',
-    fullName: 'Mateo Alejandro Quiñones Vargas',
-    sisCode: '201608357',
-    phone: '78901234',
-    email: 'mateo.quinones@example.com',
-    admissionDate: '08/02/2016',
-    graduationDate: '30/11/2023',
-    studyDuration: '7 años, 9 meses',
-    reviewDate: '15/04/2024',
-    status: 'Observado',
-    rejectionReason: 'El nombre consignado en el certificado presenta diferencias con el documento de identidad.',
   },
 ];
 
