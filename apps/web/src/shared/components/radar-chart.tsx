@@ -138,7 +138,7 @@ export const RadarChart: React.FC<RadarChartProps> = ({
           const labelCoords = getCoordinates(i, 1.28);
           const cleanScore = Math.min(100, Math.max(0, Math.round(item.affinity || 0)));
 
-          let textAnchor = 'middle';
+          let textAnchor: 'middle' | 'start' | 'end' = 'middle';
           if (labelCoords.x > center + 12) textAnchor = 'start';
           if (labelCoords.x < center - 12) textAnchor = 'end';
 

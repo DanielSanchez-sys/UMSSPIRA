@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Search, Sparkles, Cpu, RefreshCw, Zap, Award } from 'lucide-react';
+import type { RadarDataPoint } from './radar-chart';
 
 export interface SearchCandidateResult {
   graduateId: string;
@@ -12,7 +13,8 @@ export interface SearchCandidateResult {
   professionalDescription: string;
   affinity: number;
   featured: boolean;
-  nlpScore: number;
+  nlpScore?: number;
+  areas?: RadarDataPoint[];
 }
 
 interface NlpSearchProps {
@@ -69,7 +71,7 @@ export const NlpSearch: React.FC<NlpSearchProps> = ({
         return { ...cand, nlpScore };
       });
 
-      results.sort((a, b) => b.nlpScore - a.nlpScore);
+      results.sort((a, b) => (b.nlpScore ?? 0) - (a.nlpScore ?? 0));
       onSearchCompleted(results, jobDescription);
     } finally {
       setIsSearching(false);
