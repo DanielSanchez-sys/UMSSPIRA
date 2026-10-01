@@ -13,7 +13,7 @@
   },
   {
     "graduateId": "00000000-0000-0000-0000-000000000001",
-    "calculatedAt": "2026-09-28T12:00:00.000Z",
+    "calculatedAt": "2026-09-29T12:00:00.000Z",
     "areas": [
       { "area": "software-development", "affinity": 79 },
       { "area": "cloud-devops", "affinity": 71 },
@@ -25,7 +25,7 @@
   },
   {
     "graduateId": "00000000-0000-0000-0000-000000000001",
-    "calculatedAt": "2026-09-28T12:00:00.000Z",
+    "calculatedAt": "2026-09-30T12:00:00.000Z",
     "areas": [
       { "area": "software-development", "affinity": 65 },
       { "area": "cloud-devops", "affinity": 57 },

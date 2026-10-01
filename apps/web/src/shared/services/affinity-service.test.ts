@@ -1,4 +1,6 @@
 /// <reference types="jest" />
+import snapshotsMock from '../mocks/affinity-snapshots-mock.json';
+
 const AREAS_ORDER = [
   'software-development',
   'cloud-devops',
@@ -229,6 +231,34 @@ describe('recalculateAffinity', () => {
       expect(JSON.stringify(second.areas)).not.toEqual(JSON.stringify(first.areas));
       expect(JSON.stringify(third.areas)).not.toEqual(JSON.stringify(second.areas));
       expect(JSON.stringify(fourth.areas)).toEqual(JSON.stringify(first.areas));
+    },
+    15000,
+  );
+
+  it(
+    'devuelve snapshots distintos y guarda calculatedAt distintos en el JSON',
+    async () => {
+      process.env.NEXT_PUBLIC_USE_AFFINITY_MOCK = 'true';
+      const { recalculateAffinity } = await import('./affinity-service');
+
+      const first = await recalculateAffinity();
+      const second = await recalculateAffinity();
+
+      expect(JSON.stringify(second.areas)).not.toEqual(JSON.stringify(first.areas));
+
+      expect(snapshotsMock.map((snapshot) => snapshot.calculatedAt)).toEqual([
+        '2026-09-28T12:00:00.000Z',
+        '2026-09-29T12:00:00.000Z',
+        '2026-09-30T12:00:00.000Z',
+      ]);
+      snapshotsMock.forEach((snapshot) => {
+        expect(snapshot.areas.map((item) => item.area)).toEqual(AREAS_ORDER);
+        snapshot.areas.forEach((item) => {
+          expect(Number.isInteger(item.affinity)).toBe(true);
+          expect(item.affinity).toBeGreaterThanOrEqual(0);
+          expect(item.affinity).toBeLessThanOrEqual(100);
+        });
+      });
     },
     15000,
   );
