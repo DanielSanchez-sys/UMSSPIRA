@@ -30,33 +30,6 @@ export const NlpSearch: React.FC<NlpSearchProps> = ({
     'Senior Full Stack, Cloud & Microservicios'
   );
 
-  const presets = [
-    {
-      id: 'fullstack',
-      label: '💻 Senior Full Stack, Cloud & Microservicios',
-      text: 'Senior Full Stack con experiencia en React, TypeScript, Node.js y microservicios.',
-    },
-    {
-      id: 'datascience',
-      label: '🤖 Data Science & Machine Learning',
-      text: 'Ciencia de datos, Python, Machine Learning, Power BI y análisis predictivo.',
-    },
-    {
-      id: 'devops',
-      label: '☁️ Cloud Infrastructure & DevOps',
-      text: 'Especialista Cloud, AWS, Kubernetes, Docker y automatización CI/CD.',
-    },
-    {
-      id: 'qa',
-      label: '🧪 Testing & QA Automation',
-      text: 'Aseguramiento de Calidad QA, pruebas automatizadas Jest, Cypress, Selenium.',
-    },
-  ];
-
-  const handleSelectPreset = (preset: (typeof presets)[0]) => {
-    setJobDescription(preset.text);
-  };
-
   const handleExecuteNlpSearch = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!jobDescription.trim()) return;
@@ -129,25 +102,6 @@ export const NlpSearch: React.FC<NlpSearchProps> = ({
             <span className="text-xs font-bold text-abyssal-blue block">EGRESADOS</span>
             <span className="text-[10px] text-slate-500">Con afinidad y SIS verificado</span>
           </div>
-        </div>
-      </div>
-
-      {/* Quick Search Suggestions */}
-      <div>
-        <span className="text-xs font-semibold text-slate-700 block mb-2">
-          Filtros Rápidos por Rol Profesional:
-        </span>
-        <div className="flex flex-wrap gap-2">
-          {presets.map((preset) => (
-            <button
-              key={preset.id}
-              type="button"
-              onClick={() => handleSelectPreset(preset)}
-              className="px-3 py-1.5 rounded-lg text-xs font-medium bg-palladian text-abyssal-blue hover:bg-oatmeal/60 border border-slate-200 transition-colors"
-            >
-              {preset.label}
-            </button>
-          ))}
         </div>
       </div>
 
