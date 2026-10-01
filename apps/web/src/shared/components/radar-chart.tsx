@@ -136,11 +136,9 @@ export const RadarChart: React.FC<RadarChartProps> = ({
         {/* Etiquetas de cada eje alrededor del hexagono */}
         {data.map((item, i) => {
           const labelCoords = getCoordinates(i, 1.28);
-          // affinity no finita significa "sin datos": no se muestra un porcentaje inventado
-          const hasScore = Number.isFinite(item.affinity);
           const cleanScore = Math.min(100, Math.max(0, Math.round(item.affinity || 0)));
 
-          let textAnchor: 'start' | 'middle' | 'end' = 'middle';
+          let textAnchor: 'middle' | 'start' | 'end' = 'middle';
           if (labelCoords.x > center + 12) textAnchor = 'start';
           if (labelCoords.x < center - 12) textAnchor = 'end';
 
@@ -148,8 +146,8 @@ export const RadarChart: React.FC<RadarChartProps> = ({
           let shortName = item.area;
           if (shortName.toLowerCase().includes('desarrollo')) shortName = 'Desarrollo';
           else if (shortName.toLowerCase().includes('cloud')) shortName = 'Cloud/DevOps';
-          else if (shortName.toLowerCase().includes('ciencia')) shortName = 'Datos e IA';
-          else if (shortName.toLowerCase().includes('calidad')) shortName = 'QA';
+          else if (shortName.toLowerCase().includes('ciencia')) shortName = 'Datos & IA';
+          else if (shortName.toLowerCase().includes('calidad')) shortName = 'QA & Testing';
           else if (shortName.toLowerCase().includes('ciberseguridad')) shortName = 'Ciberseguridad';
           else if (shortName.toLowerCase().includes('gestion')) shortName = 'Gestión TI';
 
@@ -159,7 +157,7 @@ export const RadarChart: React.FC<RadarChartProps> = ({
                 x={labelCoords.x}
                 y={labelCoords.y - 3}
                 textAnchor={textAnchor}
-                className="text-[10px] font-semibold fill-blue-fantastic font-sans tracking-tight"
+                className="text-[10px] font-semibold fill-slate-700 font-sans tracking-tight"
               >
                 {shortName}
               </text>
@@ -169,7 +167,7 @@ export const RadarChart: React.FC<RadarChartProps> = ({
                 textAnchor={textAnchor}
                 className="text-[10px] font-bold fill-abyssal-blue font-mono"
               >
-                {hasScore ? `${cleanScore}%` : '--%'}
+                {cleanScore}%
               </text>
             </g>
           );
