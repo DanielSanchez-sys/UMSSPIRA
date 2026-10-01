@@ -59,4 +59,45 @@ export class EventsService {
       createdAt: data.fecha_creacion,
     };
   }
+
+    /**T7
+   * Catálogo para el egresado (HU2).
+   * Devuelve solo eventos PUBLICADOS que no han finalizado,
+   * ordenados por fecha de inicio ascendente.
+   */
+    async getCatalog(): Promise<EventItem[]> {
+      const now = new Date().toISOString();
+  
+      const { data, error } = await supabase
+        .from('evento')
+        .select('*')
+        .eq('estado', EVENT_STATUS.PUBLICADO) // excluye BORRADOR y CANCELADO
+        .gt('fecha_fin', now) // excluye eventos ya finalizados
+        .order('fecha_inicio', { ascending: true });
+  
+      if (error) {
+        throw new InternalServerErrorException(
+          `Error al consultar el catálogo de eventos: ${error.message}`,
+        );
+      }
+  
+      return (data ?? []).map((row) => this.mapCatalogRow(row));
+    }
+  
+    // Convierte una fila de la tabla "evento" a la estructura EventItem
+    private mapCatalogRow(row: any): EventItem {
+      return {
+        id: row.id,
+        title: row.titulo,
+        description: row.descripcion ?? null,
+        startDate: row.fecha_inicio,
+        endDate: row.fecha_fin,
+        maxCapacity: row.cupo_maximo,
+        location: row.ubicacion ?? null,
+        status: row.estado as EventStatus,
+        createdBy: row.id_usuario,
+        createdAt: row.fecha_creacion,
+      };
+    }
+
 }
