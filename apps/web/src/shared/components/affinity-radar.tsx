@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { AffinityAreaScore } from '@umsspira/shared-types';
+import { AffinityAreaScore } from '@umsspira/shared-types/src/affinity';
 import { clampPercentage, formatPercentage } from '../utils/percentage';
 
 // 1. Contrato estricto: Las 6 áreas en orden exacto
