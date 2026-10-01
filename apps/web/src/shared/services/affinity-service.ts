@@ -1,4 +1,5 @@
-import { AFFINITY_AREAS, type AffinityVectorResponse, type AffinityArea } from '@umsspira/shared-types';
+// Import directo al módulo de afinidad para no arrastrar el resto del paquete
+import { AFFINITY_AREAS, type AffinityArea, type AffinityVectorResponse } from '@umsspira/shared-types/src/affinity';
 import { apiClient } from './api-client';
 import affinityVectorMock from '../mocks/affinity-vector-mock.json';
 import affinityConfigMock from '../mocks/affinity-config-mock.json';
@@ -9,7 +10,7 @@ const AFFINITY_ENDPOINT = '/affinity/me';
 const AFFINITY_CALCULATE_ENDPOINT = '/affinity/calculate';
 const AFFINITY_CONFIG_ENDPOINT = '/affinity/config';
 export const RECALCULATE_TIMEOUT_MS = 7000;
-// Datos temporales hasta que el backend real esté disponible
+// Por defecto se usa el mock a menos que explícitamente se desactive con 'false'
 const USE_AFFINITY_MOCK = process.env.NEXT_PUBLIC_USE_AFFINITY_MOCK !== 'false';
 
 // Avanza en cada recálculo con mock para mostrar un radar distinto por intento
@@ -37,8 +38,9 @@ function orderConfigAxes(payload: AffinityConfigPayload): AffinityConfigPayload 
 }
 
 /**
- * Obtiene el vector de afinidad del graduado actual.
- * Devuelve datos mock mientras el backend real no esté disponible.
+ * Obtiene el vector de afinidad actual del graduado.
+ *
+ * @returns Promesa con los datos del vector de afinidad.
  */
 export async function getAffinityVector(): Promise<AffinityVectorResponse> {
   if (USE_AFFINITY_MOCK) {
@@ -49,16 +51,13 @@ export async function getAffinityVector(): Promise<AffinityVectorResponse> {
 
 /**
  * Solicita el cálculo del vector de afinidad del graduado.
- * Si debe fallar intencionalmente (para pruebas de UI de error), acepta shouldFail.
+ *
+ * @returns Promesa con los datos del vector de afinidad calculado.
  */
-export async function calculateAffinityVector(shouldFail = false): Promise<AffinityVectorResponse> {
+export async function calculateAffinityVector(): Promise<AffinityVectorResponse> {
   if (USE_AFFINITY_MOCK) {
     // Simula retardo de red de 1 segundo para apreciar el spinner de carga
     await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    if (shouldFail) {
-      throw new Error('No se pudo conectar con el servicio de cálculo. Intente nuevamente.');
-    }
 
     return {
       ...affinityVectorMock,
