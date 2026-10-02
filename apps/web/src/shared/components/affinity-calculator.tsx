@@ -3,7 +3,6 @@
 import React from 'react';
 import { useAffinityCalculation } from '../hooks/use-affinity-calculation';
 import { ProgressBar } from './progress-bar';
-import { Spinner } from './spinner';
 import { ErrorAlert } from './error-alert';
 import { Calculator, Sparkles, RefreshCw } from 'lucide-react';
 
@@ -44,9 +43,30 @@ export const AffinityCalculator: React.FC = () => {
 
       {/* Estado 2: Estado de Carga (Spinner) */}
       {isLoading && (
-        <div className="py-12 bg-blue-50/40 rounded-lg border border-blue-100 flex flex-col items-center justify-center space-y-3" role="status">
-          <Spinner size="lg" text="Calculando vectores de afinidad en tiempo real..." />
-          <p className="text-xs text-slate-400">Por favor espere mientras procesamos las métricas...</p>
+        <div
+          className="space-y-4 rounded-lg border border-blue-100 bg-blue-50/40 p-4"
+          role="status"
+          aria-label="Cargando vectores de afinidad"
+          aria-live="polite"
+        >
+          <p className="text-sm font-medium text-slate-600 animate-pulse">
+            Cargando vectores de afinidad...
+          </p>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2" aria-hidden="true">
+            {Array.from({ length: 6 }, (_, index) => (
+              <div
+                key={index}
+                className="space-y-3 rounded-lg border border-slate-100 bg-white p-4"
+              >
+                <div className="h-4 w-2/5 animate-pulse rounded bg-slate-200" />
+                <div className="h-2 w-full animate-pulse rounded-full bg-slate-200" />
+                <div className="h-3 w-1/5 animate-pulse rounded bg-slate-200" />
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-slate-400">
+            Espera mientras se leen los datos de afinidad.
+          </p>
         </div>
       )}
 

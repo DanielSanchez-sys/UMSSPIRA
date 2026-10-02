@@ -30,7 +30,7 @@ describe('AffinityCalculator Component', () => {
     fireEvent.click(button);
 
     expect(
-      screen.getByText('Calculando vectores de afinidad en tiempo real...'),
+      screen.getByText('Cargando vectores de afinidad...'),
     ).toBeInTheDocument();
   });
 
