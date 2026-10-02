@@ -3,11 +3,12 @@
 import { useState } from 'react';
 import { BarraProgreso } from './barra-Progreso';
 import { SeccionAcordeon } from './seccion-acordeon';
+import { FormularioExperiencia, type Experiencia } from './experiencia';
 
 export function AcordeonPerfil() {
   // Cada sección guardará aquí sus registros (T1.3, T1.4 y T1.5).
   const [formaciones] = useState<unknown[]>([]);
-  const [experiencias] = useState<unknown[]>([]);
+  const [experiencias, setExperiencias] = useState<Experiencia[]>([]);
   const [certificaciones] = useState<unknown[]>([]);
 
   const cantidades = [formaciones.length, experiencias.length, certificaciones.length];
@@ -28,7 +29,12 @@ export function AcordeonPerfil() {
         titulo="Experiencia laboral"
         descripcion="Tu experiencia profesional más relevante"
         cantidad={experiencias.length}
-      />
+        >
+        <FormularioExperiencia 
+          experiencias={experiencias} 
+          onAgregar={(experiencia) => setExperiencias([...experiencias, experiencia])} 
+        />
+     </SeccionAcordeon>
       <SeccionAcordeon
         numero={3}
         titulo="Certificaciones"
