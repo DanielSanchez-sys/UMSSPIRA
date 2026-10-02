@@ -1,85 +1,85 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  EVENT_STATUS,
-  type CreateEventDto,
-} from '@umsspira/shared-types';
+import { EVENT_STATUS, type CreateEventDto } from '@umsspira/shared-types';
 import EventForm from '@/shared/components/event-form';
+import {
+  EventAdminTabs,
+  EventManagementContent,
+  EventSuccessDialog,
+} from '@/shared/components/events-ui';
 import { createEvent } from '@/shared/services/events-service';
-
-type Feedback = { type: 'success' | 'error'; message: string } | null;
 
 export default function CreateEventPage() {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
-  const [feedback, setFeedback] = useState<Feedback>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [draftSaved, setDraftSaved] = useState(false);
+  const [validationCount, setValidationCount] = useState(0);
+  const [published, setPublished] = useState(false);
 
-  const handleSubmit = async (
-    event: CreateEventDto,
-    _image: File | null,
-  ) => {
-    setIsLoading(true);
-    setFeedback(null);
+  const handleValidationChange = useCallback((count: number) => {
+    setValidationCount(count);
+  }, []);
+
+  const handleSubmit = async (event: CreateEventDto, _image: File | null) => {
+    setIsSubmitting(true);
+    setErrorMessage(null);
+    setDraftSaved(false);
 
     try {
       await createEvent(event);
 
-      const isPublished =
-        event.status === EVENT_STATUS.PUBLICADO;
-      setFeedback({
-        type: 'success',
-        message: isPublished
-          ? 'Evento publicado correctamente.'
-          : 'Borrador guardado correctamente.',
-      });
-
-      if (isPublished) {
-        setTimeout(() => router.push('/events/catalog'), 1500);
+      if (event.status === EVENT_STATUS.PUBLICADO) {
+        setPublished(true);
+      } else {
+        setDraftSaved(true);
       }
     } catch (error) {
-      setFeedback({
-        type: 'error',
-        message:
-          error instanceof Error && error.message
-            ? error.message
-            : 'No se pudo guardar el evento. Inténtalo nuevamente.',
-      });
+      setErrorMessage(
+        error instanceof Error && error.message
+          ? error.message
+          : 'No se pudo guardar el evento. Inténtalo nuevamente.',
+      );
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
+  if (published) {
+    return (
+      <>
+        <EventManagementContent compact />
+        <EventSuccessDialog onBack={() => router.push('/events')} />
+      </>
+    );
+  }
+
   return (
-    <main className="mx-auto w-full max-w-[960px] px-4 py-8 font-sans md:px-0">
-      <h1 className="text-[22px] font-bold leading-[30px] text-[#1B2632] md:text-[32px] md:leading-[40px]">
-        Crear evento
-      </h1>
-      <p className="mt-2 text-[14px] font-medium leading-[20px] text-[#2C3B4D] md:text-[18px] md:leading-[26px]">
-        Completa la información para guardar un borrador o publicar el evento.
-      </p>
+    <main className="events-page event-create-page">
+      <header className="event-create-heading">
+        <h1>Crear evento</h1>
+        <p>
+          {validationCount > 0
+            ? 'Corrige los campos marcados antes de publicar.'
+            : 'Completa la información del evento universitario.'}
+        </p>
+      </header>
 
-      {feedback && (
-        <div
-          role="alert"
-          className={`mt-6 rounded-lg border px-4 py-3 text-[14px] font-medium ${
-            feedback.type === 'success'
-              ? 'border-[#C9C1B1] bg-[#EEE9DF] text-[#1B2632]'
-              : 'border-2 border-[#A35139] bg-[#EEE9DF] text-[#A35139]'
-          }`}
-        >
-          {feedback.type === 'success' ? '✓ ' : ''}
-          {feedback.message}
-        </div>
-      )}
+      <EventAdminTabs active="create" />
 
-      <section className="mt-6 rounded-2xl bg-white p-6 shadow-[0px_2px_8px_rgba(0,0,0,0.05)]">
+      {errorMessage && <div className="event-feedback" role="alert">{errorMessage}</div>}
+      {draftSaved && <div className="event-feedback" role="status">Borrador guardado correctamente.</div>}
+
+      <div className="event-create-layout">
         <EventForm
           onSubmit={handleSubmit}
-          isSubmitting={isLoading}
+          onCancel={() => router.push('/events')}
+          onValidationChange={handleValidationChange}
+          isSubmitting={isSubmitting}
         />
-      </section>
+      </div>
     </main>
   );
 }
