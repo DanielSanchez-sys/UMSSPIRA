@@ -1,15 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import { X } from 'lucide-react';
+//import { X } from 'lucide-react';
 import { Pagination } from '../../../../../modules/reports/components/paginacion';
+import { FileSpreadsheet, Printer, X } from 'lucide-react';
 import {
   ExpedientesTable,
   type GraduateRecord,
 } from '@/modules/reports/components/expedientes-table';
 
 // TODO: reemplazar MOCK_DATA por la respuesta del endpoint y mapearla al tipo GraduateRecord.
-const MOCK_DATA: GraduateRecord[] = [
+const MOCK_DATA: GraduateRecord[] =[
   {
     id: 1,
     registrationNumber: 'EXP-2024-001',
