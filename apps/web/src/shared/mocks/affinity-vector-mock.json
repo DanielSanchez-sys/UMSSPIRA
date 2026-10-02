@@ -5,50 +5,76 @@
   "areas": [
     {
       "area": "software-development",
-      "name": "Software Development",
       "affinity": 82.5,
-      "keywords": ["React", "TypeScript", "Node.js"],
+      "keywords": [
+        "React",
+        "TypeScript",
+        "Node.js"
+      ],
       "evidence": [
-        { "type": "project", "title": "Plataforma E-Commerce Web", "detail": "Desarrollo full-stack con React y Node." },
-        { "type": "certification", "title": "Certificación Avanzada de React", "detail": "Emitido por Meta." }
+        {
+          "type": "project",
+          "title": "Plataforma E-Commerce Web",
+          "detail": "Desarrollo full-stack con React y Node."
+        },
+        {
+          "type": "certification",
+          "title": "Certificación Avanzada de React",
+          "detail": "Emitido por Meta."
+        }
       ]
     },
-    { 
+    {
       "area": "cloud-devops",
-      "name": "Cloud & DevOps",
-       "affinity": 64,
-      "keywords": ["AWS", "Docker", "CI/CD"],
+      "affinity": 64,
+      "keywords": [
+        "AWS",
+        "Docker",
+        "CI/CD"
+      ],
       "evidence": [
-        { "type": "certification", "title": "AWS Certified Cloud Practitioner", "detail": "Amazon Web Services" }
+        {
+          "type": "certification",
+          "title": "AWS Certified Cloud Practitioner",
+          "detail": "Amazon Web Services"
+        }
       ]
     },
-    { 
+    {
       "area": "data-ai",
-      "name": "Data & AI", 
       "affinity": 71.25,
-      "keywords": ["Python", "Pandas", "Machine Learning"],
+      "keywords": [
+        "Python",
+        "Pandas",
+        "Machine Learning"
+      ],
       "evidence": []
     },
-    { 
+    {
       "area": "quality-assurance",
-      "name": "Quality Assurance", 
       "affinity": 38,
-      "keywords": ["Jest", "Cypress"],
+      "keywords": [
+        "Jest",
+        "Cypress"
+      ],
       "evidence": []
-    
     },
-    { 
+    {
       "area": "cybersecurity-networks",
-      "name": "Cybersecurity & Networks", 
       "affinity": 27.5,
-      "keywords": ["SecOps", "Firewalls"],
+      "keywords": [
+        "SecOps",
+        "Firewalls"
+      ],
       "evidence": []
     },
-    { 
-      "area": "it-management", 
-      "name": "IT Management",
+    {
+      "area": "it-management",
       "affinity": 45,
-      "keywords": ["Scrum", "Agile"],
+      "keywords": [
+        "Scrum",
+        "Agile"
+      ],
       "evidence": []
     }
   ]
