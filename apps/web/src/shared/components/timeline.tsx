@@ -42,6 +42,10 @@ export default function Timeline({ sections }: TimelineProps) {
             </h2>
           </div>
 
+          {section.items.length === 0 && (
+            <p className="pb-8 pl-10 text-sm font-medium text-umss-navy/60">Sin registros</p>
+          )}
+
           {section.items.map((item) => (
             <article key={`${section.title}-${item.title}`} className="flex gap-4">
               <Connector />
