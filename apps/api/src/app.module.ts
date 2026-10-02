@@ -1,7 +1,16 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+
+import { EventsModule } from './modules/events/events.module';
 
 @Module({
-  imports: [], // Aquí irán CompaniesModule y JobPostingsModule
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '../../.env',
+    }),
+    EventsModule,
+  ],
   controllers: [],
   providers: [],
 })
