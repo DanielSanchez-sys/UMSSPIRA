@@ -62,6 +62,7 @@ export class EventsService {
      * borrador | publicado | cancelado
      */
     const databaseStatus = initialStatus.toLowerCase();
+    const createdAt = new Date().toISOString();
 
     const { data, error } = await supabase
       .from('evento')
@@ -75,6 +76,7 @@ export class EventsService {
           cupo_maximo: maxCapacity,
           ubicacion: location ?? null,
           estado: databaseStatus,
+          fecha_creacion: createdAt,
         },
       ])
       .select()

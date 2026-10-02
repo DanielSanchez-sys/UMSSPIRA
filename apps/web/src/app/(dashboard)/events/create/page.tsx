@@ -2,9 +2,11 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { EventStatus } from '@umsspira/shared-types';
-import type { CreateEventDto } from '@umsspira/shared-types';
-import { EventForm } from '@/shared/components/event-form';
+import {
+  EVENT_STATUS,
+  type CreateEventDto,
+} from '@umsspira/shared-types';
+import EventForm from '@/shared/components/event-form';
 import { createEvent } from '@/shared/services/events-service';
 
 type Feedback = { type: 'success' | 'error'; message: string } | null;
@@ -15,16 +17,17 @@ export default function CreateEventPage() {
   const [feedback, setFeedback] = useState<Feedback>(null);
 
   const handleSubmit = async (
-    values: Omit<CreateEventDto, 'status'>,
-    status: EventStatus,
+    event: CreateEventDto,
+    _image: File | null,
   ) => {
     setIsLoading(true);
     setFeedback(null);
 
     try {
-      await createEvent({ ...values, status });
+      await createEvent(event);
 
-      const isPublished = status === EventStatus.PUBLICADO;
+      const isPublished =
+        event.status === EVENT_STATUS.PUBLICADO;
       setFeedback({
         type: 'success',
         message: isPublished
@@ -72,7 +75,10 @@ export default function CreateEventPage() {
       )}
 
       <section className="mt-6 rounded-2xl bg-white p-6 shadow-[0px_2px_8px_rgba(0,0,0,0.05)]">
-        <EventForm onSubmit={handleSubmit} isLoading={isLoading} />
+        <EventForm
+          onSubmit={handleSubmit}
+          isSubmitting={isLoading}
+        />
       </section>
     </main>
   );
