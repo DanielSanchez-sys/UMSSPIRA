@@ -53,3 +53,44 @@ describe('AffinityRadar Component', () => {
     expect(screen.queryByText('86%')).not.toBeInTheDocument();
   });
 });
+
+//Para el radar miniatura
+describe('AffinityRadar variante mini', () => {
+  it('no muestra el panel de area seleccionada', () => {
+    render(<AffinityRadar affinityData={mockData as any} variant="mini" />);
+
+    expect(screen.queryByText('ÁREA SELECCIONADA (CLICK)')).not.toBeInTheDocument();
+  });
+
+  it('muestra etiquetas cortas con porcentaje', () => {
+    render(<AffinityRadar affinityData={mockData as any} variant="mini" />);
+
+    expect(screen.getByText('Desarrollo (86%)')).toBeInTheDocument();
+    expect(screen.getByText('Cloud (70%)')).toBeInTheDocument();
+    expect(screen.getByText('Datos & IA (90%)')).toBeInTheDocument();
+    expect(screen.getByText('QA & Testing (60%)')).toBeInTheDocument();
+    expect(screen.getByText('Ciberseg. (45%)')).toBeInTheDocument();
+    expect(screen.getByText('Gestión (80%)')).toBeInTheDocument();
+  });
+
+  it('es de solo lectura: no responde a clics', () => {
+    const { container } = render(
+      <AffinityRadar affinityData={mockData as any} variant="mini" />
+    );
+
+    expect(container.querySelector('.cursor-pointer')).toBeNull();
+
+    fireEvent.click(screen.getByText('Desarrollo (86%)'));
+    expect(screen.queryByText('ÁREA SELECCIONADA (CLICK)')).not.toBeInTheDocument();
+  });
+
+  it('pinta el radar en rojo solo cuando esta destacado', () => {
+    const { container, rerender } = render(
+      <AffinityRadar affinityData={mockData as any} variant="mini" />
+    );
+    expect(container.querySelector('polygon.stroke-red-700')).toBeNull();
+
+    rerender(<AffinityRadar affinityData={mockData as any} variant="mini" highlighted />);
+    expect(container.querySelector('polygon.stroke-red-700')).not.toBeNull();
+  });
+});
