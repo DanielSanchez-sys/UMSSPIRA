@@ -9,8 +9,8 @@ import { PendingChangesDialog } from './pending-changes-dialog';
 import { RadarErrorState } from './radar-error-state';
 import { SuccessToast } from './success-toast';
 import { useRecalculateState } from '../hooks/use-recalculate-state';
-import { recalculateAffinity } from '../services/affinity-service';
-import { AFFINITY_AREAS, type AffinityArea } from '@umsspira/shared-types';
+import { recalculateAffinity, getAffinityVector } from '../services/affinity-service';
+import { AFFINITY_AREAS, type AffinityArea } from '@umsspira/shared-types/src/affinity';
 import { ArrowLeft, Code, Database, Cloud, ShieldAlert, Lock, Target, AlertTriangle, ArrowRight, Sparkles, CheckCircle2 } from 'lucide-react';
 
 const AREA_ICONS: Record<AffinityArea, React.ElementType> = {
@@ -32,6 +32,7 @@ const AREA_LABELS: Record<AffinityArea, string> = {
 };
 
 export const GraduateAffinityView: React.FC = () => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [profileState, setProfileState] = useState<'calculated' | 'customizing'>('calculated');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [hasRadarError, setHasRadarError] = useState<boolean>(false);
@@ -60,6 +61,28 @@ export const GraduateAffinityView: React.FC = () => {
     if (changeVersion === 0 || !hasPendingChanges) return;
     setIsPendingDialogOpen(true);
   }, [changeVersion, hasPendingChanges]);
+  useEffect(() => {
+    async function loadInitialVector() {
+      try {
+        setIsLoading(true);
+        const result = await getAffinityVector();
+        setCandidateAreas(
+          result.areas.map((a) => ({
+            area: AREA_LABELS[a.area as keyof typeof AREA_LABELS] || a.area,
+            affinity: a.affinity,
+          }))
+        );
+        setHasValidRadar(true);
+        setHasRadarError(false);
+      } catch {
+        setHasRadarError(true);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadInitialVector();
+  }, []);
 
   const handleRecalculate = useCallback(async () => {
     if (isRecalculatingRef.current) return;
@@ -110,6 +133,14 @@ export const GraduateAffinityView: React.FC = () => {
 
   const handleCloseToast = useCallback(() => {
     setIsSuccessToastOpen(false);
+  }, []);
+
+  const triggerTimeoutSimulation = useCallback(async () => {
+    setIsLoading(true);
+    setHasRadarError(false);
+    await new Promise((resolve) => setTimeout(resolve, 7000));
+    setHasRadarError(true);
+    setIsLoading(false);
   }, []);
 
   const areaIcons = AFFINITY_AREAS.map((area) => ({
@@ -166,6 +197,7 @@ export const GraduateAffinityView: React.FC = () => {
                     size={320}
                     accentColor="#A35139"
                     fillColor="rgba(163, 81, 57, 0.22)"
+                    isLoading={isLoading}
                   />
                 </div>
 
@@ -254,11 +286,45 @@ export const GraduateAffinityView: React.FC = () => {
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
+            {/* Botón Simular Timeout (Tarea 4) */}
+            <div className="flex justify-end pt-3 border-t border-dashed border-oatmeal mt-3">  
+            </div>
           </div>
+          <button
+                type="button"
+                onClick={triggerTimeoutSimulation}
+                className="px-3 py-1.5 text-xs font-semibold text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition-colors"
+              >
+                Simular Timeout (7s)
+              </button>
         </div>
       ) : (
         <AffinityCustomizer />
       )}
+      <div className="mt-6 flex justify-start">
+  <button
+    type="button"
+    onClick={() => {
+      setIsModalOpen(true);
+    }}
+    className="px-6 py-2.5 bg-[#FFB054] hover:bg-[#e09843] text-slate-900 font-semibold text-sm rounded-full flex items-center justify-center gap-2 transition-all duration-200 shadow-sm"
+  >
+    <svg 
+      className="w-4 h-4 text-slate-900" 
+      fill="none" 
+      stroke="currentColor" 
+      viewBox="0 0 24 24"
+    >
+      <path 
+        strokeLinecap="round" 
+        strokeLinejoin="round" 
+        strokeWidth="2.5" 
+        d="M12 4v16m8-8H4" 
+      />
+    </svg>
+    <span>Añadir certificaciones</span>
+  </button>
+</div>
 
       <PendingChangesDialog
         open={isPendingDialogOpen}
@@ -266,6 +332,52 @@ export const GraduateAffinityView: React.FC = () => {
         onDismiss={handleDismissPendingChanges}
       />
       <SuccessToast open={isSuccessToastOpen} onClose={handleCloseToast} />
+      {/* POP-UP / MODAL QUE SE ABRE AL PRESIONAR EL BOTÓN */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl space-y-4 border border-slate-100">
+            
+            {/* Cabecera del Pop-up */}
+            <div className="flex justify-between items-center">
+              <h3 className="text-base font-bold text-slate-900">Añadir nueva certificación</h3>
+              <button 
+                onClick={() => setIsModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 font-bold text-lg"
+              >
+                &times;
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-500">
+              Simula el ingreso de una certificación oficial para actualizar los vectores de afinidad mediante NLP.
+            </p>
+
+            {/* Botones de acción dentro del Pop-up */}
+            <div className="pt-4 flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  handleProfileChange();
+                  handleRecalculate();
+                  setIsModalOpen(false);      // Cierra el pop-up
+                }}
+                className="w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-semibold text-xs rounded-xl transition-all shadow-sm flex items-center justify-center gap-2"
+              >
+                <span>Simular cambio en el perfil</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-xs rounded-xl transition-all"
+              >
+                Cancelar
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
     </div>
   );
 };
