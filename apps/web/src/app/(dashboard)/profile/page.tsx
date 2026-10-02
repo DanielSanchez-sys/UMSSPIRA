@@ -1,12 +1,69 @@
+import { Pencil } from 'lucide-react';
+
 import Timeline from '@/shared/components/timeline';
-import { profileTimeline } from '@/modules/profile/data/profile-data';
+import { profileHeader, profileTimeline } from '@/modules/profile/data/profile-data';
 
 export default function ProfilePage() {
+  const validatedBackups = profileTimeline
+    .flatMap((section) => section.items)
+    .filter((item) => item.status === 'verified').length;
+  const experiences =
+    profileTimeline.find((section) => section.title === 'EXPERIENCIA LABORAL')?.items.length ?? 0;
+
   return (
-    <main className="min-h-screen bg-[#eeeade] px-4 py-6 md:px-8">
-      <div className="mx-auto w-full max-w-6xl">
-        <div className="px-2 py-4 md:px-6 md:py-6">
-          <Timeline sections={profileTimeline} />
+    <main className="min-h-screen bg-umss-cream px-4 py-6 md:px-10 md:py-8">
+      <div className="mx-auto flex w-full max-w-[1100px] flex-col gap-8">
+        {/* Cabecera del perfil */}
+        <header className="flex flex-col gap-6 rounded-2xl border border-umss-ink/10 bg-white px-5 py-6 md:flex-row md:items-end md:justify-between md:px-8 md:py-7">
+          <div className="flex min-w-0 flex-col gap-2">
+            <p className="text-sm font-bold uppercase tracking-[0.1em] text-umss-terracotta">
+              {profileHeader.verified ? 'Perfil profesional verificado' : 'Perfil profesional'}
+            </p>
+            <h1 className="text-[28px] font-bold leading-tight text-umss-navy md:text-[40px]">
+              {profileHeader.title} {profileHeader.name}
+            </h1>
+            <p className="text-base font-medium text-umss-navy/80 md:text-lg">
+              {profileHeader.career} · Promoción {profileHeader.graduationYear}
+            </p>
+          </div>
+
+          {/* Acciones del perfil (aquí irá el botón Descargar de la HU5) */}
+          <div className="flex flex-col gap-3 md:flex-row md:items-center">
+            <button
+              type="button"
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-umss-orange px-6 py-3.5 text-sm font-bold text-umss-ink transition hover:brightness-95"
+            >
+              <Pencil className="h-4 w-4" aria-hidden="true" />
+              Editar perfil
+            </button>
+          </div>
+        </header>
+
+        <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
+          {/* Resumen del perfil */}
+          <aside className="hidden w-[300px] shrink-0 flex-col gap-4 rounded-2xl border border-umss-ink/10 bg-white p-6 lg:flex">
+            <h2 className="text-xl font-bold text-umss-navy">Resumen del Perfil</h2>
+            <p className="text-[13px] leading-[1.5] text-umss-navy/70">
+              Este es el resumen digital de tu trayectoria académica y laboral registrada en la UMSS.
+              Los respaldos documentales han sido validados por la administración de la Red de
+              Egresados.
+            </p>
+            <ul className="flex flex-col gap-3 border-t border-umss-sand pt-4 text-xs font-semibold text-umss-navy">
+              <li className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-[#0F5132]" aria-hidden="true" />
+                {validatedBackups} Respaldos validados
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-umss-terracotta" aria-hidden="true" />
+                {experiences} Experiencias registradas
+              </li>
+            </ul>
+          </aside>
+
+          {/* Línea de tiempo */}
+          <section className="min-w-0 flex-1 rounded-2xl border border-umss-ink/10 bg-white px-4 py-5 md:px-7 md:py-6">
+            <Timeline sections={profileTimeline} />
+          </section>
         </div>
       </div>
     </main>

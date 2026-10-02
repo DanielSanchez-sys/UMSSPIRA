@@ -1,20 +1,42 @@
+export type BackupStatus = 'verified' | 'missing';
+
 export type TimelineItem = {
   title: string;
   subtitle: string;
-  date: string;
+  date?: string;
+  detail?: string;
   document?: string;
-  verified?: boolean;
-  showStatus?: boolean;
+  status?: BackupStatus;
 };
 
 export type TimelineSection = {
   title: string;
+  dateTone?: 'accent' | 'muted';
   items: TimelineItem[];
+};
+
+export type ProfileHeader = {
+  id: string;
+  title: string;
+  name: string;
+  career: string;
+  graduationYear: number;
+  verified: boolean;
+};
+
+export const profileHeader: ProfileHeader = {
+  id: '000452',
+  title: 'Ing.',
+  name: 'Carlos Mendoza Ríos',
+  career: 'Ingeniería de Sistemas',
+  graduationYear: 2018,
+  verified: true,
 };
 
 export const profileTimeline: TimelineSection[] = [
   {
     title: 'EDUCACIÓN',
+    dateTone: 'accent',
     items: [
       {
         title: 'Universidad Mayor de San Simón',
@@ -33,6 +55,7 @@ export const profileTimeline: TimelineSection[] = [
 
   {
     title: 'EXPERIENCIA LABORAL',
+    dateTone: 'muted',
     items: [
       {
         title: 'NTT DATA',
@@ -58,24 +81,22 @@ export const profileTimeline: TimelineSection[] = [
       {
         title: 'AWS Solutions Architect',
         subtitle: 'Amazon Web Services · 2022',
-        date: 'Grado: Profesional',
+        detail: 'Grado: Profesional',
         document: 'respaldo.pdf',
-        verified: true,
-        showStatus: true,
+        status: 'verified',
       },
       {
         title: 'Scrum Master PSM I',
         subtitle: 'Scrum.org · 2021',
-        date: 'Grado: Asociado',
+        detail: 'Grado: Asociado',
         document: 'respaldo.pdf',
-        verified: true,
-        showStatus: true,
+        status: 'verified',
       },
       {
         title: 'Google Cloud Engineer',
         subtitle: 'Google · 2023',
-        date: 'Grado: Profesional',
-        showStatus: true,
+        detail: 'Grado: Profesional',
+        status: 'missing',
       },
     ],
   },
