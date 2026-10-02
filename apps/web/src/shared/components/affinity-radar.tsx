@@ -25,6 +25,16 @@ const AREA_LABELS: Record<AreaId, string> = {
   'it-management': 'Gestión TI',
 };
 
+// Etiquetas abreviadas para la variante miniatura
+const AREA_SHORT_LABELS: Record<AreaId, string> = {
+  'software-development': 'Desarrollo',
+  'cloud-devops': 'Cloud',
+  'data-ai': 'Datos & IA',
+  'quality-assurance': 'QA & Testing',
+  'cybersecurity-networks': 'Ciberseg.',
+  'it-management': 'Gestión',
+};
+
 interface AffinityRadarProps {
   affinityData?: AffinityAreaScore[];
   variant?: 'full' | 'mini' //"full" = interactivo; "mini" = solo lectura para tarjetas 
@@ -46,6 +56,7 @@ export default function AffinityRadar({ affinityData = [], variant = 'full', }: 
     return {
       id,
       label: AREA_LABELS[id],
+      shortLabel: AREA_SHORT_LABELS[id],
       value: clampPercentage(rawValue), // Número para calcular coordenadas en el SVG
       displayValue: formatPercentage(rawValue), // Texto "XX%" para mostrar en la UI
     };
@@ -183,7 +194,7 @@ export default function AffinityRadar({ affinityData = [], variant = 'full', }: 
                   fontSize={18}
                   className="font-medium fill-slate-700"
                 >
-                  {data.label}
+                  {`${data.shortLabel} (${data.displayValue})`}
                 </text>
               );
             }
