@@ -77,3 +77,69 @@ describe('AffinityRadar Component', () => {
     expect(screen.getByText('Desarrollo de Software')).toBeInTheDocument();
   });
 });
+
+// Para el radar miniatura
+describe('AffinityRadar variante mini', () => {
+  it('no muestra el panel de area seleccionada', () => {
+    render(<AffinityRadar affinityData={mockData as any} variant="mini" />);
+
+    expect(screen.queryByText('ÁREA SELECCIONADA (CLICK)')).not.toBeInTheDocument();
+  });
+
+  it('muestra etiquetas cortas con porcentaje', () => {
+    render(<AffinityRadar affinityData={mockData as any} variant="mini" />);
+
+    expect(screen.getByText('Desarrollo (86%)')).toBeInTheDocument();
+    expect(screen.getByText('Cloud (70%)')).toBeInTheDocument();
+    expect(screen.getByText('Datos & IA (90%)')).toBeInTheDocument();
+    expect(screen.getByText('QA & Testing (60%)')).toBeInTheDocument();
+    expect(screen.getByText('Ciberseg. (45%)')).toBeInTheDocument();
+    expect(screen.getByText('Gestión (80%)')).toBeInTheDocument();
+  });
+
+  it('es de solo lectura: no responde a clics', () => {
+    const { container } = render(
+      <AffinityRadar affinityData={mockData as any} variant="mini" />
+    );
+
+    expect(container.querySelector('.cursor-pointer')).toBeNull();
+
+    fireEvent.click(screen.getByText('Desarrollo (86%)'));
+    expect(screen.queryByText('ÁREA SELECCIONADA (CLICK)')).not.toBeInTheDocument();
+  });
+
+  it('pinta el radar en rojo solo cuando esta destacado', () => {
+    const { container, rerender } = render(
+      <AffinityRadar affinityData={mockData as any} variant="mini" />
+    );
+    expect(container.querySelector('polygon.stroke-red-700')).toBeNull();
+
+    rerender(<AffinityRadar affinityData={mockData as any} variant="mini" highlighted />);
+    expect(container.querySelector('polygon.stroke-red-700')).not.toBeNull();
+  });
+
+  it('en estado vacío muestra solo la cuadrícula, sin polígono ni porcentajes', () => {
+    const expectOnlyGrid = (container: HTMLElement) => {
+      // Solo los 5 polígonos de la cuadrícula, ninguno de datos
+      expect(container.querySelectorAll('polygon')).toHaveLength(5);
+      expect(container.querySelector('polygon.stroke-red-700')).toBeNull();
+      expect(container.querySelector('polygon.stroke-slate-800')).toBeNull();
+      // Sin vértices
+      expect(container.querySelectorAll('circle')).toHaveLength(0);
+      // Sin etiquetas ni porcentajes
+      expect(container.querySelectorAll('text')).toHaveLength(0);
+      expect(screen.queryByText(/%/)).not.toBeInTheDocument();
+      expect(screen.queryByText('ÁREA SELECCIONADA (CLICK)')).not.toBeInTheDocument();
+    };
+
+    // Caso 1: hasData en false (aunque haya datos)
+    const { container, rerender } = render(
+      <AffinityRadar affinityData={mockData as any} hasData={false} variant="mini" highlighted />
+    );
+    expectOnlyGrid(container);
+
+    // Caso 2: affinityData vacío
+    rerender(<AffinityRadar affinityData={[]} hasData={true} variant="mini" highlighted />);
+    expectOnlyGrid(container);
+  });
+});
