@@ -5,6 +5,7 @@ import { RadarChart } from './radar-chart';
 import { Spinner } from './spinner';
 import { ErrorAlert } from './error-alert';
 import { ShieldCheck, RefreshCw, PieChart, Sparkles, CheckCircle, Activity } from 'lucide-react';
+import { clampPercentage } from '../utils/percentage';
 
 export interface AreaScore {
   area: string;
@@ -64,7 +65,7 @@ export const AffinityVectorDisplay: React.FC<AffinityVectorDisplayProps> = ({
 
     let rawScore = found ? found.affinity : 0;
     // Apply HU-1 Criteria 2, 3, 4: Rounding, clamping 0-100%
-    const cleanScore = Math.min(100, Math.max(0, Math.round(rawScore)));
+    const cleanScore = clampPercentage(rawScore);
 
     return {
       area: mandatoryName,
