@@ -20,6 +20,7 @@ interface AreaData {
 interface RadarInspectionProps {
   selectedAreaId: string | null;
   onSelectArea: (id: string | null) => void;
+  areas?: AreaData[];
 }
 
 // 2. Diccionario estricto de ids a los nombres de la HU2-C3 (Inciso 4)
@@ -32,8 +33,11 @@ const AREA_NAMES_MAP: Record<string, string> = {
   "it-management": "Gestión TI",
 };
 
-export default function RadarInspection({ selectedAreaId, onSelectArea }: RadarInspectionProps) {
-  const areas = (mockData.areas || []) as unknown as AreaData[];
+export default function RadarInspection({ 
+  selectedAreaId, 
+  onSelectArea,
+  areas = (mockData.areas || []) as unknown as AreaData[]
+}: RadarInspectionProps) {
 
   // 3. Estado vacío actualizado: SOLO muestra el mensaje, sin botón "Completar perfil"
   if (!areas || areas.length === 0) {

@@ -29,9 +29,22 @@ describe('RadarInspection Component', () => {
   });
 
   test('C2: Renderiza el estado vacío correctamente cuando no hay áreas', () => {
-    // Sobrescribimos temporalmente el mock o pasamos una estructura vacía si el componente lo permite, 
-    // o mockeamos el JSON vacío. Para este test, validamos el texto "Sin datos de historial laboral" sin botón.
-    // (Nota: si tu componente importa directo el mock, puedes probar mockeando un array vacío).
+    // Pasamos un array vacío mediante la prop 'areas' para probar el estado vacío sin botones (CA-HU2-05)
+    render(
+      <RadarInspection 
+        selectedAreaId={null} 
+        onSelectArea={mockOnSelectArea} 
+        areas={[]} 
+      />
+    );
+
+    // Verificamos que se muestre el texto de estado vacío obligatorio
+    expect(
+      screen.getByText(/Sin datos de historial laboral/i)
+    ).toBeInTheDocument();
+
+    // Verificamos rigurosamente que NO se renderice ningún botón
+    expect(screen.queryByRole('button')).not.toBeInTheDocument();
   });
 
   test('C4, C6 & C3: Muestra las áreas con sus nombres oficiales, porcentajes enteros y permite seleccionar un área', () => {
