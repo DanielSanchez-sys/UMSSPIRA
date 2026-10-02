@@ -1,6 +1,7 @@
 import { Pencil } from 'lucide-react';
 
 import Timeline from '@/shared/components/timeline';
+import DownloadProfileButton from '@/modules/profile/components/download-profile-button';
 import { profileHeader, profileTimeline } from '@/modules/profile/data/profile-data';
 
 export default function ProfilePage() {
@@ -27,7 +28,7 @@ export default function ProfilePage() {
             </p>
           </div>
 
-          {/* Acciones del perfil (aquí irá el botón Descargar de la HU5) */}
+          {/* Acciones del perfil */}
           <div className="flex flex-col gap-3 md:flex-row md:items-center">
             <button
               type="button"
@@ -36,6 +37,7 @@ export default function ProfilePage() {
               <Pencil className="h-4 w-4" aria-hidden="true" />
               Editar perfil
             </button>
+            <DownloadProfileButton header={profileHeader} sections={profileTimeline} />
           </div>
         </header>
 
