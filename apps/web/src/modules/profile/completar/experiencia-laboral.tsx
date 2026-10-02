@@ -6,22 +6,37 @@ import { Briefcase } from 'lucide-react';
 export type Experiencia = {
   empresa: string;
   cargo: string;
-  periodo: string;
+  fechaInicio: string;
+  fechaFin?: string;
 };
 type FormularioExperienciaProps = {
   experiencias:Experiencia[];
   onAgregar: (experiencia: Experiencia) => void;
 };
-const VACIO: Experiencia = { empresa: '', cargo: '', periodo: '' };
 
-const CAMPOS: { nombre: keyof Experiencia; etiqueta: string; ejemplo: string }[] = [
-  { nombre: 'empresa', etiqueta: 'Empresa', ejemplo: 'Ej. Jalasoft' },
-  { nombre: 'cargo', etiqueta: 'Cargo', ejemplo: 'Ej. Desarrollador Frontend' },
-  { nombre: 'periodo', etiqueta: 'Periodo', ejemplo: 'Ej. 2022 - 2024' },
+type Datos = {
+  empresa: string;
+  cargo: string;
+  fechaInicio: string;
+  fechaFin: string;
+};
+
+const VACIO: Datos = { empresa: '', cargo: '', fechaInicio: '', fechaFin: '' };
+
+const CAMPOS: { nombre: keyof Datos; etiqueta: string; tipo: 'text' | 'date'; ejemplo?: string }[] = [
+  { nombre: 'empresa', etiqueta: 'Empresa', tipo: 'text', ejemplo: 'Ej. Jalasoft' },
+  { nombre: 'cargo', etiqueta: 'Cargo', tipo: 'text', ejemplo: 'Ej. Desarrollador Frontend' },
+  { nombre: 'fechaInicio', etiqueta: 'fechaInicio', tipo: 'date' },
+  { nombre: 'fechaFin', etiqueta: 'fechaFin', tipo: 'date' },
 ];
 
+function mostrarFecha(fecha: string) {
+  const [anio, mes] = fecha.split('-');
+  return `${mes}/${anio}`;
+}
+
 export function FormularioExperiencia({experiencias, onAgregar }: FormularioExperienciaProps) {
-  const [datos, setDatos] = useState<Experiencia>(VACIO);
+  const [datos, setDatos] = useState<Datos>(VACIO);
   const completo = CAMPOS.every((campo) => datos[campo.nombre].trim() !== '');
 
   function agregar(evento: React.FormEvent<HTMLFormElement>) {
@@ -30,7 +45,8 @@ export function FormularioExperiencia({experiencias, onAgregar }: FormularioExpe
     onAgregar({
       empresa: datos.empresa.trim(),
       cargo: datos.cargo.trim(),
-      periodo: datos.periodo.trim(),
+      fechaInicio: datos.fechaInicio,
+      fechaFin: datos.fechaFin,
     });
     setDatos(VACIO);
   }
@@ -49,7 +65,8 @@ export function FormularioExperiencia({experiencias, onAgregar }: FormularioExpe
               <span>
                 <span className="block text-sm font-semibold text-[#1B2632]">{experiencia.cargo}</span>
                 <span className="block text-xs text-[#2C3B4D]/70">
-                  {experiencia.empresa} · {experiencia.periodo}
+                  {experiencia.empresa} · {mostrarFecha(experiencia.fechaInicio)} - {' '}
+                  {experiencia.fechaFin ? mostrarFecha(experiencia.fechaFin) : 'Actualidad'}
                 </span>
               </span>
             </li>
@@ -64,7 +81,7 @@ export function FormularioExperiencia({experiencias, onAgregar }: FormularioExpe
               {campo.etiqueta} <span className="text-[#A35139]">*</span>
             </span>
             <input
-              type="text"
+              type={campo.tipo}
               value={datos[campo.nombre]}
               onChange={(e) => setDatos({ ...datos, [campo.nombre]: e.target.value })}
               placeholder={campo.ejemplo}
