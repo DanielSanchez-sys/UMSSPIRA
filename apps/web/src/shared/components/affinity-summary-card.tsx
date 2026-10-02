@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatPercentage } from '../utils/percentage';
 
 export interface TopArea {
   id: string;
@@ -35,7 +36,7 @@ export const AffinitySummaryCard: React.FC<AffinitySummaryCardProps> = ({
                   : 'bg-white border border-gray-300 text-gray-700'
               }`}
             >
-              {index + 1}. {area.label} ({area.score}%)
+              {index + 1}. {area.label} ({formatPercentage(area.score)})
             </div>
           ))}
         </div>
@@ -44,7 +45,7 @@ export const AffinitySummaryCard: React.FC<AffinitySummaryCardProps> = ({
       {/* Sección 2: Palabras clave más influyentes */}
       <div>
         <h3 className="flex items-center text-sm font-bold text-gray-800 mb-3">
-          <span className="text-red-500 mr-2">🏷️</span>
+          <span className="w-2 h-2 rounded-full bg-blue-600 mr-2"></span>
           Palabras clave más influyentes:
         </h3>
         <div className="flex flex-wrap gap-2">
