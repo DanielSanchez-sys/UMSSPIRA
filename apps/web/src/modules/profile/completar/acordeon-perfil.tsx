@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { BarraProgreso } from './barra-Progreso';
+import { BarraProgreso } from './barra-progreso';
 import { SeccionAcordeon } from './seccion-acordeon';
-import { FormularioExperiencia, type Experiencia } from './experiencia';
+import { FormularioExperiencia, type Experiencia } from './experiencia-laboral';
 
 export function AcordeonPerfil() {
   // Cada sección guardará aquí sus registros (T1.3, T1.4 y T1.5).

@@ -1,6 +1,5 @@
 import { ChevronRight } from 'lucide-react';
-import { AcordeonPerfil} from '@/shared/components/perfil/FormularioAcordion';
-
+import { AcordeonPerfil } from '@/modules/profile/completar/acordeon-perfil';
 export default function PerfilPage() {
   return (
     <div className="min-h-screen bg-[#EEE9DF]">
