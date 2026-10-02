@@ -1,5 +1,5 @@
 import { ChevronRight } from 'lucide-react';
-import { AcordeonPerfil} from '@/shared/components/perfil/seccion-acordeon';
+import { AcordeonPerfil} from '@/shared/components/perfil/FormularioAcordion';
 
 export default function PerfilPage() {
   return (
