@@ -3,6 +3,7 @@ import Link from 'next/link';
 import Timeline from '@/shared/components/timeline';
 import DownloadProfileButton from '@/modules/profile/components/download-profile-button';
 import { profileHeader, profileTimeline } from '@/modules/profile/data/profile-data';
+import { sortSectionsByRecency } from '@/modules/profile/utils/sort-by-recency';
 
 export default function ProfilePage() {
   const validatedBackups = profileTimeline
@@ -64,7 +65,7 @@ export default function ProfilePage() {
 
           {/* Línea de tiempo */}
           <section className="min-w-0 flex-1 rounded-2xl border border-umss-ink/10 bg-white px-4 py-5 md:px-7 md:py-6">
-            <Timeline sections={profileTimeline} />
+            <Timeline sections={sortSectionsByRecency(profileTimeline)} />
           </section>
         </div>
       </div>
