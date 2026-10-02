@@ -26,8 +26,8 @@ const VACIO: Datos = { empresa: '', cargo: '', fechaInicio: '', fechaFin: '' };
 const CAMPOS: { nombre: keyof Datos; etiqueta: string; tipo: 'text' | 'date'; ejemplo?: string }[] = [
   { nombre: 'empresa', etiqueta: 'Empresa', tipo: 'text', ejemplo: 'Ej. Jalasoft' },
   { nombre: 'cargo', etiqueta: 'Cargo', tipo: 'text', ejemplo: 'Ej. Desarrollador Frontend' },
-  { nombre: 'fechaInicio', etiqueta: 'fechaInicio', tipo: 'date' },
-  { nombre: 'fechaFin', etiqueta: 'fechaFin', tipo: 'date' },
+  { nombre: 'fechaInicio', etiqueta: 'fecha inicio', tipo: 'date' },
+  { nombre: 'fechaFin', etiqueta: 'fecha fin', tipo: 'date' },
 ];
 
 function mostrarFecha(fecha: string) {
@@ -40,6 +40,8 @@ export function FormularioExperiencia({experiencias, onAgregar }: FormularioExpe
   const [trabajoActual, setTrabajoActual] = useState(false);
   const completo = CAMPOS.every((campo) => (campo.nombre === 'fechaFin' && trabajoActual) || datos[campo.nombre].trim() !== '',
   );
+
+  const ordenadas = [...experiencias].sort((a, b) => b.fechaInicio.localeCompare(a.fechaInicio));
 
   function agregar(evento: React.FormEvent<HTMLFormElement>) {
     evento.preventDefault();
@@ -57,7 +59,7 @@ export function FormularioExperiencia({experiencias, onAgregar }: FormularioExpe
     <div className="flex flex-col gap-5">
         {experiencias.length > 0 && (
         <ul className="flex flex-col gap-2">
-          {experiencias.map((experiencia, indice) => (
+          {ordenadas.map((experiencia, indice) => (
             <li
               key={`${experiencia.empresa}-${indice}`}
               className="flex items-center gap-3 rounded-xl border border-[#C9C1B1]/70 bg-[#FAF8F4] px-4 py-3"
@@ -77,7 +79,7 @@ export function FormularioExperiencia({experiencias, onAgregar }: FormularioExpe
         </ul>
       )}
       <form onSubmit={agregar} className="flex flex-col gap-4">  
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2">
         {CAMPOS.map((campo) => {
           const esFin = campo.nombre === 'fechaFin';
           const deshabilitado = esFin && trabajoActual;
@@ -85,7 +87,7 @@ export function FormularioExperiencia({experiencias, onAgregar }: FormularioExpe
       return (
           <label key={campo.nombre} className="flex flex-col gap-1.5">
             <span className="text-[13px] font-semibold text-[#1B2632]">
-              {campo.etiqueta} <span className="text-[#A35139]">*</span>
+              {campo.etiqueta} 
               {!deshabilitado && <span className="text-[#A35139]"> *</span>}
             </span>
             <input
