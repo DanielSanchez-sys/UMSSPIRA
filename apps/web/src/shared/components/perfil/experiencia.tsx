@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Briefcase } from 'lucide-react';
 
 export type Experiencia = {
   empresa: string;
@@ -8,6 +9,7 @@ export type Experiencia = {
   periodo: string;
 };
 type FormularioExperienciaProps = {
+  experiencias:Experiencia[];
   onAgregar: (experiencia: Experiencia) => void;
 };
 const VACIO: Experiencia = { empresa: '', cargo: '', periodo: '' };
@@ -18,7 +20,7 @@ const CAMPOS: { nombre: keyof Experiencia; etiqueta: string; ejemplo: string }[]
   { nombre: 'periodo', etiqueta: 'Periodo', ejemplo: 'Ej. 2022 - 2024' },
 ];
 
-export function FormularioExperiencia({ onAgregar }: FormularioExperienciaProps) {
+export function FormularioExperiencia({experiencias, onAgregar }: FormularioExperienciaProps) {
   const [datos, setDatos] = useState<Experiencia>(VACIO);
   const completo = CAMPOS.every((campo) => datos[campo.nombre].trim() !== '');
 
@@ -34,6 +36,26 @@ export function FormularioExperiencia({ onAgregar }: FormularioExperienciaProps)
   }
   return (
     <div className="flex flex-col gap-5">
+        {experiencias.length > 0 && (
+        <ul className="flex flex-col gap-2">
+          {experiencias.map((experiencia, indice) => (
+            <li
+              key={`${experiencia.empresa}-${indice}`}
+              className="flex items-center gap-3 rounded-xl border border-[#C9C1B1]/70 bg-[#FAF8F4] px-4 py-3"
+            >
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#EEE9DF]">
+                <Briefcase className="h-4 w-4 text-[#2C3B4D]" />
+              </span>
+              <span>
+                <span className="block text-sm font-semibold text-[#1B2632]">{experiencia.cargo}</span>
+                <span className="block text-xs text-[#2C3B4D]/70">
+                  {experiencia.empresa} · {experiencia.periodo}
+                </span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
       <form onSubmit={agregar} className="flex flex-col gap-4">  
         <div className="grid gap-4 md:grid-cols-3">
         {CAMPOS.map((campo) => (
