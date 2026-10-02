@@ -101,6 +101,8 @@ export const CandidateCarousel: React.FC<CandidateCarouselProps> = ({
               affinity={candidate.affinity}
               nlpScore={candidate.nlpScore}
               featured={candidate.featured}
+              areas={candidate.areas}
+              mayorConcentracion={candidate.mayorConcentracion || candidate.concentrationArea}
               onSelectCandidate={onSelectCandidate}
             />
           </div>

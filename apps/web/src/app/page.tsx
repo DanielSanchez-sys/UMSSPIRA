@@ -9,12 +9,16 @@ import { GraduateAffinityView } from '@/shared/components/graduate-affinity-view
 import { Epic2IntegrationDocs } from '@/shared/components/epic2-integration-docs';
 import { SiteFooter } from '@/shared/components/site-footer';
 import candidatesData from '@/shared/mocks/candidates-mock.json';
+import { computeMayorConcentracion } from '@/shared/utils/concentration';
 import { ChevronLeft, ChevronRight, Users, Sparkles } from 'lucide-react';
 
 export default function Home() {
   const [activeView, setActiveView] = useState<'recruiter' | 'graduate'>('recruiter');
-  const [candidates, setCandidates] = useState<SearchCandidateResult[]>(
-    candidatesData.candidates as SearchCandidateResult[]
+  const [candidates, setCandidates] = useState<SearchCandidateResult[]>(() =>
+    (candidatesData.candidates as SearchCandidateResult[]).map((cand) => ({
+      ...cand,
+      mayorConcentracion: computeMayorConcentracion('', cand),
+    }))
   );
   const [selectedGraduateId, setSelectedGraduateId] = useState<string>(
     candidatesData.candidates[0].graduateId
@@ -101,6 +105,7 @@ export default function Home() {
                       featured={cand.featured}
                       isSelected={selectedGraduateId === cand.graduateId}
                       areas={cand.areas}
+                      mayorConcentracion={cand.mayorConcentracion || cand.concentrationArea}
                       onSelectCandidate={(id) => setSelectedGraduateId(id)}
                     />
                   ))}
