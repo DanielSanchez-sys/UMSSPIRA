@@ -1,5 +1,5 @@
 import { Pencil } from 'lucide-react';
-
+import Link from 'next/link';
 import Timeline from '@/shared/components/timeline';
 import DownloadProfileButton from '@/modules/profile/components/download-profile-button';
 import { profileHeader, profileTimeline } from '@/modules/profile/data/profile-data';
@@ -30,13 +30,13 @@ export default function ProfilePage() {
 
           {/* Acciones del perfil */}
           <div className="flex flex-col gap-3 md:flex-row md:items-center">
-            <button
-              type="button"
+            <Link
+            href="/profile/completar"
               className="inline-flex items-center justify-center gap-2 rounded-lg bg-umss-orange px-6 py-3.5 text-sm font-bold text-umss-ink transition hover:brightness-95"
-            >
-              <Pencil className="h-4 w-4" aria-hidden="true" />
-              Editar perfil
-            </button>
+             >
+            <Pencil className="h-4 w-4" aria-hidden="true" />
+             Editar perfil
+             </Link>
             <DownloadProfileButton header={profileHeader} sections={profileTimeline} />
           </div>
         </header>
