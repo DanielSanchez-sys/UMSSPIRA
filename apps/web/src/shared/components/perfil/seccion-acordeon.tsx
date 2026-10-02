@@ -1,5 +1,4 @@
 'use client';
-
 import { useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 
@@ -48,5 +47,27 @@ export function SeccionAcordeon({ numero, titulo, descripcion, children }: Secci
         <div className="border-t border-[#C9C1B1]/70 px-4 py-4 md:px-6 md:py-5">{children}</div>
       )}
     </section>
+  );
+}
+
+export function AcordeonPerfil() {
+  return (
+    <div className="flex flex-col gap-4">
+      <SeccionAcordeon
+        numero={1}
+        titulo="Formación académica"
+        descripcion="Tu formación académica principal"
+      />
+      <SeccionAcordeon
+        numero={2}
+        titulo="Experiencia laboral"
+        descripcion="Tu experiencia profesional más relevante"
+      />
+      <SeccionAcordeon
+        numero={3}
+        titulo="Certificaciones"
+        descripcion="Credenciales que respaldan tu perfil"
+      />
+    </div>
   );
 }

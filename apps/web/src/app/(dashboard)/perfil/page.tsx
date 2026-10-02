@@ -1,4 +1,5 @@
 import { ChevronRight } from 'lucide-react';
+import { AcordeonPerfil} from '@/shared/components/perfil/seccion-acordeon';
 
 export default function PerfilPage() {
   return (
@@ -21,6 +22,9 @@ export default function PerfilPage() {
         <p className="mt-1.5 text-sm text-[#2C3B4D]/70">
           Registra tu formación académica, experiencia laboral y certificaciones. 
         </p>
+        <div className="mt-5">
+          <AcordeonPerfil />
+        </div>
       </main>
     </div>
   );
