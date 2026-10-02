@@ -7,6 +7,10 @@ export type TimelineItem = {
   detail?: string;
   document?: string;
   status?: BackupStatus;
+  // Solo certificaciones. Se reemplazan por el tipo de lectura de shared-types cuando exista.
+  issuer?: string;
+  year?: string;
+  grade?: string;
 };
 
 export type TimelineSection = {
@@ -82,6 +86,9 @@ export const profileTimeline: TimelineSection[] = [
         title: 'AWS Solutions Architect',
         subtitle: 'Amazon Web Services · 2022',
         detail: 'Grado: Profesional',
+        issuer: 'Amazon Web Services',
+        year: '2022',
+        grade: 'Profesional',
         document: 'respaldo.pdf',
         status: 'verified',
       },
@@ -89,6 +96,9 @@ export const profileTimeline: TimelineSection[] = [
         title: 'Scrum Master PSM I',
         subtitle: 'Scrum.org · 2021',
         detail: 'Grado: Asociado',
+        issuer: 'Scrum.org',
+        year: '2021',
+        grade: 'Asociado',
         document: 'respaldo.pdf',
         status: 'verified',
       },
@@ -96,6 +106,9 @@ export const profileTimeline: TimelineSection[] = [
         title: 'Google Cloud Engineer',
         subtitle: 'Google · 2023',
         detail: 'Grado: Profesional',
+        issuer: 'Google',
+        year: '2023',
+        grade: 'Profesional',
         status: 'missing',
       },
     ],
