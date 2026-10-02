@@ -22,6 +22,13 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isSearching, setIsSearching] = useState<boolean>(false);
 
+  // --- LÓGICA DEL CARRUSEL AGREGADA ---
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const itemsPerPage = 3;
+  const handlePrev = () => setCurrentIndex((prev) => Math.max(0, prev - itemsPerPage));
+  const handleNext = () => setCurrentIndex((prev) => Math.min(Math.max(0, candidates.length - itemsPerPage), prev + itemsPerPage));
+  // ------------------------------------
+
   // Selected candidate object
   const selectedCandidate =
     candidates.find((c) => c.graduateId === selectedGraduateId) || candidates[0];
@@ -29,6 +36,7 @@ export default function Home() {
   const handleSearchCompleted = (results: SearchCandidateResult[], query: string) => {
     setCandidates(results);
     setSearchQuery(query);
+    setCurrentIndex(0); // Reinicia el carrusel al buscar
     if (results.length > 0) {
       setSelectedGraduateId(results[0].graduateId);
     }
@@ -72,22 +80,33 @@ export default function Home() {
                     </p>
                   </div>
 
+                  {/* Controles del Carrusel Reparados */}
                   <div className="flex items-center space-x-2 self-end sm:self-auto">
                     <span className="text-xs text-slate-500 font-mono mr-2">
-                      Mostrando 1 - {Math.min(3, candidates.length)} de {candidates.length} candidatos
+                      Mostrando {currentIndex + 1} - {Math.min(currentIndex + itemsPerPage, candidates.length)} de {candidates.length} candidatos
                     </span>
-                    <button className="p-1.5 rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 transition-colors">
+                    <button 
+                      type="button"
+                      onClick={handlePrev}
+                      disabled={currentIndex === 0}
+                      className="p-1.5 rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 transition-colors disabled:opacity-50"
+                    >
                       <ChevronLeft className="w-4 h-4" />
                     </button>
-                    <button className="p-1.5 rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 transition-colors">
+                    <button 
+                      type="button"
+                      onClick={handleNext}
+                      disabled={currentIndex + itemsPerPage >= candidates.length}
+                      className="p-1.5 rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 transition-colors disabled:opacity-50"
+                    >
                       <ChevronRight className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
 
-                {/* 3 Candidate Cards Grid with Hexágonos */}
+                {/* 3 Candidate Cards Grid with Hexágonos (Arreglado el Slice) */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {candidates.slice(0, 3).map((cand) => (
+                  {candidates.slice(currentIndex, currentIndex + itemsPerPage).map((cand) => (
                     <CandidateCard
                       key={cand.graduateId}
                       graduateId={cand.graduateId}
