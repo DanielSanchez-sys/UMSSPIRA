@@ -1,7 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { ChevronDown, ChevronUp } from 'lucide-react';
-import { BarraProgreso } from './barra-Progreso';
+import { Check, ChevronDown, ChevronUp } from 'lucide-react';
 
 type SeccionAcordeonProps = {
   numero: number;
@@ -41,6 +40,17 @@ export function SeccionAcordeon({
         </span>
 
         <span className="flex shrink-0 items-center gap-3">
+                    <span
+            className={`hidden items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold sm:flex ${
+              completa ? 'bg-[#FFB162]/25 text-[#1B2632]' : 'bg-[#EEE9DF] text-[#2C3B4D]'
+            }`}
+          >
+            {completa && <Check className="h-3.5 w-3.5" aria-label="Sección completa" />}
+            {completa ? `${cantidad} ${cantidad === 1 ? 'registro' : 'registros'}` : 'Sin registros'}
+          </span>
+          {completa && (
+            <Check className="h-4 w-4 text-[#A35139] sm:hidden" aria-label="Sección completa" />
+          )}
           <span className="flex h-[30px] w-[30px] items-center justify-center rounded-md border border-[#C9C1B1] bg-white">
             {abierta ? (
               <ChevronUp className="h-4 w-4 text-[#2C3B4D]" />
@@ -58,35 +68,3 @@ export function SeccionAcordeon({
   );
 }
 
-export function AcordeonPerfil() {
-  const [formaciones] = useState<unknown[]>([]);
-  const [experiencias] = useState<unknown[]>([]);
-  const [certificaciones] = useState<unknown[]>([]);
-
-  const cantidades = [formaciones.length, experiencias.length, certificaciones.length];
-  const completas = cantidades.filter((cantidad) => cantidad > 0).length;
-
-  return (
-    <div className="flex flex-col gap-4">
-      <BarraProgreso completas={completas} total={3} />
-      <SeccionAcordeon
-        numero={1}
-        titulo="Formación académica"
-        descripcion="Tu formación académica principal"
-        cantidad={formaciones.length}
-      />
-      <SeccionAcordeon
-        numero={2}
-        titulo="Experiencia laboral"
-        descripcion="Tu experiencia profesional más relevante"
-        cantidad={experiencias.length}
-      />
-      <SeccionAcordeon
-        numero={3}
-        titulo="Certificaciones"
-        descripcion="Credenciales que respaldan tu perfil"
-        cantidad={certificaciones.length}
-      />
-    </div>
-  );
-}
