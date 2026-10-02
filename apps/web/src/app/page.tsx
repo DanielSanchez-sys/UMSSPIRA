@@ -8,8 +8,11 @@ import { EvidenceBreakdown } from '@/shared/components/evidence-breakdown';
 import { GraduateAffinityView } from '@/shared/components/graduate-affinity-view';
 import { Epic2IntegrationDocs } from '@/shared/components/epic2-integration-docs';
 import { SiteFooter } from '@/shared/components/site-footer';
+import { useCarouselPagination } from '@/shared/hooks/use-carousel-pagination';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+
+// TODO: [Tarea #32] - Reemplazar este mock estático cuando se conecte el cálculo de afinidad real de la base de datos (Épica 2)
 import candidatesData from '@/shared/mocks/candidates-mock.json';
-import { ChevronLeft, ChevronRight, Users, Sparkles } from 'lucide-react';
 
 export default function Home() {
   const [activeView, setActiveView] = useState<'recruiter' | 'graduate'>('recruiter');
@@ -22,21 +25,16 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isSearching, setIsSearching] = useState<boolean>(false);
 
-  // --- LÓGICA DEL CARRUSEL AGREGADA ---
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const itemsPerPage = 3;
-  const handlePrev = () => setCurrentIndex((prev) => Math.max(0, prev - itemsPerPage));
-  const handleNext = () => setCurrentIndex((prev) => Math.min(Math.max(0, candidates.length - itemsPerPage), prev + itemsPerPage));
-  // ------------------------------------
+  // Hook de paginación del carrusel
+  const { currentIndex, itemsPerPage, handlePrev, handleNext, resetPagination } = useCarouselPagination(candidates.length);
 
-  // Selected candidate object
-  const selectedCandidate =
-    candidates.find((c) => c.graduateId === selectedGraduateId) || candidates[0];
+  const selectedCandidate = candidates.find((c) => c.graduateId === selectedGraduateId) || candidates[0];
 
   const handleSearchCompleted = (results: SearchCandidateResult[], query: string) => {
+    // TODO: [Tarea #32] - Aquí se inyectarán los resultados filtrados provenientes del backend de la Épica 2
     setCandidates(results);
     setSearchQuery(query);
-    setCurrentIndex(0); // Reinicia el carrusel al buscar
+    resetPagination();
     if (results.length > 0) {
       setSelectedGraduateId(results[0].graduateId);
     }
@@ -45,18 +43,11 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-palladian text-abyssal-blue font-sans flex flex-col justify-between">
       <div>
-        {/* Top Header Navbar */}
-        <SiteHeader
-          activeView={activeView}
-          onToggleView={(view) => setActiveView(view)}
-        />
+        <SiteHeader activeView={activeView} onToggleView={(view) => setActiveView(view)} />
 
-        {/* Main Content Area */}
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
           {activeView === 'recruiter' ? (
-            /* Modo Buscador (Reclutador) - Mockup 3 */
             <div className="space-y-10 animate-fadeIn">
-              {/* Section 1: Buscador de Talento y Afinidad Profesional */}
               <section>
                 <NlpSearch
                   onSearchCompleted={handleSearchCompleted}
@@ -65,7 +56,6 @@ export default function Home() {
                 />
               </section>
 
-              {/* Section 2: Comparativa de Egresados & Hexágonos de Afinidad */}
               <section className="space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-300/60 pb-3">
                   <div>
@@ -80,10 +70,9 @@ export default function Home() {
                     </p>
                   </div>
 
-                  {/* Controles del Carrusel Reparados */}
                   <div className="flex items-center space-x-2 self-end sm:self-auto">
                     <span className="text-xs text-slate-500 font-mono mr-2">
-                      Mostrando {currentIndex + 1} - {Math.min(currentIndex + itemsPerPage, candidates.length)} de {candidates.length} candidatos
+                      Mostrando {candidates.length > 0 ? currentIndex + 1 : 0} - {Math.min(currentIndex + itemsPerPage, candidates.length)} de {candidates.length} candidatos
                     </span>
                     <button 
                       type="button"
@@ -104,7 +93,6 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* 3 Candidate Cards Grid with Hexágonos (Arreglado el Slice) */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {candidates.slice(currentIndex, currentIndex + itemsPerPage).map((cand) => (
                     <CandidateCard
@@ -126,24 +114,19 @@ export default function Home() {
                 </div>
               </section>
 
-              {/* Section 3: Expediente Académico y Certificaciones Verificadas */}
               <section id="evidence-section">
                 <EvidenceBreakdown candidateName={selectedCandidate.name} />
               </section>
 
-              {/* Section 4: Documentación Técnica de Integración Tarea #32 */}
               <section>
                 <Epic2IntegrationDocs />
               </section>
             </div>
           ) : (
-            /* Modo Egresado (Mi Afinidad Profesional) - Mockup 1 */
             <GraduateAffinityView />
           )}
         </main>
       </div>
-
-      {/* Footer Banner */}
       <SiteFooter />
     </div>
   );

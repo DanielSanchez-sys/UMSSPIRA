@@ -1,34 +1,36 @@
 'use client';
 
-export default function InstitutionalBanner() {
+import React from 'react';
+import { Building2, Download } from 'lucide-react';
+
+export const InstitutionalBanner: React.FC = () => {
   return (
-    // Contenedor principal con el color de fondo Palladian
-    <div className="w-full bg-[#EEE9DF] py-8 border-t border-gray-200">
-      <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
-        
-        {/* Sección de texto */}
-        <div className="text-gray-800">
-          <h2 className="text-xl font-bold mb-1">CONVENIOS EMPRESARIALES FCYT</h2>
-          <p className="text-sm">¿Buscas contratar cohortes completas de graduados o formular pasantías institucionales?</p>
-          <p className="text-xs text-gray-600 mt-1">
-            La Dirección de Interacción Social y la Bolsa de Trabajo FCYT organizan sesiones de selección directa y validación presencial de competencias técnicas de nuestros titulados.
+    <div className="bg-gradient-to-r from-blue-fantastic to-abyssal-blue p-6 sm:p-8 rounded-2xl border border-slate-700/60 shadow-xl space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="space-y-2 max-w-3xl">
+          <span className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-truffle-trouble/20 text-burning-flame border border-truffle-trouble/40 text-[10px] font-bold uppercase tracking-wider">
+            <Building2 className="w-3.5 h-3.5" />
+            <span>CONVENIOS EMPRESARIALES FCYT</span>
+          </span>
+          <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+            ¿Buscas contratar cohortes completas de graduados o formular pasantías institucionales?
+          </h3>
+          <p className="text-xs text-slate-300 leading-relaxed">
+            La Dirección de Interacción Social y la Unidad de Titulación FCyT coordinan procesos de selección directa y validación personalizada de competencias técnicas para empresas aliadas.
           </p>
         </div>
 
-        {/* Sección de botones */}
-        <div className="flex flex-col sm:flex-row gap-3 min-w-max">
-          {/* Botón Principal (Burning Flame) */}
-          <button className="bg-[#FFB162] hover:bg-orange-400 text-[#1B2632] font-semibold py-2 px-6 rounded-md shadow-sm transition-colors text-sm">
-            Solicitar Alianza Corporativa
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
+          <button type="button" className="px-5 py-2.5 bg-truffle-trouble hover:bg-truffle-trouble/90 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center space-x-2">
+            <Building2 className="w-4 h-4" />
+            <span>Solicitar Alianza Corporativa</span>
           </button>
-          
-          {/* Botón Secundario (Oatmeal) */}
-          <button className="bg-[#C9C1B1] hover:bg-gray-300 text-[#1B2632] font-semibold py-2 px-6 rounded-md shadow-sm transition-colors text-sm flex items-center justify-center gap-2">
+          <button type="button" className="px-5 py-2.5 bg-abyssal-blue border border-slate-600 hover:bg-slate-800 text-slate-200 font-semibold text-xs rounded-xl transition-colors flex items-center justify-center space-x-2">
+            <Download className="w-4 h-4 text-slate-400" />
             <span>Descargar Guía de Validación SIS</span>
           </button>
         </div>
-
       </div>
     </div>
   );
-}
+};
