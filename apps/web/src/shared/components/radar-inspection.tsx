@@ -33,7 +33,7 @@ const AREA_NAMES_MAP: Record<string, string> = {
 };
 
 export default function RadarInspection({ selectedAreaId, onSelectArea }: RadarInspectionProps) {
-  const areas: AreaData[] = mockData.areas || [];
+  const areas = (mockData.areas || []) as unknown as AreaData[];
 
   // 3. Estado vacío actualizado: SOLO muestra el mensaje, sin botón "Completar perfil"
   if (!areas || areas.length === 0) {
