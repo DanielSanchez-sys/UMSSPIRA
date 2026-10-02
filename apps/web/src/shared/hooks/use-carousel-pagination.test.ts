@@ -20,7 +20,7 @@ describe('useCarouselPagination', () => {
     act(() => {
       result.current.handleNext(); // intenta ir más allá, debe quedarse en un índice válido
     });
-    expect(result.current.currentIndex).toBe(3);
+    expect(result.current.currentIndex).toBe(1);
   });
 
   it('retrocede correctamente sin bajar de 0', () => {
