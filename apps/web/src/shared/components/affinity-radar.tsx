@@ -27,10 +27,12 @@ const AREA_LABELS: Record<AreaId, string> = {
 
 interface AffinityRadarProps {
   affinityData?: AffinityAreaScore[];
+  variant?: 'full' | 'mini' //"full" = interactivo; "mini" = solo lectura para tarjetas 
 }
 
-export default function AffinityRadar({ affinityData = [] }: AffinityRadarProps) {
+export default function AffinityRadar({ affinityData = [], variant = 'full', }: AffinityRadarProps) {
   const [selectedArea, setSelectedArea] = useState<string | null>(null);
+  const isMini = variant === 'mini';
 
   if (!affinityData || affinityData.length === 0) {
     return null; // Ocultar si no hay datos
@@ -72,11 +74,19 @@ export default function AffinityRadar({ affinityData = [] }: AffinityRadarProps)
     .join(' ');
 
   const selectedData = chartData.find((d) => d.id === selectedArea);
+  // La variante mini ensancha el viewBox para que quepan las etiquetas laterales
+  const viewBox = isMini ? `-100 -20 ${size + 200} ${size + 40}` : `0 0 ${size} ${size}`;
 
   return (
-    <div className="flex flex-col items-center justify-center w-full max-w-md mx-auto p-4">
+    <div
+      className={
+        isMini
+          ? 'flex flex-col items-center justify-center w-full max-w-[280px] mx-auto'
+          : 'flex flex-col items-center justify-center w-full max-w-md mx-auto p-4'
+      }
+    >
       <div className="relative w-full aspect-square">
-        <svg viewBox={`0 0 ${size} ${size}`} className="w-full h-full overflow-visible">
+        <svg viewBox={viewBox} className="w-full h-full overflow-visible">
           {/* Ejes de fondo (telaraña) */}
           {[20, 40, 60, 80, 100].map((level) => (
             <polygon
@@ -109,13 +119,30 @@ export default function AffinityRadar({ affinityData = [] }: AffinityRadarProps)
           {/* Polígono de datos */}
           <polygon
             points={polygonPoints}
-            className="fill-blue-500/30 stroke-blue-600 stroke-2 transition-all duration-500"
+            className={
+              isMini
+                ? 'fill-amber-800/15 stroke-slate-800 stroke-2 transition-all duration-500'
+                : 'fill-blue-500/30 stroke-blue-600 stroke-2 transition-all duration-500'
+            }
           />
 
           {/* Vértices interactivos */}
           {chartData.map((data, i) => {
             const { x, y } = getCoordinatesForValue(data.value, i);
             const isSelected = selectedArea === data.id;
+
+            if (isMini) {
+              return (
+                <circle
+                  key={`point-${data.id}`}
+                  cx={x}
+                  cy={y}
+                  r={5}
+                  strokeWidth={3}
+                  className="fill-white stroke-slate-800"
+                />
+              );
+            }
 
             return (
               <g
@@ -140,6 +167,27 @@ export default function AffinityRadar({ affinityData = [] }: AffinityRadarProps)
 
           {/* Etiquetas (Labels) */}
           {chartData.map((data, i) => {
+            if (isMini) {
+              const { x, y } = getCoordinatesForValue(118, i);
+              let textAnchor: 'start' | 'middle' | 'end' = 'middle';
+              if (x > center + 12) textAnchor = 'start';
+              if (x < center - 12) textAnchor = 'end';
+
+              return (
+                <text
+                  key={`label-${data.id}`}
+                  x={x}
+                  y={y}
+                  textAnchor={textAnchor}
+                  dominantBaseline="middle"
+                  fontSize={18}
+                  className="font-medium fill-slate-700"
+                >
+                  {data.label}
+                </text>
+              );
+            }
+
             const { x, y } = getCoordinatesForValue(115, i);
             const isSelected = selectedArea === data.id;
             
@@ -162,8 +210,9 @@ export default function AffinityRadar({ affinityData = [] }: AffinityRadarProps)
         </svg>
       </div>
 
-      {/* Sección inferior */}
-      <div className="mt-6 w-full min-h-[100px] bg-slate-50 rounded-lg p-4 flex flex-col items-center justify-center text-center border border-slate-100">
+      {/* Sección inferior (No se muestra en la variante mini)*/}
+      {!isMini &&(
+        <div className="mt-6 w-full min-h-[100px] bg-slate-50 rounded-lg p-4 flex flex-col items-center justify-center text-center border border-slate-100">
         <p className="text-xs text-slate-500 font-semibold mb-1 tracking-wider">
           ÁREA SELECCIONADA (CLICK)
         </p>
@@ -185,6 +234,8 @@ export default function AffinityRadar({ affinityData = [] }: AffinityRadarProps)
           </p>
         )}
       </div>
+      )}
+      
     </div>
   );
 }
