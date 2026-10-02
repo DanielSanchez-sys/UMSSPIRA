@@ -1,6 +1,12 @@
+'use client';
+
+import { useState } from 'react';
 import { FileText } from 'lucide-react';
 
 import type { TimelineItem, TimelineSection } from '@/modules/profile/data/profile-data';
+import CertificationItem from '@/modules/profile/ver/certification-item';
+
+const SECTION_CERTIFICATIONS = 'CERTIFICACIONES';
 
 type TimelineProps = {
   sections: TimelineSection[];
@@ -30,6 +36,9 @@ function StatusBadge({ status }: { status: NonNullable<TimelineItem['status']> }
 }
 
 export default function Timeline({ sections }: TimelineProps) {
+  // Solo una certificación abierta a la vez; todas cerradas al inicio
+  const [openCertification, setOpenCertification] = useState<string | null>(null);
+
   return (
     <div className="w-full">
       {sections.map((section) => (
@@ -46,49 +55,63 @@ export default function Timeline({ sections }: TimelineProps) {
             <p className="pb-8 pl-10 text-sm font-medium text-umss-navy/60">Sin registros</p>
           )}
 
-          {section.items.map((item) => (
-            <article key={`${section.title}-${item.title}`} className="flex gap-4">
-              <Connector />
+          {section.items.map((item) =>
+            section.title === SECTION_CERTIFICATIONS ? (
+              <article key={`${section.title}-${item.title}`} className="flex gap-4">
+                <Connector />
+                <CertificationItem
+                  item={item}
+                  isOpen={openCertification === item.title}
+                  onToggle={() =>
+                    setOpenCertification((current) => (current === item.title ? null : item.title))
+                  }
+                  status={item.status && <StatusBadge status={item.status} />}
+                />
+              </article>
+            ) : (
+              <article key={`${section.title}-${item.title}`} className="flex gap-4">
+                <Connector />
 
-              <div className="flex min-w-0 flex-1 flex-col gap-2 pb-8">
-                <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between md:gap-6">
-                  {/* Información principal */}
-                  <div className="min-w-0 space-y-1">
-                    <h3 className="text-xl font-bold leading-6 text-umss-navy">{item.title}</h3>
-                    <p className="text-sm font-medium text-umss-navy/80">{item.subtitle}</p>
-                    {item.detail && <p className="text-xs text-umss-navy/60">{item.detail}</p>}
+                <div className="flex min-w-0 flex-1 flex-col gap-2 pb-8">
+                  <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between md:gap-6">
+                    {/* Información principal */}
+                    <div className="min-w-0 space-y-1">
+                      <h3 className="text-xl font-bold leading-6 text-umss-navy">{item.title}</h3>
+                      <p className="text-sm font-medium text-umss-navy/80">{item.subtitle}</p>
+                      {item.detail && <p className="text-xs text-umss-navy/60">{item.detail}</p>}
+                    </div>
+
+                    {/* Fecha */}
+                    {item.date && (
+                      <span
+                        className={`shrink-0 text-sm ${
+                          section.dateTone === 'muted'
+                            ? 'font-semibold text-umss-navy/60'
+                            : 'font-bold text-umss-terracotta'
+                        }`}
+                      >
+                        {item.date}
+                      </span>
+                    )}
+
+                    {/* Estado del respaldo */}
+                    {item.status && <StatusBadge status={item.status} />}
                   </div>
 
-                  {/* Fecha */}
-                  {item.date && (
-                    <span
-                      className={`shrink-0 text-sm ${
-                        section.dateTone === 'muted'
-                          ? 'font-semibold text-umss-navy/60'
-                          : 'font-bold text-umss-terracotta'
-                      }`}
+                  {/* Documento de respaldo */}
+                  {item.document && (
+                    <a
+                      href="#"
+                      className="inline-flex w-fit items-center gap-1.5 rounded-md border border-umss-sand bg-white px-2 py-1.5 text-[11px] font-semibold text-umss-navy transition hover:bg-umss-cream"
                     >
-                      {item.date}
-                    </span>
+                      <FileText className="h-3.5 w-3.5 text-umss-terracotta" aria-hidden="true" />
+                      {item.document}
+                    </a>
                   )}
-
-                  {/* Estado del respaldo */}
-                  {item.status && <StatusBadge status={item.status} />}
                 </div>
-
-                {/* Documento de respaldo */}
-                {item.document && (
-                  <a
-                    href="#"
-                    className="inline-flex w-fit items-center gap-1.5 rounded-md border border-umss-sand bg-white px-2 py-1.5 text-[11px] font-semibold text-umss-navy transition hover:bg-umss-cream"
-                  >
-                    <FileText className="h-3.5 w-3.5 text-umss-terracotta" aria-hidden="true" />
-                    {item.document}
-                  </a>
-                )}
-              </div>
-            </article>
-          ))}
+              </article>
+            ),
+          )}
         </section>
       ))}
     </div>
