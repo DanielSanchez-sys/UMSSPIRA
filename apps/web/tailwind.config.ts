@@ -7,7 +7,20 @@ const config: Config = {
     "./src/modules/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/shared/**/*.{js,ts,jsx,tsx,mdx}"
   ],
-  theme: { extend: {} },
+  theme: {
+    extend: {
+      colors: {
+        umss: {
+          navy: '#2C3B4D',
+          ink: '#1B2632',
+          cream: '#EEE9DF',
+          sand: '#C9C1B1',
+          terracotta: '#A35139',
+          orange: '#FFB162',
+        },
+      },
+    },
+  },
   plugins: [],
 };
 export default config;
