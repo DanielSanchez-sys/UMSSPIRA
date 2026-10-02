@@ -38,9 +38,10 @@ const AREA_SHORT_LABELS: Record<AreaId, string> = {
 interface AffinityRadarProps {
   affinityData?: AffinityAreaScore[];
   variant?: 'full' | 'mini' //"full" = interactivo; "mini" = solo lectura para tarjetas 
+  highlighted?: boolean; // Solo aplica a mini: pinta el radar en rojo (tarjeta destacada)
 }
 
-export default function AffinityRadar({ affinityData = [], variant = 'full', }: AffinityRadarProps) {
+export default function AffinityRadar({ affinityData = [], variant = 'full', highlighted = false, }: AffinityRadarProps) {
   const [selectedArea, setSelectedArea] = useState<string | null>(null);
   const isMini = variant === 'mini';
 
@@ -132,7 +133,9 @@ export default function AffinityRadar({ affinityData = [], variant = 'full', }: 
             points={polygonPoints}
             className={
               isMini
-                ? 'fill-amber-800/15 stroke-slate-800 stroke-2 transition-all duration-500'
+                ? highlighted
+                  ? 'fill-red-700/20 stroke-red-700 stroke-2 transition-all duration-500'
+                  : 'fill-amber-800/15 stroke-slate-800 stroke-2 transition-all duration-500'
                 : 'fill-blue-500/30 stroke-blue-600 stroke-2 transition-all duration-500'
             }
           />
@@ -150,7 +153,7 @@ export default function AffinityRadar({ affinityData = [], variant = 'full', }: 
                   cy={y}
                   r={5}
                   strokeWidth={3}
-                  className="fill-white stroke-slate-800"
+                  className={highlighted ? 'fill-white stroke-red-700' : 'fill-white stroke-slate-800'}
                 />
               );
             }
