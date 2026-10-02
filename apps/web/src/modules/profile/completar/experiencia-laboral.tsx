@@ -37,7 +37,9 @@ function mostrarFecha(fecha: string) {
 
 export function FormularioExperiencia({experiencias, onAgregar }: FormularioExperienciaProps) {
   const [datos, setDatos] = useState<Datos>(VACIO);
-  const completo = CAMPOS.every((campo) => datos[campo.nombre].trim() !== '');
+  const [trabajoActual, setTrabajoActual] = useState(false);
+  const completo = CAMPOS.every((campo) => (campo.nombre === 'fechaFin' && trabajoActual) || datos[campo.nombre].trim() !== '',
+  );
 
   function agregar(evento: React.FormEvent<HTMLFormElement>) {
     evento.preventDefault();
@@ -46,9 +48,10 @@ export function FormularioExperiencia({experiencias, onAgregar }: FormularioExpe
       empresa: datos.empresa.trim(),
       cargo: datos.cargo.trim(),
       fechaInicio: datos.fechaInicio,
-      fechaFin: datos.fechaFin,
+      fechaFin: trabajoActual ? undefined : datos.fechaFin,
     });
     setDatos(VACIO);
+    setTrabajoActual(false);
   }
   return (
     <div className="flex flex-col gap-5">
@@ -75,21 +78,40 @@ export function FormularioExperiencia({experiencias, onAgregar }: FormularioExpe
       )}
       <form onSubmit={agregar} className="flex flex-col gap-4">  
         <div className="grid gap-4 md:grid-cols-3">
-        {CAMPOS.map((campo) => (
+        {CAMPOS.map((campo) => {
+          const esFin = campo.nombre === 'fechaFin';
+          const deshabilitado = esFin && trabajoActual;
+
+      return (
           <label key={campo.nombre} className="flex flex-col gap-1.5">
             <span className="text-[13px] font-semibold text-[#1B2632]">
               {campo.etiqueta} <span className="text-[#A35139]">*</span>
+              {!deshabilitado && <span className="text-[#A35139]"> *</span>}
             </span>
             <input
               type={campo.tipo}
               value={datos[campo.nombre]}
               onChange={(e) => setDatos({ ...datos, [campo.nombre]: e.target.value })}
               placeholder={campo.ejemplo}
-              className="h-11 rounded-lg border border-[#C9C1B1] bg-[#EEE9DF] px-3 text-sm text-[#1B2632] outline-none placeholder:text-[#2C3B4D]/40 focus:border-2 focus:border-[#2C3B4D] focus:bg-white"
+              disabled={deshabilitado}
+              className="h-11 rounded-lg border border-[#C9C1B1] bg-[#EEE9DF] px-3 text-sm text-[#1B2632] outline-none placeholder:text-[#2C3B4D]/40 focus:border-2 focus:border-[#2C3B4D] focus:bg-white disabled:cursor-not-allowed disabled:opacity-50"
             />
           </label>
-        ))}
+        );
+      })}
       </div>
+      <label className="flex items-center gap-2 text-sm text-[#1B2632]">
+          <input
+            type="checkbox"
+            checked={trabajoActual}
+            onChange={(e) => {
+              setTrabajoActual(e.target.checked);
+              setDatos({ ...datos, fechaFin: '' });
+            }}
+            className="h-4 w-4 accent-[#A35139]"
+          />
+          Actualmente trabajo aquí
+        </label>
 
       <div className="flex justify-end">
           <button
@@ -101,7 +123,6 @@ export function FormularioExperiencia({experiencias, onAgregar }: FormularioExpe
           </button>
         </div>
       </form>
-    </div>
+  </div>  
   );
 }
-    
