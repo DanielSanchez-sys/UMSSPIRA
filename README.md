@@ -87,12 +87,19 @@ pnpm --filter web dev
 - API por defecto en `http://localhost:3000` (revisar `apps/api/src/main.ts`)
 - Web por defecto en `http://localhost:3001`
 
+### Probar el backend con Postman
+
+1. Inicia el API desde la raiz del repositorio: `pnpm.cmd --filter api dev` en Windows PowerShell (o `pnpm --filter api dev` en otras terminales).
+2. Deja abierta la terminal mientras el API se ejecuta en modo watch. No hace falta abrir una pagina web ni iniciar Docker para probar los perfiles de ejemplo en modo demo.
+3. En Postman, importa `collection/mentorship-api.postman_collection.json` y luego importa `collection/environments/local.postman_environment.json` como environment.
+4. Selecciona el environment **UMSSPIRA - Local API** y ejecuta las solicitudes en la carpeta **Mentorship API**. Para probar los mismos escenarios que antes ofrecía la consola, ejecuta **Evaluar perfil elegible**, **Evaluar perfil incompleto** y **Evaluar perfil con restricciones**; cada solicitud muestra el resultado y comprueba automáticamente la respuesta en la pestaña **Test Results**.
+5. Para probar la desactivacion, ejecuta primero **Listar perfiles** (guarda automaticamente el identificador del primer perfil) y despues **Desactivar mentor**. Vuelve a **Listar perfiles** para ver el cambio. En modo demo, **Restablecer perfiles demo** revierte los datos.
+
+Todas las solicitudes usan `http://localhost:3000` y envian/reciben JSON. Si Postman indica que no puede conectarse, confirma que la terminal donde ejecutaste el API sigue abierta y que Nest no mostro errores de inicio. El endpoint raiz `/` no sirve un panel web; la API se prueba con las solicitudes de Postman. Al configurar Supabase, el restablecimiento demo deja de estar disponible.
 
 ## Colección de API (Postman)
 
-Importar en Postman:
-- `collection/companies.postman_collection.json`
-- Environment: `collection/environments/local.postman_environment.json`
+Importar estos dos archivos en Postman: la coleccion `collection/mentorship-api.postman_collection.json` y el environment `collection/environments/local.postman_environment.json`.
 
 ## Tests (web)
 
@@ -151,12 +158,12 @@ Se importan en ambas apps como `@umsspira/shared-types`.
 
 | Tarea | Archivo |
 |---|---|
-| Nuevos endpoints a probar manualmente | Agregar request a `collection/companies.postman_collection.json` (o crear colección nueva por módulo) |
+| Nuevos endpoints a probar manualmente | Agregar request a `collection/mentorship-api.postman_collection.json` (o crear colección nueva por módulo) |
 | Tests de componentes/páginas web | Junto al archivo o en `__tests__/`, config en `jest.config.js` / `jest.setup.js` |
 
 ---
 
-Los tests para el backend seran con postman y los test del frontend estan configurados con jest, tomenlo en cuenta para su implementacion
+Las pruebas manuales del backend se hacen con Postman; las pruebas del frontend estan configuradas con Jest.
 
 ## Convenciones de commits
 

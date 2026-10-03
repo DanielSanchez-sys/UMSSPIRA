@@ -14,15 +14,16 @@
 - Perfil: descripcion y descripcion de experiencia.
 - Elegibilidad de negocio: egresado, verificado, aprobado y sin restriccion de participacion.
 
-## Pruebas de mentorship
+## API de mentorship
 
-- `GET /` sirve la consola de pruebas del API en `http://localhost:3000`.
-- `pnpm dev` inicia el API en watch y abre esa consola cuando queda disponible.
+- `pnpm --filter api dev` inicia NestJS en modo watch en `http://localhost:3000`; no hay consola web, la API se prueba con Postman.
 - `GET /mentorship/status` indica `supabase` o `demo`.
-- `GET /mentorship/test-profiles` lista los casos de prueba.
+- `GET /mentorship/profiles` lista los perfiles disponibles.
+- `POST /mentorship/profiles/reset` restaura los perfiles de ejemplo en modo demo.
 - `POST /mentorship/eligibility` recibe `{ "profile": { ... } }`.
 - `PATCH /mentorship/deactivate/:userId` recibe opcionalmente `{ "reason": "..." }` y conserva la configuracion.
-- `supabase/seed.sql` crea tres casos: elegible, perfil incompleto e inelegible por verificacion/restriccion.
+- La coleccion importable de Postman esta en `collection/mentorship-api.postman_collection.json`; usa el environment `collection/environments/local.postman_environment.json`.
+- `supabase/seed.sql` carga tres perfiles de ejemplo: elegible, perfil incompleto e inelegible por verificacion/restriccion.
 - Aplicar `supabase/migrations/0002_mentorship_eligibility.sql` antes de ejecutar el seed.
 
 ## Supabase y modo demo

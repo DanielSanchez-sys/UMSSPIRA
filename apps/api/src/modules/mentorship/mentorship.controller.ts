@@ -26,13 +26,13 @@ export class MentorshipController {
         return { mode: this.supabaseService.isConfigured ? 'supabase' : 'demo' };
     }
 
-    @Get('test-profiles')
-    getTestProfiles() {
+    @Get('profiles')
+    getProfiles() {
         return this.supabaseService.getMentorProfiles();
     }
 
-    @Post('test-profiles/reset')
-    resetTestProfiles() {
+    @Post('profiles/reset')
+    resetProfiles() {
         return this.supabaseService.resetDemoProfiles();
     }
 
