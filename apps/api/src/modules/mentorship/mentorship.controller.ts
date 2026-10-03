@@ -1,6 +1,7 @@
 import {
     BadRequestException,
     Controller,
+    ConflictException,
     Get,
     HttpCode,
     HttpStatus,
@@ -31,6 +32,12 @@ export class MentorshipController {
         return this.supabaseService.getMentorProfiles();
     }
 
+    @Get('mi-perfil')
+    async getMyMentorParticipation() {
+        const profile = await this.supabaseService.getCurrentMentorProfile();
+        return this.mentorshipEligibilityService.evaluate(profile);
+    }
+
     @Post('profiles/reset')
     resetProfiles() {
         return this.supabaseService.resetDemoProfiles();
@@ -40,6 +47,36 @@ export class MentorshipController {
     @HttpCode(HttpStatus.OK)
     evaluateEligibility(@Body('profile') profile: unknown) {
         return this.mentorshipEligibilityService.evaluate(profile);
+    }
+
+    @Patch('mi-perfil/participacion')
+    @HttpCode(HttpStatus.OK)
+    async updateMyMentorParticipation(@Body() body: { isActive?: boolean }) {
+        if (typeof body?.isActive !== 'boolean') {
+            throw new BadRequestException('Envía "isActive" con un valor booleano.');
+        }
+
+        const profile = await this.supabaseService.getCurrentMentorProfile();
+        const result = this.mentorshipEligibilityService.evaluate(profile);
+        if (body.isActive && (!result.requirements.egresado || !result.requirements.perfil)) {
+            throw new ConflictException(result);
+        }
+
+        if (body.isActive) {
+            await this.supabaseService.activateMentor(profile.userId);
+        } else {
+            const retainedSettings = {
+                ...profile.mentorSettings,
+                bio: profile.mentorSettings?.bio ?? profile.description,
+            };
+            await this.supabaseService.deactivateMentor(
+                profile.userId,
+                undefined,
+                retainedSettings,
+            );
+        }
+
+        return { ...result, isActive: body.isActive };
     }
 
     @Patch('deactivate/:userId')

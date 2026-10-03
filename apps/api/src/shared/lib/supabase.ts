@@ -72,6 +72,18 @@ export class SupabaseService {
 		return Boolean(this.url && this.serviceRoleKey);
 	}
 
+	async getCurrentMentorProfile(): Promise<MentorEligibilityProfile> {
+		if (this.isConfigured) {
+			throw new ServiceUnavailableException(
+				'La API aún no puede resolver el perfil autenticado en modo Supabase.',
+			);
+		}
+
+		const profile = this.localProfiles[0];
+		if (!profile) throw new NotFoundException('No hay un perfil de mentor disponible.');
+		return profile;
+	}
+
 	async getMentorProfiles(): Promise<MentorEligibilityProfile[]> {
 		if (!this.isConfigured) return this.localProfiles;
 
@@ -124,6 +136,29 @@ export class SupabaseService {
 					fecha_actualizacion: new Date().toISOString().slice(0, 10),
 					motivo_desactivacion: reason ?? null,
 					configuracion: settings,
+				}),
+			},
+		);
+	}
+
+	async activateMentor(userId: string): Promise<void> {
+		if (!this.isConfigured) {
+			const profile = this.localProfiles.find((candidate) => candidate.userId === userId);
+			if (!profile) throw new NotFoundException('No se encontró el perfil de mentor indicado.');
+			profile.isMentorActive = true;
+			this.persistDemoProfiles();
+			return;
+		}
+
+		await this.request(
+			`/rest/v1/mentor?usuario_id=eq.${encodeURIComponent(userId)}`,
+			{
+				method: 'PATCH',
+				headers: { Prefer: 'return=minimal' },
+				body: JSON.stringify({
+					esta_activo: true,
+					fecha_actualizacion: new Date().toISOString().slice(0, 10),
+					motivo_desactivacion: null,
 				}),
 			},
 		);

@@ -42,8 +42,11 @@ export interface MentorEligibilityIssue {
 }
 
 export interface MentorEligibilityResult {
-  eligible: boolean;
-  issues: MentorEligibilityIssue[];
+  isActive: boolean;
+  requirements: {
+    egresado: boolean;
+    perfil: boolean;
+  };
 }
 export interface MentorSettings {
   maxMentees?: number;

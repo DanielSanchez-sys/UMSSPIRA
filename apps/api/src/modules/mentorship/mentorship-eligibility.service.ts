@@ -113,7 +113,21 @@ export class MentorshipEligibilityService {
       });
     }
 
-    return { eligible: issues.length === 0, issues };
+    const graduateIssueCodes = new Set([
+      'not_graduate',
+      'not_verified',
+      'not_approved',
+      'participation_restricted',
+      'invalid_profile_data',
+    ]);
+
+    return {
+      isActive: profile?.isMentorActive === true,
+      requirements: {
+        egresado: !issues.some((issue) => graduateIssueCodes.has(issue.code)),
+        perfil: !issues.some((issue) => issue.code === 'profile_incomplete'),
+      },
+    };
   }
 
   deactivateMentorRole(
