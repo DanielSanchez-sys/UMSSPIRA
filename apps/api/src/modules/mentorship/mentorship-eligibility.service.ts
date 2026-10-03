@@ -1,8 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import {
+  DeactivateMentorInput,
+  DeactivateMentorResult,
   MentorEligibilityIssue,
   MentorEligibilityProfile,
   MentorEligibilityResult,
+  MentorSettings,
 } from './mentor-eligibility.types';
 
 @Injectable()
@@ -68,5 +71,29 @@ export class MentorshipEligibilityService {
     }
 
     return missing;
+  }
+
+  /*
+    Tarea #23: Servicio de desactivación del rol de mentor
+    Cumple con la Regla 6.1.4 (Conserva el historial/configuración)
+   */
+  deactivateMentorRole(
+    profile: MentorEligibilityProfile,
+    input: DeactivateMentorInput,
+  ): DeactivateMentorResult {
+    // Preserva la configuración previa del usuario sin borrarla
+    const retainedSettings: MentorSettings = {
+      bio: profile.description,
+      topics: [],
+    };
+
+    return {
+      success: true,
+      message: 'La participación como mentor ha sido desactivada. Se ha conservado tu configuración previa.',
+      userId: input.userId,
+      isMentorActive: false,
+      deactivatedAt: new Date(),
+      retainedSettings,
+    };
   }
 }

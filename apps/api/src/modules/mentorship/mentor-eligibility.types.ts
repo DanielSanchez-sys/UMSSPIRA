@@ -40,3 +40,22 @@ export interface MentorEligibilityResult {
   eligible: boolean;
   issues: MentorEligibilityIssue[];
 }
+export interface MentorSettings {
+  maxMentees?: number;
+  topics?: string[];
+  bio?: string;
+}
+
+export interface DeactivateMentorInput {
+  userId: string;
+  reason?: string;
+}
+
+export interface DeactivateMentorResult {
+  success: boolean;
+  message: string;
+  userId: string;
+  isMentorActive: boolean;
+  deactivatedAt: Date;
+  retainedSettings: MentorSettings; // Regla 6.1.4: Conserva la configuración previa
+}
