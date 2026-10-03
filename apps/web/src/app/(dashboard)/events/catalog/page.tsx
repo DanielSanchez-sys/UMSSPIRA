@@ -58,7 +58,7 @@ export default function EventsCatalogPage() {
       ]
         .join(' ')
         .toLowerCase();
-      const eventMonth = event.startDate.slice(5, 7);
+      const eventMonth = event.startDate.slice(0, 7);
       const matchesSearch = searchableText.includes(normalizedSearch);
       const matchesDate = dateFilter === 'all' || eventMonth === dateFilter;
 
