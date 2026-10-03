@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { HomeIcon, ArrowRightIcon, CompassIcon, UserRoundCogIcon } from 'lucide-react';
-import { ExploreCard } from './perfil/_components/explore-card';
+import { ExploreCard } from '@/features/mentorias/components/explore-card';
 
 export default function MentoriasPage() {
   return (
