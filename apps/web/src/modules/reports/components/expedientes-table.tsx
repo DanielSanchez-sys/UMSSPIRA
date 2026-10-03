@@ -20,6 +20,7 @@ export type GraduateRecord = {
 type ExpedientesTableProps = {
   records: GraduateRecord[];
   onViewReason: (record: GraduateRecord) => void;
+  startIndex?: number;
 };
 
 function StatusBadge({ status }: { status: GraduateRecord['status'] }) {
@@ -36,26 +37,31 @@ function StatusBadge({ status }: { status: GraduateRecord['status'] }) {
   );
 }
 
-export function ExpedientesTable({ records, onViewReason }: ExpedientesTableProps) {
+export function ExpedientesTable({
+  records,
+  onViewReason,
+  startIndex = 0,
+}: ExpedientesTableProps) {
   if (records.length === 0) {
-    return (
-      <div className="rounded-lg border border-slate-200 bg-white px-6 py-16 text-center shadow-sm">
-        <p className="font-semibold text-slate-700">
-          No se encontraron egresados Observados o Verificados en el sistema.
+      return (
+      <div className="flex min-h-[420px] flex-col items-center justify-center rounded-2xl border border-[#e8e1d2] bg-[#fbf8f1] px-6 py-16 text-center">
+        <h3 className="max-w-xl text-xl font-bold text-slate-900 sm:text-2xl">
+          No se encontraron egresados Observados o Verificados en el sistema
+        </h3>
+        <p className="mt-3 max-w-lg text-sm leading-relaxed text-slate-600">
+          No se han registrado postulantes ni egresados bajo los criterios de filtrado
+          seleccionados para el periodo establecido. Intente ajustando el rango de
+          titulación o restableciendo los parámetros de auditoría.
         </p>
       </div>
     );
+
   }
 
   return (
     <>
-      <div className="hidden w-full min-w-0 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm md:block">
-        <div
-          aria-label="Tabla de expedientes desplazable horizontalmente"
-          className="max-w-full overflow-x-auto overscroll-x-contain"
-          role="region"
-          tabIndex={0}
-        >
+      <div className="hidden min-w-0 max-w-full overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm md:block">
+        <div className="max-w-full overflow-x-auto">
           <table className="w-full min-w-[1550px] border-collapse text-left text-sm">
             <thead className="bg-[#1e293b] text-xs font-bold uppercase tracking-wide text-white">
               <tr>
@@ -76,7 +82,9 @@ export function ExpedientesTable({ records, onViewReason }: ExpedientesTableProp
             <tbody className="divide-y divide-slate-200">
               {records.map((record, index) => (
                 <tr className="align-top hover:bg-slate-50/80" key={record.id}>
-                  <td className="whitespace-nowrap px-4 py-4">{index + 1}</td>
+                  <td className="whitespace-nowrap px-4 py-4">
+                    {startIndex + index + 1}
+                  </td>
                   <td className="whitespace-nowrap px-4 py-4 font-semibold text-slate-800">
                     {record.registrationNumber}
                   </td>
@@ -85,7 +93,7 @@ export function ExpedientesTable({ records, onViewReason }: ExpedientesTableProp
                   </td>
                   <td className="whitespace-nowrap px-4 py-4">{record.sisCode}</td>
                   <td className="whitespace-nowrap px-4 py-4">{record.phone}</td>
-                  <td className="px-4 py-4">{record.email}</td>
+                  <td className="max-w-64 break-all px-4 py-4">{record.email}</td>
                   <td className="whitespace-nowrap px-4 py-4">{record.admissionDate}</td>
                   <td className="whitespace-nowrap px-4 py-4">{record.graduationDate}</td>
                   <td className="whitespace-nowrap px-4 py-4">{record.studyDuration}</td>
@@ -116,18 +124,18 @@ export function ExpedientesTable({ records, onViewReason }: ExpedientesTableProp
         </div>
       </div>
 
-      <div className="min-w-0 space-y-3 md:hidden">
+      <div className="space-y-3 md:hidden">
         {records.map((record) => (
           <article
-            className="min-w-0 rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
+            className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
             key={record.id}
           >
             <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
-              <div className="min-w-0">
+              <div>
                 <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
                   {record.registrationNumber}
                 </p>
-                <h3 className="mt-1 break-words font-bold text-slate-900">{record.fullName}</h3>
+                <h3 className="mt-1 font-bold text-slate-900">{record.fullName}</h3>
                 <p className="mt-1 text-sm text-slate-600">Código SIS: {record.sisCode}</p>
               </div>
               <StatusBadge status={record.status} />
