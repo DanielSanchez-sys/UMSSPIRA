@@ -16,6 +16,13 @@ type RecordActionsProps = {
   onDelete: ProfileRecordsTableProps['onDelete'];
 };
 
+// Pantalla de edición de cada sección
+const EDIT_ROUTES: Record<RecordSection, string> = {
+  education: '/profile/education',
+  experience: '/profile/experience',
+  certification: '/profile/certifications',
+};
+
 // Íconos sin borde, como en la v3 del Figma
 const actionClassName =
   'flex h-8 w-8 items-center justify-center rounded-lg transition hover:bg-umss-cream';
@@ -23,27 +30,14 @@ const actionClassName =
 function RecordActions({ section, record, onDelete }: RecordActionsProps) {
   return (
     <div className="flex items-center gap-2">
-      {/* Por ahora solo existe la pantalla de edición de certificaciones (mockup "Editar certificación") */}
-      {section === 'certification' ? (
-        <Link
-          href={`/profile/certifications/${record.id}/edit`}
-          aria-label="Editar registro"
-          title="Editar registro"
-          className={`${actionClassName} text-umss-navy`}
-        >
-          <Pencil className="h-4 w-4" aria-hidden="true" />
-        </Link>
-      ) : (
-        <button
-          type="button"
-          aria-label="Editar registro"
-          title="Edición disponible próximamente"
-          disabled
-          className={`${actionClassName} cursor-not-allowed text-umss-navy opacity-40`}
-        >
-          <Pencil className="h-4 w-4" aria-hidden="true" />
-        </button>
-      )}
+      <Link
+        href={`${EDIT_ROUTES[section]}/${record.id}/edit`}
+        aria-label="Editar registro"
+        title="Editar registro"
+        className={`${actionClassName} text-umss-navy`}
+      >
+        <Pencil className="h-4 w-4" aria-hidden="true" />
+      </Link>
       <button
         type="button"
         aria-label="Eliminar registro"

@@ -19,7 +19,8 @@ describe('ProfileRecordsManager', () => {
     render(<ProfileRecordsManager />);
     const rows = getDesktopRows();
     rows.forEach((row) => {
-      expect(within(row).getByRole('button', { name: 'Editar registro' })).toBeInTheDocument();
+      // Editar ahora es un enlace a la pantalla de edición de la sección
+      expect(within(row).getByRole('link', { name: 'Editar registro' })).toHaveAttribute('href', expect.stringMatching(/^\/profile\/education\/.+\/edit$/));
       expect(within(row).getByRole('button', { name: 'Eliminar registro' })).toBeInTheDocument();
     });
   });
