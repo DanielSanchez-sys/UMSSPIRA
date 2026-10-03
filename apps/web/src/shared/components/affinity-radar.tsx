@@ -49,6 +49,9 @@ export default function AffinityRadar({
   hasData = true,
   variant = 'full',
   highlighted = false,
+  isLoading = false,    
+  changedAreaIds = []     
+
 }: AffinityRadarProps) {
   const [selectedArea, setSelectedArea] = useState<string | null>(null);
   const isMini = variant === 'mini';
@@ -100,9 +103,10 @@ export default function AffinityRadar({
   return (
     <div
       className={
-        isMini
+        `transition-opacity duration-300 ${isLoading ? 'opacity-50 pointer-events-none' : 'opacity-100'} ` +
+        (isMini
           ? 'flex flex-col items-center justify-center w-full max-w-[280px] mx-auto'
-          : 'flex flex-col items-center justify-center w-full max-w-md mx-auto p-4'
+          : 'flex flex-col items-center justify-center w-full max-w-md mx-auto p-4')
       }
     >
       <div className="relative w-full aspect-square">
@@ -217,6 +221,7 @@ export default function AffinityRadar({
             }
 
             const { x, y } = getCoordinatesForValue(115, i);
+            const isChanged = changedAreaIds.includes(data.id);
             const isSelected = selectedArea === data.id;
 
             return (
@@ -227,7 +232,11 @@ export default function AffinityRadar({
                 textAnchor="middle"
                 dominantBaseline="middle"
                 className={`text-xs md:text-sm font-medium cursor-pointer transition-colors ${
-                  isSelected ? 'fill-blue-700 font-bold' : 'fill-gray-600 hover:fill-blue-500'
+                  isChanged 
+                    ? 'fill-amber-600 font-bold scale-105' 
+                    : isSelected 
+                      ? 'fill-blue-700 font-bold' 
+                      : 'fill-gray-600 hover:fill-blue-500'
                 }`}
                 onClick={() => setSelectedArea(data.id)}
               >

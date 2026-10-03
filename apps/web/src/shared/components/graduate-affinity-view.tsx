@@ -12,6 +12,7 @@ import { useRecalculateState } from '../hooks/use-recalculate-state';
 import { recalculateAffinity, getAffinityVector } from '../services/affinity-service';
 import { AFFINITY_AREAS, type AffinityArea } from '@umsspira/shared-types/src/affinity';
 import { ArrowLeft, Code, Database, Cloud, ShieldAlert, Lock, Target, AlertTriangle, ArrowRight, Sparkles, CheckCircle2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 const AREA_ICONS: Record<AffinityArea, React.ElementType> = {
   'software-development': Code,
@@ -31,17 +32,8 @@ const AREA_LABELS: Record<AffinityArea, string> = {
   'it-management': 'Gestión de TI',
 };
 
-// Mapeo inverso de etiqueta legible a clave técnica del sistema
-const REVERSE_AREA_LABELS: Record<string, string> = {
-  'Desarrollo de Software': 'software-development',
-  'Cloud/DevOps e Infraestructura': 'cloud-devops',
-  'Ciencia de Datos/IA': 'data-ai',
-  'Aseguramiento de Calidad (QA)': 'quality-assurance',
-  'Ciberseguridad y Redes': 'cybersecurity-networks',
-  'Gestión de TI': 'it-management',
-};
-
 export const GraduateAffinityView: React.FC = () => {
+  const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [profileState, setProfileState] = useState<'calculated' | 'customizing'>('calculated');
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -53,14 +45,16 @@ export const GraduateAffinityView: React.FC = () => {
   
   // Estado para los IDs de áreas modificadas (Punto 3)
   const [changedAreaIds, setChangedAreaIds] = useState<string[]>([]);
+  // Ruta de Épica 2 para añadir certificaciones (pendiente de integración con el equipo correspondiente)
+  const EPICA_2_ROUTE = '/epica-2/certificaciones/nueva?returnTo=/afinidad';
 
   const [candidateAreas, setCandidateAreas] = useState([
-    { area: 'Desarrollo de Software', affinity: 95 },
-    { area: 'Cloud/DevOps e Infraestructura', affinity: 64 },
-    { area: 'Ciencia de Datos/IA', affinity: 71 },
-    { area: 'Aseguramiento de Calidad (QA)', affinity: 58 },
-    { area: 'Ciberseguridad y Redes', affinity: 42 },
-    { area: 'Gestión de TI', affinity: 50 },
+    { area: 'software-development', affinity: 95 },
+    { area: 'cloud-devops', affinity: 64 },
+    { area: 'data-ai', affinity: 71 },
+    { area: 'quality-assurance', affinity: 58 },
+    { area: 'cybersecurity-networks', affinity: 42 },
+    { area: 'it-management', affinity: 50 },
   ]);
 
   const isRecalculatingRef = useRef<boolean>(false);
@@ -96,9 +90,9 @@ export const GraduateAffinityView: React.FC = () => {
     loadInitialVector();
   }, []);
 
-  const handleRecalculate = useCallback(async () => {
-    if (isRecalculatingRef.current) return;
-    if (!hasPendingChanges && !hasRadarError) return;
+  const handleRecalculate = useCallback(async ({ force = false }: { force?: boolean } = {}) => {
+  if (isRecalculatingRef.current) return;
+  if (!force && !hasPendingChanges && !hasRadarError) return;
 
     isRecalculatingRef.current = true;
     setIsLoading(true);
@@ -118,10 +112,14 @@ export const GraduateAffinityView: React.FC = () => {
       // Detectar qué áreas cambiaron su porcentaje respecto al radar anterior (Punto 3)
       const modifiedIds: string[] = [];
       result.areas.forEach((newAreaItem) => {
-        const technicalKey = newAreaItem.area;
-        const readableLabel = AREA_LABELS[technicalKey as keyof typeof AREA_LABELS] || technicalKey;
+        const technicalKey = newAreaItem.area; // ej: 'cloud-devops'
         
-        const oldItem = previousAreas.find((p) => p.area === technicalKey);
+      
+        // Buscamos comparando tanto con la clave técnica como con la etiqueta legible
+        const oldItem = previousAreas.find(
+          (p) => p.area === technicalKey || p.area === AREA_LABELS[technicalKey as keyof typeof AREA_LABELS]
+        );
+        
         if (!oldItem || oldItem.affinity !== newAreaItem.affinity) {
           modifiedIds.push(technicalKey);
         }
@@ -158,6 +156,7 @@ export const GraduateAffinityView: React.FC = () => {
     setIsSuccessToastOpen(false);
   }, []);
 
+  // Demostración del Sprint 1: Simulación temporal de timeout (7s) para pruebas de error
   const triggerTimeoutSimulation = useCallback(async () => {
     setIsLoading(true);
     setHasRadarError(false);
@@ -217,7 +216,7 @@ export const GraduateAffinityView: React.FC = () => {
                 <h3 className="font-bold text-abyssal-blue text-base">Gráfico de afinidad</h3>
                 <span className="text-xs font-mono font-semibold text-truffle-trouble bg-palladian px-2.5 py-1 rounded-md border border-oatmeal flex items-center space-x-1">
                   <CheckCircle2 className="w-3.5 h-3.5 text-truffle-trouble" />
-                  <span>Vector Calculado NLP</span>
+                  <span>Vector Calculado</span>
                 </span>
               </div>
 
@@ -251,7 +250,7 @@ export const GraduateAffinityView: React.FC = () => {
                   onClick={handleProfileChange}
                   className="h-11 px-4 rounded-lg border border-oatmeal bg-white text-blue-fantastic text-sm font-semibold hover:bg-palladian transition-colors"
                 >
-                  Simular cambio en el perfil
+                  Simular actualización del radar
                 </button>
 
                 <RecalculateButton
@@ -316,9 +315,8 @@ export const GraduateAffinityView: React.FC = () => {
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
-            <div className="flex justify-end pt-3 border-t border-dashed border-oatmeal mt-3">  
-            </div>
           </div>
+          {/* Botón de simulación temporal (Sprint 1) */}
           <button
             type="button"
             onClick={triggerTimeoutSimulation}
@@ -334,9 +332,9 @@ export const GraduateAffinityView: React.FC = () => {
         <button
           type="button"
           onClick={() => {
-            setIsModalOpen(true);
+            router.push(EPICA_2_ROUTE);
           }}
-          className="px-6 py-2.5 bg-[#FFB054] hover:bg-[#e09843] text-slate-900 font-semibold text-sm rounded-full flex items-center justify-center gap-2 transition-all duration-200 shadow-sm"
+          className="px-6 py-2.5 bg-burning-flame hover:bg-burning-flame/90 text-slate-900 font-semibold text-sm rounded-full flex items-center justify-center gap-2 transition-all duration-200 shadow-sm"
         >
           <svg className="w-4 h-4 text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
@@ -344,7 +342,6 @@ export const GraduateAffinityView: React.FC = () => {
           <span>Añadir certificaciones</span>
         </button>
       </div>
-
       <PendingChangesDialog
         open={isPendingDialogOpen}
         onRecalculate={handleRecalculate}
@@ -354,7 +351,11 @@ export const GraduateAffinityView: React.FC = () => {
       
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl space-y-4 border border-slate-100">
+          <div
+            role="dialog" 
+            aria-modal="true"
+            className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl space-y-4 border border-slate-100"
+          >
             <div className="flex justify-between items-center">
               <h3 className="text-base font-bold text-slate-900">Añadir nueva certificación</h3>
               <button 
@@ -366,7 +367,7 @@ export const GraduateAffinityView: React.FC = () => {
             </div>
 
             <p className="text-xs text-slate-500">
-              Simula el ingreso de una certificación oficial para actualizar los vectores de afinidad mediante NLP.
+              Simula el ingreso de una certificación oficial para actualizar los vectores de afinidad de forma simulada.
             </p>
 
             <div className="pt-4 flex flex-col gap-2">
@@ -379,7 +380,7 @@ export const GraduateAffinityView: React.FC = () => {
                 }}
                 className="w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-semibold text-xs rounded-xl transition-all shadow-sm flex items-center justify-center gap-2"
               >
-                <span>Simular cambio en el perfil</span>
+                <span>Simular actualización del radar</span>
               </button>
 
               <button
