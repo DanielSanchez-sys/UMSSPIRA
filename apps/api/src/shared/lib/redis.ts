@@ -1,33 +1,19 @@
-import Redis, { RedisOptions } from 'ioredis';
+import { createClient, type RedisClientType } from 'redis';
 
-const DEFAULT_REDIS_PORT = 6379;
+const redisClient: RedisClientType = createClient({
+  url: process.env.REDIS_URL ?? 'redis://localhost:6379',
+});
 
-function getRedisPort(value?: string): number {
-  if (!value) {
-    return DEFAULT_REDIS_PORT;
+redisClient.on('error', (error) => {
+  console.error('Error de conexión a Redis:', error);
+});
+
+let connectionPromise: Promise<void> | null = null;
+
+export async function getRedisClient() {
+  if (!connectionPromise) {
+    connectionPromise = redisClient.connect().then(() => undefined);
   }
-
-  const port = Number(value);
-
-  if (!Number.isInteger(port) || port < 1 || port > 65535) {
-    throw new Error('REDIS_PORT debe ser un puerto válido');
-  }
-
-  return port;
+  await connectionPromise;
+  return redisClient;
 }
-
-export function getRedisOptions(): RedisOptions {
-  return {
-    host: process.env.REDIS_HOST || 'localhost',
-    port: getRedisPort(process.env.REDIS_PORT),
-    password: process.env.REDIS_PASSWORD || undefined,
-    lazyConnect: true,
-    maxRetriesPerRequest: 3,
-  };
-}
-
-export function createRedisClient(): Redis {
-  return new Redis(getRedisOptions());
-}
-
-export const redisClient = createRedisClient();
