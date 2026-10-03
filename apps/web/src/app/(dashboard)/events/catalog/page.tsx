@@ -1,19 +1,79 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ChevronDown, Search } from 'lucide-react';
 
 import EventCard from '@/shared/components/event-card';
+import { getEventCatalog } from '@/shared/services/events-service';
 import type { EventItem } from '@umsspira/shared-types';
 
 type SortOrder = 'nearest' | 'furthest';
 
-const catalogEvents: EventItem[] = [];
-
 export default function EventsCatalogPage() {
+  const [catalogEvents, setCatalogEvents] = useState<EventItem[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState('all');
   const [sortOrder, setSortOrder] = useState<SortOrder>('nearest');
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadCatalog() {
+      try {
+        const events = await getEventCatalog();
+
+        if (isMounted) {
+          setCatalogEvents(events);
+          setErrorMessage(null);
+        }
+      } catch {
+        if (isMounted) {
+          setErrorMessage(
+            'No se pudo cargar el catálogo de eventos. Intenta nuevamente más tarde.',
+          );
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadCatalog();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const visibleEvents = useMemo(() => {
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+    const filteredEvents = catalogEvents.filter((event) => {
+      const searchableText = [
+        event.title,
+        event.description ?? '',
+        event.location ?? '',
+      ]
+        .join(' ')
+        .toLowerCase();
+      const eventMonth = event.startDate.slice(5, 7);
+      const matchesSearch = searchableText.includes(normalizedSearch);
+      const matchesDate = dateFilter === 'all' || eventMonth === dateFilter;
+
+      return matchesSearch && matchesDate;
+    });
+
+    return [...filteredEvents].sort((firstEvent, secondEvent) => {
+      const firstDate = new Date(firstEvent.startDate).getTime();
+      const secondDate = new Date(secondEvent.startDate).getTime();
+
+      return sortOrder === 'furthest'
+        ? secondDate - firstDate
+        : firstDate - secondDate;
+    });
+  }, [catalogEvents, dateFilter, searchTerm, sortOrder]);
 
   return (
     <main className="min-h-screen bg-[#EEE9DF] px-5 py-10 text-[#2C3B4D] sm:px-8 lg:px-16 lg:py-12">
@@ -86,12 +146,23 @@ export default function EventsCatalogPage() {
         </section>
 
         <p className="mb-7 text-xs font-semibold text-[#2C3B4D]/70">
-          {catalogEvents.length} eventos disponibles
+          {visibleEvents.length} eventos disponibles
         </p>
 
-        {catalogEvents.length > 0 ? (
+        {isLoading ? (
+          <p className="py-16 text-center text-sm text-[#2C3B4D]/70" role="status">
+            Cargando eventos...
+          </p>
+        ) : errorMessage ? (
+          <div
+            className="rounded-xl border border-[#A35139]/30 bg-white/50 px-6 py-16 text-center"
+            role="alert"
+          >
+            <p className="text-sm font-semibold text-[#A35139]">{errorMessage}</p>
+          </div>
+        ) : visibleEvents.length > 0 ? (
           <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-            {catalogEvents.map((event) => (
+            {visibleEvents.map((event) => (
               <EventCard key={event.id} event={event} />
             ))}
           </div>
