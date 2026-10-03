@@ -38,11 +38,7 @@ export class MentorshipController {
 
     @Post('eligibility')
     @HttpCode(HttpStatus.OK)
-    evaluateEligibility(@Body('profile') profile: MentorEligibilityProfile) {
-        if (!profile || typeof profile !== 'object'
-            || !profile.personalInfo || !profile.academicInfo || !profile.professionalInfo) {
-            throw new BadRequestException('Envía un perfil completo en la propiedad "profile".');
-        }
+    evaluateEligibility(@Body('profile') profile: unknown) {
         return this.mentorshipEligibilityService.evaluate(profile);
     }
 
@@ -50,9 +46,17 @@ export class MentorshipController {
     @HttpCode(HttpStatus.OK)
     deactivateMentor(
         @Param('userId') userId: string,
-        @Body() body: { profile?: MentorEligibilityProfile; reason?: string },
+        @Body() body: { profile?: MentorEligibilityProfile; reason?: unknown } | null,
     ) {
-        return this.deactivate(userId, body);
+        const requestBody = body ?? {};
+        const reason = requestBody.reason;
+        if (reason !== undefined && typeof reason !== 'string') {
+            throw new BadRequestException('El motivo de desactivación debe ser texto.');
+        }
+        return this.deactivate(userId, {
+            profile: requestBody.profile,
+            ...(typeof reason === 'string' ? { reason } : {}),
+        });
     }
 
     private async deactivate(

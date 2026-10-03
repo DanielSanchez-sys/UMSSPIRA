@@ -1,6 +1,6 @@
 export interface MentorEligibilityProfile {
   userId: string;
-  isMentorActive?: boolean;
+  isMentorActive: boolean;
   mentorSettings?: MentorSettings;
   isGraduate: boolean;
   isVerified: boolean;
@@ -38,6 +38,7 @@ export interface MentorEligibilityIssue {
   code: MentorEligibilityIssueCode;
   message: string;
   missingFields?: string[];
+  invalidFields?: string[];
 }
 
 export interface MentorEligibilityResult {

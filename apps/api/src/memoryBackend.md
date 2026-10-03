@@ -13,6 +13,10 @@
 - Datos profesionales: resumen y anios de experiencia como numero finito no negativo.
 - Perfil: descripcion y descripcion de experiencia.
 - Elegibilidad de negocio: egresado, verificado, aprobado y sin restriccion de participacion.
+- El perfil debe tener `userId` y `isMentorActive: true`; un mentor inactivo nunca es elegible.
+- Los campos de texto son obligatorios, deben ser strings no vacios y contener letras; nombre y apellido no pueden contener numeros. El correo y telefono deben tener formatos validos.
+- `graduationYear` debe ser un entero entre 1950 y el ano actual. `yearsExperience` debe ser un numero finito de 0 a 80.
+- El endpoint de elegibilidad devuelve `eligible: false` con `profile_incomplete`, `invalid_profile_data` y/o las condiciones de negocio que no se cumplen; tambien informa que campos faltan o son invalidos.
 
 ## API de mentorship
 
@@ -20,8 +24,8 @@
 - `GET /mentorship/status` indica `supabase` o `demo`.
 - `GET /mentorship/profiles` lista los perfiles disponibles.
 - `POST /mentorship/profiles/reset` restaura los perfiles de ejemplo en modo demo.
-- `POST /mentorship/eligibility` recibe `{ "profile": { ... } }`.
-- `PATCH /mentorship/deactivate/:userId` recibe opcionalmente `{ "reason": "..." }` y conserva la configuracion.
+- `POST /mentorship/eligibility` recibe `{ "profile": { ... } }`; las faltas de campos se devuelven como resultado de validacion, no se aceptan como elegibles.
+- `PATCH /mentorship/deactivate/:userId` acepta opcionalmente `{ "reason": "..." }`, solo desactiva un rol actualmente activo y conserva la configuracion previa.
 - La coleccion importable de Postman esta en `collection/mentorship-api.postman_collection.json`; usa el environment `collection/environments/local.postman_environment.json`.
 - `supabase/seed.sql` carga tres perfiles de ejemplo: elegible, perfil incompleto e inelegible por verificacion/restriccion.
 - Aplicar `supabase/migrations/0002_mentorship_eligibility.sql` antes de ejecutar el seed.

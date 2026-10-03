@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import {
   DeactivateMentorInput,
   DeactivateMentorResult,
@@ -8,125 +8,122 @@ import {
   MentorSettings,
 } from './mentor-eligibility.types';
 
+type DataRecord = Record<string, unknown>;
+
 @Injectable()
 export class MentorshipEligibilityService {
-  evaluate(profile: MentorEligibilityProfile): MentorEligibilityResult {
+  evaluate(input: unknown): MentorEligibilityResult {
     const issues: MentorEligibilityIssue[] = [];
+    const profile = this.asRecord(input) ?? {};
     const invalidFlags: string[] = [];
 
-    if (profile?.isGraduate === false) {
+    this.addFlagIssue(profile, 'isGraduate', 'Condición de egresado', invalidFlags);
+    this.addFlagIssue(profile, 'isVerified', 'Verificación', invalidFlags);
+    this.addFlagIssue(profile, 'isApproved', 'Aprobación', invalidFlags);
+    this.addFlagIssue(profile, 'hasParticipationRestriction', 'Restricciones de participación', invalidFlags);
+    this.addFlagIssue(profile, 'isMentorActive', 'Estado activo del mentor', invalidFlags);
+
+    if (profile.isGraduate === false) {
       issues.push({ code: 'not_graduate', message: 'El usuario debe ser egresado.' });
-    } else if (typeof profile?.isGraduate !== 'boolean') {
-      invalidFlags.push('Condición de egresado');
     }
-    if (profile?.isVerified === false) {
+    if (profile.isVerified === false) {
       issues.push({ code: 'not_verified', message: 'El egresado debe estar verificado.' });
-    } else if (typeof profile?.isVerified !== 'boolean') {
-      invalidFlags.push('Verificación');
     }
-    if (profile?.isApproved === false) {
+    if (profile.isApproved === false) {
       issues.push({ code: 'not_approved', message: 'El egresado debe estar aprobado.' });
-    } else if (typeof profile?.isApproved !== 'boolean') {
-      invalidFlags.push('Aprobación');
     }
-    if (profile?.hasParticipationRestriction === true) {
+    if (profile.hasParticipationRestriction === true) {
       issues.push({
         code: 'participation_restricted',
         message: 'El usuario tiene restricciones para participar como mentor.',
       });
-    } else if (typeof profile?.hasParticipationRestriction !== 'boolean') {
-      invalidFlags.push('Restricciones de participación');
     }
-    if (profile?.isMentorActive === false) {
+    if (profile.isMentorActive === false) {
       issues.push({
         code: 'mentor_inactive',
-        message: 'El rol de mentor está desactivado.',
+        message: 'El rol de mentor debe estar activo para ser elegible.',
       });
     }
+
+    const missingFields: string[] = [];
+    const invalidFields: string[] = [];
+    const userId = profile.userId;
+    this.validateText(userId, 'Identificador de usuario', missingFields, invalidFields, false, false);
+
+    const personalInfo = this.asRecord(profile.personalInfo) ?? {};
+    const academicInfo = this.asRecord(profile.academicInfo) ?? {};
+    const professionalInfo = this.asRecord(profile.professionalInfo) ?? {};
+
+    this.validateText(personalInfo.firstName, 'Nombre', missingFields, invalidFields, true);
+    this.validateText(personalInfo.lastName, 'Apellido', missingFields, invalidFields, true);
+    this.validateText(personalInfo.email, 'Correo electrónico', missingFields, invalidFields, false, false);
+    this.validateText(personalInfo.phone, 'Teléfono', missingFields, invalidFields, false, false);
+    this.validateText(academicInfo.career, 'Carrera', missingFields, invalidFields);
+    this.validateText(academicInfo.degree, 'Grado académico', missingFields, invalidFields);
+    this.validateText(professionalInfo.summary, 'Resumen profesional', missingFields, invalidFields);
+    this.validateText(profile.description, 'Descripción del perfil', missingFields, invalidFields);
+    this.validateText(profile.experienceDescription, 'Descripción de experiencia', missingFields, invalidFields);
+
+    const email = personalInfo.email;
+    if (typeof email === 'string' && email.trim()
+      && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      invalidFields.push('Correo electrónico válido');
+    }
+
+    const phone = personalInfo.phone;
+    if (typeof phone === 'string' && phone.trim()
+      && (!/^[+\d\s().-]+$/.test(phone) || phone.replace(/\D/g, '').length < 7)) {
+      invalidFields.push('Teléfono válido');
+    }
+
+    this.validateNumber(
+      academicInfo.graduationYear,
+      'Año de egreso',
+      1950,
+      new Date().getFullYear(),
+      true,
+      missingFields,
+      invalidFields,
+    );
+    this.validateNumber(
+      professionalInfo.yearsExperience,
+      'Años de experiencia',
+      0,
+      80,
+      false,
+      missingFields,
+      invalidFields,
+    );
 
     if (invalidFlags.length > 0) {
-      issues.push({
-        code: 'invalid_profile_data',
-        message: 'Las condiciones de elegibilidad deben tener valores booleanos válidos.',
-        missingFields: invalidFlags,
-      });
+      invalidFields.push(...invalidFlags);
     }
-
-    const missingFields = this.getMissingProfileFields(profile);
     if (missingFields.length > 0) {
       issues.push({
         code: 'profile_incomplete',
-        message: 'Completa los datos mínimos del perfil para habilitarte como mentor.',
-        missingFields,
+        message: 'Completa todos los campos obligatorios del perfil mínimo.',
+        missingFields: [...new Set(missingFields)],
+      });
+    }
+    if (invalidFields.length > 0) {
+      issues.push({
+        code: 'invalid_profile_data',
+        message: 'Corrige los campos con formato, tipo o valor inválido.',
+        invalidFields: [...new Set(invalidFields)],
       });
     }
 
     return { eligible: issues.length === 0, issues };
   }
 
-  private getMissingProfileFields(profile: MentorEligibilityProfile): string[] {
-    const personalInfo = profile?.personalInfo;
-    const academicInfo = profile?.academicInfo;
-    const professionalInfo = profile?.professionalInfo;
-    const requiredText: Array<[string, unknown]> = [
-      ['Nombre', personalInfo?.firstName],
-      ['Apellido', personalInfo?.lastName],
-      ['Correo electrónico', personalInfo?.email],
-      ['Teléfono', personalInfo?.phone],
-      ['Carrera', academicInfo?.career],
-      ['Grado académico', academicInfo?.degree],
-      ['Resumen profesional', professionalInfo?.summary],
-      ['Descripción del perfil', profile?.description],
-      ['Descripción de experiencia', profile?.experienceDescription],
-    ];
-
-    const missing = requiredText
-      .filter(([, value]) => typeof value !== 'string' || !value.trim())
-      .map(([label]) => label);
-
-    for (const [label, value] of [['Nombre', personalInfo?.firstName], ['Apellido', personalInfo?.lastName]] as Array<[string, unknown]>) {
-      if (typeof value === 'string' && value.trim()
-        && (!/\p{L}/u.test(value) || /\d/u.test(value))) {
-        missing.push(`${label} válido (no uses números)`);
-      }
-    }
-
-    const phone = personalInfo?.phone;
-    if (typeof phone === 'string' && phone.trim()
-      && (!/^[+\d\s().-]+$/.test(phone) || phone.replace(/\D/g, '').length < 7)) {
-      missing.push('Teléfono válido');
-    }
-
-    const graduationYear = academicInfo?.graduationYear;
-    if (typeof graduationYear !== 'number' || !Number.isInteger(graduationYear)
-      || graduationYear < 1950 || graduationYear > new Date().getFullYear()) {
-      missing.push('Año de egreso');
-    }
-
-    const yearsExperience = professionalInfo?.yearsExperience;
-    if (typeof yearsExperience !== 'number' || !Number.isFinite(yearsExperience)
-      || yearsExperience < 0 || yearsExperience > 80) {
-      missing.push('Años de experiencia');
-    }
-
-    const email = personalInfo?.email;
-    if (typeof email === 'string' && email.trim()
-      && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      missing.push('Correo electrónico válido');
-    }
-
-    return [...new Set(missing)];
-  }
-
-  /*
-    Tarea #23: Servicio de desactivación del rol de mentor
-    Cumple con la Regla 6.1.4 (Conserva el historial/configuración)
-   */
   deactivateMentorRole(
     profile: MentorEligibilityProfile,
     input: DeactivateMentorInput,
   ): DeactivateMentorResult {
-    // Preserva la configuración previa del usuario sin borrarla
+    if (profile.isMentorActive !== true) {
+      throw new ConflictException('El rol de mentor ya está desactivado.');
+    }
+
     const retainedSettings: MentorSettings = {
       ...profile.mentorSettings,
       bio: profile.mentorSettings?.bio ?? profile.description,
@@ -140,5 +137,62 @@ export class MentorshipEligibilityService {
       deactivatedAt: new Date(),
       retainedSettings,
     };
+  }
+
+  private addFlagIssue(
+    profile: DataRecord,
+    key: string,
+    label: string,
+    invalidFlags: string[],
+  ): void {
+    if (typeof profile[key] !== 'boolean') invalidFlags.push(label);
+  }
+
+  private validateText(
+    value: unknown,
+    label: string,
+    missingFields: string[],
+    invalidFields: string[],
+    isName = false,
+    requireLetter = true,
+  ): void {
+    if (value === undefined || value === null || (typeof value === 'string' && !value.trim())) {
+      missingFields.push(label);
+      return;
+    }
+    if (typeof value !== 'string') {
+      invalidFields.push(label);
+      return;
+    }
+
+    const text = value.trim();
+    if ((requireLetter && !/\p{L}/u.test(text)) || (isName && /\d/u.test(text))) {
+      invalidFields.push(`${label} válido`);
+    }
+  }
+
+  private validateNumber(
+    value: unknown,
+    label: string,
+    minimum: number,
+    maximum: number,
+    mustBeInteger: boolean,
+    missingFields: string[],
+    invalidFields: string[],
+  ): void {
+    if (value === undefined || value === null || value === '') {
+      missingFields.push(label);
+      return;
+    }
+    if (typeof value !== 'number' || !Number.isFinite(value)
+      || (mustBeInteger && !Number.isInteger(value))
+      || value < minimum || value > maximum) {
+      invalidFields.push(label);
+    }
+  }
+
+  private asRecord(value: unknown): DataRecord | undefined {
+    if (value === null || typeof value !== 'object' || Array.isArray(value)) return undefined;
+    return value as DataRecord;
   }
 }
