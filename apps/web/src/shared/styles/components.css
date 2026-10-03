@@ -1,5 +1,17 @@
 /* Componentes reutilizables: botones, breadcrumb, encabezados, banners y badges */
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .breadcrumb-list {
   display: flex;
   flex-wrap: wrap;
@@ -286,3 +298,22 @@
     animation: none;
   }
 }
+
+/* Confirmación compartida: foco y teclado en confirm-modal.tsx. */
+.confirm-modal-overlay { position: fixed; z-index: 50; inset: 0; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+.confirm-modal-backdrop { position: absolute; inset: 0; background: rgb(32 37 43 / 55%); }
+.confirm-modal-dialog { position: relative; width: 100%; max-width: 35rem; max-height: calc(100dvh - 2rem); overflow-y: auto; padding: 1.5rem; border-radius: .75rem; background: white; box-shadow: 0 20px 30px rgb(0 0 0 / 18%); }
+.confirm-modal-header { display: flex; align-items: flex-start; gap: .75rem; }
+.confirm-modal-icon { display: flex; width: 2.5rem; height: 2.5rem; flex: 0 0 auto; align-items: center; justify-content: center; border-radius: 50%; background: var(--palladian); color: var(--truffle); }
+.confirm-modal-copy { flex: 1; min-width: 0; }
+.confirm-modal-eyebrow { font-size: .6875rem; font-weight: 700; color: var(--truffle-dark); }
+.confirm-modal-title { font-size: 1.125rem; font-weight: 600; line-height: 1.5; }
+.confirm-modal-description { margin-top: .375rem; font-size: .875rem; color: var(--ink-75); }
+.confirm-modal-close { display: flex; align-items: center; justify-content: center; min-width: 2rem; min-height: 2rem; border: 0; border-radius: .25rem; background: transparent; color: var(--ink-70); }
+.confirm-modal-close:hover { background: var(--palladian); }
+.confirm-modal-content { margin-top: 1.25rem; }
+.confirm-modal-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .75rem; margin-top: 1.5rem; border-top: 1px solid var(--oatmeal-70); padding-top: 1.25rem; }
+.confirm-modal-confirm { background: var(--truffle-dark); color: white; }
+.confirm-modal-confirm:hover:not(:disabled) { background: var(--truffle); }
+.confirm-modal-confirm:disabled { opacity: .7; }
+@media (max-width: 639px) { .confirm-modal-actions { flex-direction: column-reverse; } }
