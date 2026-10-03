@@ -49,8 +49,13 @@ export function ExpedientesTable({ records, onViewReason }: ExpedientesTableProp
 
   return (
     <>
-      <div className="hidden overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm md:block">
-        <div className="overflow-x-auto">
+      <div className="hidden w-full min-w-0 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm md:block">
+        <div
+          aria-label="Tabla de expedientes desplazable horizontalmente"
+          className="max-w-full overflow-x-auto overscroll-x-contain"
+          role="region"
+          tabIndex={0}
+        >
           <table className="w-full min-w-[1550px] border-collapse text-left text-sm">
             <thead className="bg-[#1e293b] text-xs font-bold uppercase tracking-wide text-white">
               <tr>
@@ -111,18 +116,18 @@ export function ExpedientesTable({ records, onViewReason }: ExpedientesTableProp
         </div>
       </div>
 
-      <div className="space-y-3 md:hidden">
+      <div className="min-w-0 space-y-3 md:hidden">
         {records.map((record) => (
           <article
-            className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
+            className="min-w-0 rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
             key={record.id}
           >
             <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
-              <div>
+              <div className="min-w-0">
                 <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
                   {record.registrationNumber}
                 </p>
-                <h3 className="mt-1 font-bold text-slate-900">{record.fullName}</h3>
+                <h3 className="mt-1 break-words font-bold text-slate-900">{record.fullName}</h3>
                 <p className="mt-1 text-sm text-slate-600">Código SIS: {record.sisCode}</p>
               </div>
               <StatusBadge status={record.status} />

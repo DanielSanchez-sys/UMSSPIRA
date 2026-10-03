@@ -165,15 +165,15 @@ function ObservationModal({
       <section
         aria-labelledby="observation-modal-title"
         aria-modal="true"
-        className="w-full max-w-xl rounded-lg bg-white shadow-2xl"
+        className="flex max-h-[calc(100dvh-2rem)] w-full max-w-xl flex-col overflow-hidden rounded-lg bg-white shadow-2xl"
         role="dialog"
       >
-        <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
-          <div>
+        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-200 px-4 py-4 sm:gap-4 sm:px-6 sm:py-5">
+          <div className="min-w-0">
             <p className="text-xs font-bold uppercase tracking-[0.12em] text-red-700">
               Dictamen de expediente
             </p>
-            <h2 id="observation-modal-title" className="mt-1 text-xl font-bold text-slate-900">
+            <h2 id="observation-modal-title" className="mt-1 break-words text-lg font-bold text-slate-900 sm:text-xl">
               Expediente de Observación y Motivos de Rechazo
             </h2>
           </div>
@@ -186,22 +186,22 @@ function ObservationModal({
             <X aria-hidden="true" size={20} />
           </button>
         </div>
-        <div className="space-y-5 px-6 py-6">
+        <div className="min-h-0 space-y-5 overflow-y-auto px-4 py-5 sm:px-6 sm:py-6">
           <div>
             <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Egresado</p>
-            <p className="mt-1 font-semibold text-slate-900">{record.fullName}</p>
+            <p className="mt-1 break-words font-semibold text-slate-900">{record.fullName}</p>
             <p className="text-sm text-slate-500">Código SIS: {record.sisCode}</p>
           </div>
           <div className="rounded-md border border-red-200 bg-red-50 p-4">
             <p className="text-xs font-bold uppercase tracking-wide text-red-800">
               Motivos de rechazo
             </p>
-            <p className="mt-2 leading-relaxed text-red-950">{record.rejectionReason}</p>
+            <p className="mt-2 break-words leading-relaxed text-red-950">{record.rejectionReason}</p>
           </div>
         </div>
-        <div className="flex justify-end border-t border-slate-200 px-6 py-4">
+        <div className="flex shrink-0 justify-end border-t border-slate-200 px-4 py-3 sm:px-6 sm:py-4">
           <button
-            className="rounded-md bg-[#1e293b] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2"
+            className="w-full rounded-md bg-[#1e293b] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 sm:w-auto"
             onClick={onClose}
             type="button"
           >
