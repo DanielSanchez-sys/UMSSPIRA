@@ -1,5 +1,4 @@
 import {
-  IsIn,
   IsInt,
   IsISO8601,
   IsNotEmpty,
@@ -10,16 +9,10 @@ import {
 } from 'class-validator';
 
 import type {
-  EventStatus,
-  CreateEventDto as CreateEventContract,
+  UpdateDraftEventDto as UpdateDraftEventContract,
 } from '@umsspira/shared-types';
 
-const CREATE_ALLOWED_STATUSES = [
-  'BORRADOR',
-  'PUBLICADO',
-] as const;
-
-export class CreateEventDto implements CreateEventContract {
+export class UpdateDraftEventDto implements UpdateDraftEventContract {
   @IsNotEmpty({
     message: 'El título es obligatorio',
   })
@@ -69,13 +62,4 @@ export class CreateEventDto implements CreateEventContract {
     message: 'La ubicación no puede superar los 100 caracteres',
   })
   location?: string;
-
-  @IsOptional()
-  @IsIn(CREATE_ALLOWED_STATUSES, {
-    message: 'El estado debe ser BORRADOR o PUBLICADO',
-  })
-  status?: Extract<
-    EventStatus,
-    'BORRADOR' | 'PUBLICADO'
-  >;
 }

@@ -30,6 +30,8 @@ export interface CreateEventDto {
   status?: Extract<EventStatus, 'BORRADOR' | 'PUBLICADO'>;
 }
 
+export type UpdateDraftEventDto = Omit<CreateEventDto, 'status'>;
+
 export interface EventFilters {
   status?: EventStatus;
   upcomingOnly?: boolean;
