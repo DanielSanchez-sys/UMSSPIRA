@@ -75,6 +75,21 @@ export default function EventsCatalogPage() {
     });
   }, [catalogEvents, dateFilter, searchTerm, sortOrder]);
 
+  const dateOptions = useMemo(() => {
+    const monthFormatter = new Intl.DateTimeFormat('es-BO', {
+      month: 'long',
+      year: 'numeric',
+    });
+    const uniqueMonths = Array.from(
+      new Set(catalogEvents.map((event) => event.startDate.slice(0, 7))),
+    ).sort();
+
+    return uniqueMonths.map((month) => ({
+      value: month,
+      label: monthFormatter.format(new Date(`${month}-01T00:00:00`)),
+    }));
+  }, [catalogEvents]);
+
   return (
     <main className="min-h-screen bg-[#EEE9DF] px-5 py-10 text-[#2C3B4D] sm:px-8 lg:px-16 lg:py-12">
       <div className="mx-auto max-w-[1440px]">
@@ -117,8 +132,11 @@ export default function EventsCatalogPage() {
               className="w-full appearance-none bg-transparent outline-none"
             >
               <option value="all">Todas las fechas</option>
-              <option value="10">Octubre</option>
-              <option value="11">Noviembre</option>
+              {dateOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
             </select>
             <ChevronDown size={15} className="pointer-events-none absolute right-3" aria-hidden="true" />
           </label>
@@ -145,10 +163,6 @@ export default function EventsCatalogPage() {
           </label>
         </section>
 
-        <p className="mb-7 text-xs font-semibold text-[#2C3B4D]/70">
-          {visibleEvents.length} eventos disponibles
-        </p>
-
         {isLoading ? (
           <p className="py-16 text-center text-sm text-[#2C3B4D]/70" role="status">
             Cargando eventos...
@@ -161,11 +175,16 @@ export default function EventsCatalogPage() {
             <p className="text-sm font-semibold text-[#A35139]">{errorMessage}</p>
           </div>
         ) : visibleEvents.length > 0 ? (
-          <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-            {visibleEvents.map((event) => (
-              <EventCard key={event.id} event={event} />
-            ))}
-          </div>
+          <>
+            <p className="mb-7 text-xs font-semibold text-[#2C3B4D]/70">
+              {visibleEvents.length} eventos disponibles
+            </p>
+            <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+              {visibleEvents.map((event) => (
+                <EventCard key={event.id} event={event} />
+              ))}
+            </div>
+          </>
         ) : (
           <div className="rounded-xl border border-dashed border-[#C9C1B1] bg-white/40 px-6 py-16 text-center">
             <p className="text-sm font-semibold">No encontramos eventos</p>
