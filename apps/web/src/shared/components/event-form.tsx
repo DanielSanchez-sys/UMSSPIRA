@@ -1,7 +1,11 @@
 'use client';
 
 import { FormEvent, ReactNode, useEffect, useMemo, useState } from 'react';
-import { EVENT_STATUS, type CreateEventDto } from '@umsspira/shared-types';
+import {
+  EVENT_STATUS,
+  type CreateEventDto,
+  type EventItem,
+} from '@umsspira/shared-types';
 import {
   EventConfirmDialog,
   type EventSummary,
@@ -38,6 +42,8 @@ export interface EventFormProps {
   onCancel?: () => void;
   onValidationChange?: (errorCount: number) => void;
   isSubmitting?: boolean;
+  initialEvent?: EventItem;
+  allowPublication?: boolean;
 }
 
 const initialState: EventFormState = {
@@ -57,16 +63,27 @@ export default function EventForm({
   onCancel,
   onValidationChange,
   isSubmitting = false,
+  initialEvent,
+  allowPublication = true,
 }: EventFormProps) {
-  const [form, setForm] = useState<EventFormState>(initialState);
+  const [form, setForm] = useState<EventFormState>(() =>
+    createInitialState(initialEvent),
+  );
   const [errors, setErrors] = useState<EventFormErrors>({});
   const [pendingPublication, setPendingPublication] = useState<PendingPublication | null>(null);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
 
   const errorCount = countValidationGroups(errors);
+  const isBusy = isSubmitting || isSavingDraft;
 
   useEffect(() => {
     onValidationChange?.(errorCount);
   }, [errorCount, onValidationChange]);
+
+  useEffect(() => {
+    setForm(createInitialState(initialEvent));
+    setErrors({});
+  }, [initialEvent]);
 
   const dateLabel = useMemo(
     () => formatDateLabel(form.startDate, form.startTime, form.endDate, form.endTime),
@@ -88,8 +105,13 @@ export default function EventForm({
     if (!form.endTime) nextErrors.endTime = 'Este campo es obligatorio.';
 
     const capacity = Number(form.maxCapacity);
-    if (!form.maxCapacity || !Number.isFinite(capacity) || capacity <= 0) {
-      nextErrors.maxCapacity = 'Ingresa un cupo mayor a 0.';
+    if (
+      !form.maxCapacity
+      || !Number.isFinite(capacity)
+      || !Number.isInteger(capacity)
+      || capacity <= 0
+    ) {
+      nextErrors.maxCapacity = 'Ingresa un cupo entero mayor a 0.';
     }
 
     if (form.startDate && form.startTime && form.endDate && form.endTime) {
@@ -123,7 +145,13 @@ export default function EventForm({
 
   const saveDraft = async () => {
     if (!validateForm()) return;
-    await onSubmit(buildEventDto(EVENT_STATUS.BORRADOR), form.image);
+
+    setIsSavingDraft(true);
+    try {
+      await onSubmit(buildEventDto(EVENT_STATUS.BORRADOR), form.image);
+    } finally {
+      setIsSavingDraft(false);
+    }
   };
 
   const requestPublication = (event: FormEvent<HTMLFormElement>) => {
@@ -157,6 +185,7 @@ export default function EventForm({
         id="event-create-form"
         className={`event-form-card ${errorCount > 0 ? 'has-validation-errors' : ''}`}
         onSubmit={requestPublication}
+        aria-busy={isBusy}
         noValidate
       >
         <h2 className="event-form-heading">
@@ -250,18 +279,26 @@ export default function EventForm({
         </div>
 
         <div className="event-form-actions event-form-actions-desktop">
-          <button type="button" className="event-button event-button-secondary" onClick={onCancel} disabled={isSubmitting}>Cancelar</button>
-          <button type="button" className="event-button event-button-secondary" onClick={() => void saveDraft()} disabled={isSubmitting}>Guardar borrador</button>
-          <button type="submit" className="event-button event-button-primary" disabled={isSubmitting}>Publicar evento</button>
+          <button type="button" className="event-button event-button-secondary" onClick={onCancel} disabled={isBusy}>Cancelar</button>
+          <button type="button" className="event-button event-button-secondary" onClick={() => void saveDraft()} disabled={isBusy}>
+            {isSavingDraft ? 'Guardando…' : 'Guardar borrador'}
+          </button>
+          {allowPublication ? (
+            <button type="submit" className="event-button event-button-primary" disabled={isBusy}>Publicar evento</button>
+          ) : null}
         </div>
       </form>
 
       <EventPreview form={form} dateLabel={dateLabel} hasErrors={errorCount > 0} />
 
       <div className="event-form-actions event-form-actions-mobile">
-        <button type="button" className="event-button event-button-secondary" onClick={onCancel} disabled={isSubmitting}>Cancelar</button>
-        <button type="button" className="event-button event-button-secondary" onClick={() => void saveDraft()} disabled={isSubmitting}>Guardar borrador</button>
-        <button type="submit" form="event-create-form" className="event-button event-button-primary" disabled={isSubmitting}>Publicar</button>
+        <button type="button" className="event-button event-button-secondary" onClick={onCancel} disabled={isBusy}>Cancelar</button>
+        <button type="button" className="event-button event-button-secondary" onClick={() => void saveDraft()} disabled={isBusy}>
+          {isSavingDraft ? 'Guardando…' : 'Guardar borrador'}
+        </button>
+        {allowPublication ? (
+          <button type="submit" form="event-create-form" className="event-button event-button-primary" disabled={isBusy}>Publicar</button>
+        ) : null}
       </div>
 
       {pendingPublication && (
@@ -351,4 +388,47 @@ function formatFileDetails(file: File) {
   const extension = file.name.split('.').pop()?.toUpperCase() ?? 'ARCHIVO';
   const size = `${(file.size / 1024 / 1024).toFixed(1).replace('.', ',')} MB`;
   return `${extension} · ${size}`;
+}
+
+function createInitialState(event?: EventItem): EventFormState {
+  if (!event) return initialState;
+
+  const start = toDateTimeInputParts(event.startDate);
+  const end = toDateTimeInputParts(event.endDate);
+
+  return {
+    title: event.title,
+    description: event.description ?? '',
+    startDate: start.date,
+    startTime: start.time,
+    endDate: end.date,
+    endTime: end.time,
+    maxCapacity: String(event.maxCapacity),
+    location: event.location ?? '',
+    image: null,
+  };
+}
+
+function toDateTimeInputParts(value: string) {
+  const parsedDate = new Date(value);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    const [date = '', time = ''] = value.split('T');
+    return {
+      date,
+      time: time.slice(0, 5),
+    };
+  }
+
+  const date = [
+    parsedDate.getFullYear(),
+    String(parsedDate.getMonth() + 1).padStart(2, '0'),
+    String(parsedDate.getDate()).padStart(2, '0'),
+  ].join('-');
+  const time = [
+    String(parsedDate.getHours()).padStart(2, '0'),
+    String(parsedDate.getMinutes()).padStart(2, '0'),
+  ].join(':');
+
+  return { date, time };
 }
