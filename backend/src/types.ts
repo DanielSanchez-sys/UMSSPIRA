@@ -13,8 +13,6 @@ export interface Candidate {
   affinity: number;
   featured: boolean;
   areas?: AffinityAreaItem[];
-  mayorConcentracion?: string;
-  concentrationArea?: string;
 }
 
 export interface CandidatesData {
@@ -23,8 +21,6 @@ export interface CandidatesData {
 
 export interface SearchResult extends Candidate {
   nlpScore: number;
-  mayorConcentracion: string;
-  concentrationArea: string;
   breakdown?: {
     careerMatch: number;
     skillsMatch: number;
