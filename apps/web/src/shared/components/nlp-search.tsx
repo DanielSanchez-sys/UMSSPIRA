@@ -98,7 +98,7 @@ export const NlpSearch: React.FC<NlpSearchProps> = ({
         {/* Stats Pill Card */}
         <div className="bg-blue-fantastic/5 border border-blue-fantastic/10 p-3.5 rounded-xl flex items-center space-x-3 shrink-0">
           <div className="w-10 h-10 rounded-lg bg-abyssal-blue text-burning-flame flex items-center justify-center font-black text-lg">
-            48
+            8
           </div>
           <div>
             <span className="text-xs font-bold text-abyssal-blue block">TITULADOS</span>
