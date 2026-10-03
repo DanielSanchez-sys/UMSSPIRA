@@ -12,20 +12,43 @@ import {
 export class MentorshipEligibilityService {
   evaluate(profile: MentorEligibilityProfile): MentorEligibilityResult {
     const issues: MentorEligibilityIssue[] = [];
+    const invalidFlags: string[] = [];
 
-    if (!profile.isGraduate) {
+    if (profile?.isGraduate === false) {
       issues.push({ code: 'not_graduate', message: 'El usuario debe ser egresado.' });
+    } else if (typeof profile?.isGraduate !== 'boolean') {
+      invalidFlags.push('Condición de egresado');
     }
-    if (!profile.isVerified) {
+    if (profile?.isVerified === false) {
       issues.push({ code: 'not_verified', message: 'El egresado debe estar verificado.' });
+    } else if (typeof profile?.isVerified !== 'boolean') {
+      invalidFlags.push('Verificación');
     }
-    if (!profile.isApproved) {
+    if (profile?.isApproved === false) {
       issues.push({ code: 'not_approved', message: 'El egresado debe estar aprobado.' });
+    } else if (typeof profile?.isApproved !== 'boolean') {
+      invalidFlags.push('Aprobación');
     }
-    if (profile.hasParticipationRestriction) {
+    if (profile?.hasParticipationRestriction === true) {
       issues.push({
         code: 'participation_restricted',
         message: 'El usuario tiene restricciones para participar como mentor.',
+      });
+    } else if (typeof profile?.hasParticipationRestriction !== 'boolean') {
+      invalidFlags.push('Restricciones de participación');
+    }
+    if (profile?.isMentorActive === false) {
+      issues.push({
+        code: 'mentor_inactive',
+        message: 'El rol de mentor está desactivado.',
+      });
+    }
+
+    if (invalidFlags.length > 0) {
+      issues.push({
+        code: 'invalid_profile_data',
+        message: 'Las condiciones de elegibilidad deben tener valores booleanos válidos.',
+        missingFields: invalidFlags,
       });
     }
 
@@ -42,35 +65,57 @@ export class MentorshipEligibilityService {
   }
 
   private getMissingProfileFields(profile: MentorEligibilityProfile): string[] {
-    const requiredText: Array<[string, string]> = [
-      ['Nombre', profile.personalInfo.firstName],
-      ['Apellido', profile.personalInfo.lastName],
-      ['Correo electrónico', profile.personalInfo.email],
-      ['Teléfono', profile.personalInfo.phone],
-      ['Carrera', profile.academicInfo.career],
-      ['Grado académico', profile.academicInfo.degree],
-      ['Resumen profesional', profile.professionalInfo.summary],
-      ['Descripción del perfil', profile.description],
-      ['Descripción de experiencia', profile.experienceDescription],
+    const personalInfo = profile?.personalInfo;
+    const academicInfo = profile?.academicInfo;
+    const professionalInfo = profile?.professionalInfo;
+    const requiredText: Array<[string, unknown]> = [
+      ['Nombre', personalInfo?.firstName],
+      ['Apellido', personalInfo?.lastName],
+      ['Correo electrónico', personalInfo?.email],
+      ['Teléfono', personalInfo?.phone],
+      ['Carrera', academicInfo?.career],
+      ['Grado académico', academicInfo?.degree],
+      ['Resumen profesional', professionalInfo?.summary],
+      ['Descripción del perfil', profile?.description],
+      ['Descripción de experiencia', profile?.experienceDescription],
     ];
 
     const missing = requiredText
-      .filter(([, value]) => !value?.trim())
+      .filter(([, value]) => typeof value !== 'string' || !value.trim())
       .map(([label]) => label);
 
-    if (!Number.isInteger(profile.academicInfo.graduationYear)) {
+    for (const [label, value] of [['Nombre', personalInfo?.firstName], ['Apellido', personalInfo?.lastName]] as Array<[string, unknown]>) {
+      if (typeof value === 'string' && value.trim()
+        && (!/\p{L}/u.test(value) || /\d/u.test(value))) {
+        missing.push(`${label} válido (no uses números)`);
+      }
+    }
+
+    const phone = personalInfo?.phone;
+    if (typeof phone === 'string' && phone.trim()
+      && (!/^[+\d\s().-]+$/.test(phone) || phone.replace(/\D/g, '').length < 7)) {
+      missing.push('Teléfono válido');
+    }
+
+    const graduationYear = academicInfo?.graduationYear;
+    if (typeof graduationYear !== 'number' || !Number.isInteger(graduationYear)
+      || graduationYear < 1950 || graduationYear > new Date().getFullYear()) {
       missing.push('Año de egreso');
     }
-    if (!Number.isFinite(profile.professionalInfo.yearsExperience)
-      || profile.professionalInfo.yearsExperience < 0) {
+
+    const yearsExperience = professionalInfo?.yearsExperience;
+    if (typeof yearsExperience !== 'number' || !Number.isFinite(yearsExperience)
+      || yearsExperience < 0 || yearsExperience > 80) {
       missing.push('Años de experiencia');
     }
-    if (profile.personalInfo.email?.trim()
-      && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(profile.personalInfo.email.trim())) {
+
+    const email = personalInfo?.email;
+    if (typeof email === 'string' && email.trim()
+      && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
       missing.push('Correo electrónico válido');
     }
 
-    return missing;
+    return [...new Set(missing)];
   }
 
   /*
@@ -83,8 +128,8 @@ export class MentorshipEligibilityService {
   ): DeactivateMentorResult {
     // Preserva la configuración previa del usuario sin borrarla
     const retainedSettings: MentorSettings = {
-      bio: profile.description,
-      topics: [],
+      ...profile.mentorSettings,
+      bio: profile.mentorSettings?.bio ?? profile.description,
     };
 
     return {

@@ -1,5 +1,7 @@
 export interface MentorEligibilityProfile {
   userId: string;
+  isMentorActive?: boolean;
+  mentorSettings?: MentorSettings;
   isGraduate: boolean;
   isVerified: boolean;
   isApproved: boolean;
@@ -28,6 +30,8 @@ export type MentorEligibilityIssueCode =
   | 'not_verified'
   | 'not_approved'
   | 'participation_restricted'
+  | 'mentor_inactive'
+  | 'invalid_profile_data'
   | 'profile_incomplete';
 
 export interface MentorEligibilityIssue {
