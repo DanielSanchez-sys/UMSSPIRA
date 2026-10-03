@@ -5,6 +5,7 @@ import { FileText } from 'lucide-react';
 
 import type { TimelineItem, TimelineSection } from '@/modules/profile/data/profile-data';
 import CertificationItem from '@/modules/profile/ver/certification-item';
+import { SAMPLE_BACKUP_URL } from '@/modules/profile/utils/backup-url';
 
 const SECTION_CERTIFICATIONS = 'CERTIFICACIONES';
 
@@ -21,16 +22,20 @@ function Connector() {
   );
 }
 
+const STATUS_STYLES: Record<NonNullable<TimelineItem['status']>, { label: string; badge: string; dot: string }> = {
+  verified: { label: 'Respaldo verificado', badge: 'bg-[#D1E7DD] text-[#0F5132]', dot: 'bg-[#0F5132]' },
+  pending: { label: 'Respaldo en revisión', badge: 'bg-[#FFF3CD] text-[#664D03]', dot: 'bg-[#664D03]' },
+  missing: { label: 'Sin respaldo', badge: 'bg-[#E2E3E5] text-[#383D41]', dot: 'bg-[#383D41]' },
+};
+
 function StatusBadge({ status }: { status: NonNullable<TimelineItem['status']> }) {
-  const verified = status === 'verified';
+  const { label, badge, dot } = STATUS_STYLES[status];
   return (
     <span
-      className={`inline-flex w-fit shrink-0 items-center gap-1 rounded px-2 py-1 text-[10px] font-bold uppercase tracking-[0.05em] ${
-        verified ? 'bg-[#D1E7DD] text-[#0F5132]' : 'bg-[#E2E3E5] text-[#383D41]'
-      }`}
+      className={`inline-flex w-fit shrink-0 items-center gap-1 rounded px-2 py-1 text-[10px] font-bold uppercase tracking-[0.05em] ${badge}`}
     >
-      <span className={`h-1.5 w-1.5 rounded-full ${verified ? 'bg-[#0F5132]' : 'bg-[#383D41]'}`} />
-      {verified ? 'Respaldo verificado' : 'Sin respaldo'}
+      <span className={`h-1.5 w-1.5 rounded-full ${dot}`} />
+      {label}
     </span>
   );
 }
@@ -101,7 +106,9 @@ export default function Timeline({ sections }: TimelineProps) {
                   {/* Documento de respaldo */}
                   {item.document && (
                     <a
-                      href="#"
+                      href={SAMPLE_BACKUP_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="inline-flex w-fit items-center gap-1.5 rounded-md border border-umss-sand bg-white px-2 py-1.5 text-[11px] font-semibold text-umss-navy transition hover:bg-umss-cream"
                     >
                       <FileText className="h-3.5 w-3.5 text-umss-terracotta" aria-hidden="true" />

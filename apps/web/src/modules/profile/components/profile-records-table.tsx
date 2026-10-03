@@ -1,4 +1,5 @@
 import { Pencil, Trash2 } from 'lucide-react';
+import Link from 'next/link';
 
 import type { ProfileRecord, RecordSection } from '@/modules/profile/types/profile-record';
 import { getRecordColumns } from '@/modules/profile/utils/record-columns';
@@ -10,26 +11,45 @@ type ProfileRecordsTableProps = {
 };
 
 type RecordActionsProps = {
+  section: RecordSection;
   record: ProfileRecord;
   onDelete: ProfileRecordsTableProps['onDelete'];
 };
 
+// Íconos sin borde, como en la v3 del Figma
 const actionClassName =
-  'flex h-8 w-8 items-center justify-center rounded-lg border border-umss-sand bg-white transition hover:bg-umss-cream';
+  'flex h-8 w-8 items-center justify-center rounded-lg transition hover:bg-umss-cream';
 
-function RecordActions({ record, onDelete }: RecordActionsProps) {
+function RecordActions({ section, record, onDelete }: RecordActionsProps) {
   return (
     <div className="flex items-center gap-2">
-      {/* La acción de editar (C/A 2 a 5) corresponde a la pantalla de edición */}
-      <button type="button" aria-label="Editar registro" title="Editar registro" className={`${actionClassName} text-umss-navy`}>
-        <Pencil className="h-4 w-4" aria-hidden="true" />
-      </button>
+      {/* Por ahora solo existe la pantalla de edición de certificaciones (mockup "Editar certificación") */}
+      {section === 'certification' ? (
+        <Link
+          href={`/profile/certifications/${record.id}/edit`}
+          aria-label="Editar registro"
+          title="Editar registro"
+          className={`${actionClassName} text-umss-navy`}
+        >
+          <Pencil className="h-4 w-4" aria-hidden="true" />
+        </Link>
+      ) : (
+        <button
+          type="button"
+          aria-label="Editar registro"
+          title="Edición disponible próximamente"
+          disabled
+          className={`${actionClassName} cursor-not-allowed text-umss-navy opacity-40`}
+        >
+          <Pencil className="h-4 w-4" aria-hidden="true" />
+        </button>
+      )}
       <button
         type="button"
         aria-label="Eliminar registro"
         title="Eliminar registro"
         onClick={() => onDelete(record)}
-        className={`${actionClassName} text-umss-terracotta hover:border-umss-terracotta`}
+        className={`${actionClassName} text-umss-terracotta`}
       >
         <Trash2 className="h-4 w-4" aria-hidden="true" />
       </button>
@@ -75,7 +95,7 @@ export function ProfileRecordsTable({ section, records, onDelete }: ProfileRecor
                   </td>
                 ))}
                 <td className="px-5 py-4">
-                  <RecordActions record={record} onDelete={onDelete} />
+                  <RecordActions section={section} record={record} onDelete={onDelete} />
                 </td>
               </tr>
             ))}
@@ -99,7 +119,7 @@ export function ProfileRecordsTable({ section, records, onDelete }: ProfileRecor
                   {rest.map((column) => column.getValue(record)).join(' · ')}
                 </p>
               </div>
-              <RecordActions record={record} onDelete={onDelete} />
+              <RecordActions section={section} record={record} onDelete={onDelete} />
             </li>
           );
         })}

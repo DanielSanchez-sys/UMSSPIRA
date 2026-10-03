@@ -1,12 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Check } from 'lucide-react';
+import { ArrowLeft, Check, Plus } from 'lucide-react';
+import Link from 'next/link';
 
 import { DeleteRecordModal } from '@/modules/profile/components/delete-record-modal';
 import { ProfileRecordsTable } from '@/modules/profile/components/profile-records-table';
 import { PROFILE_RECORDS_MOCK, SECTION_LABELS } from '@/modules/profile/data/profile-records-data';
 import { DeleteRecordException, deleteProfileRecord } from '@/modules/profile/services/profile-records-service';
+import { useOptionalProfileStore } from '@/modules/profile/state/profile-store';
 import type {
   DeleteRecordErrorCode,
   ProfileRecord,
@@ -16,7 +18,8 @@ import type {
 import { removeProfileRecord } from '@/modules/profile/utils/remove-profile-record';
 import { cn } from '@/shared/utils/cn';
 
-const SECTIONS: RecordSection[] = ['education', 'experience', 'certification'];
+// Mismo orden de pestañas que la v3 del Figma
+const SECTIONS: RecordSection[] = ['education', 'certification', 'experience'];
 const TOAST_DURATION_MS = 3000;
 
 type ProfileRecordsManagerProps = {
@@ -24,7 +27,10 @@ type ProfileRecordsManagerProps = {
 };
 
 export function ProfileRecordsManager({ initialRecords = PROFILE_RECORDS_MOCK }: ProfileRecordsManagerProps) {
-  const [records, setRecords] = useState<ProfileRecords>(initialRecords);
+  // Dentro de las pantallas del perfil usa el estado compartido; sin proveedor (pruebas) usa su propio estado
+  const store = useOptionalProfileStore();
+  const [localRecords, setLocalRecords] = useState<ProfileRecords>(initialRecords);
+  const records = store?.records ?? localRecords;
   const [activeSection, setActiveSection] = useState<RecordSection>('education');
   const [recordToDelete, setRecordToDelete] = useState<ProfileRecord | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -54,10 +60,14 @@ export function ProfileRecordsManager({ initialRecords = PROFILE_RECORDS_MOCK }:
     try {
       await deleteProfileRecord(recordToDelete);
       // Se actualiza solo la lista en memoria, sin recargar la pantalla
-      setRecords((current) => ({
-        ...current,
-        [activeSection]: removeProfileRecord(current[activeSection], recordToDelete.id),
-      }));
+      if (store) {
+        store.removeRecord(activeSection, recordToDelete.id);
+      } else {
+        setLocalRecords((current) => ({
+          ...current,
+          [activeSection]: removeProfileRecord(current[activeSection], recordToDelete.id),
+        }));
+      }
       setRecordToDelete(null);
       setIsToastVisible(true);
     } catch (error) {
@@ -70,12 +80,26 @@ export function ProfileRecordsManager({ initialRecords = PROFILE_RECORDS_MOCK }:
   return (
     <div className="flex flex-col gap-6">
       <header className="flex flex-col gap-2">
-        <p className="text-xs font-bold uppercase tracking-[0.1em] text-umss-terracotta">Administrar perfil</p>
-        <h1 className="text-[28px] font-bold leading-tight text-umss-navy md:text-[34px]">
+        <Link
+          href="/profile"
+          className="inline-flex w-fit items-center gap-1 text-xs font-semibold text-umss-navy/70 transition hover:text-umss-navy"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
+          Volver al resumen
+        </Link>
+        <h1 className="text-[28px] font-semibold leading-tight text-umss-navy">
           Mis registros del perfil
         </h1>
         <p className="text-sm text-umss-navy/70">Edita o elimina tu información profesional.</p>
       </header>
+
+      <Link
+        href="/profile/completar"
+        className="inline-flex w-fit items-center gap-2 rounded-lg bg-umss-orange px-5 py-3 text-sm font-bold text-umss-ink transition hover:brightness-95"
+      >
+        <Plus className="h-4 w-4" aria-hidden="true" />
+        Agregar Registros
+      </Link>
 
       <div role="tablist" aria-label="Secciones del perfil" className="flex gap-6 overflow-x-auto border-b border-umss-sand">
         {SECTIONS.map((section) => {

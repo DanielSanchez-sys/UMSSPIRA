@@ -2,6 +2,7 @@ import type { KeyboardEvent, ReactNode } from 'react';
 import { ChevronDown, Download, FileText } from 'lucide-react';
 
 import type { TimelineItem } from '@/modules/profile/data/profile-data';
+import { SAMPLE_BACKUP_URL } from '@/modules/profile/utils/backup-url';
 
 type CertificationItemProps = {
   item: TimelineItem;
@@ -67,7 +68,9 @@ export default function CertificationItem({
       {/* Documento de respaldo, igual que en la v3 */}
       {item.document && (
         <a
-          href="#"
+          href={SAMPLE_BACKUP_URL}
+          target="_blank"
+          rel="noopener noreferrer"
           className="inline-flex w-fit items-center gap-1.5 rounded-md border border-umss-sand bg-white px-2 py-1.5 text-[11px] font-semibold text-umss-navy transition hover:bg-umss-cream"
         >
           <FileText className="h-3.5 w-3.5 text-umss-terracotta" aria-hidden="true" />
@@ -89,9 +92,11 @@ export default function CertificationItem({
               <span className="min-w-0 flex-1 truncate text-sm font-medium text-umss-navy">
                 {item.document}
               </span>
-              {/* TODO: enlazar al archivo real cuando exista el backend de respaldos */}
+              {/* Por ahora abre el PDF de ejemplo; se enlaza al archivo real cuando exista el backend */}
               <a
-                href="#"
+                href={SAMPLE_BACKUP_URL}
+          target="_blank"
+          rel="noopener noreferrer"
                 aria-label={`Descargar ${item.document}`}
                 className="shrink-0 rounded p-1 text-umss-navy transition hover:bg-umss-cream"
               >

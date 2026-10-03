@@ -3,32 +3,27 @@ import type { ProfileRecords, RecordSection } from '@/modules/profile/types/prof
 // Egresado con sesión iniciada (temporal hasta integrar la autenticación)
 export const CURRENT_GRADUATE_ID = 'graduate-000452';
 
-// Datos temporales (mock) mientras el endpoint de perfil no esté disponible
+// Datos de prueba únicos del perfil: los usan el resumen, el formulario, "Mis registros",
+// la edición y la descarga en JSON. Se reemplazan por la API cuando exista el backend.
 export const PROFILE_RECORDS_MOCK: ProfileRecords = {
   education: [
     {
       id: 'edu-1',
       ownerId: CURRENT_GRADUATE_ID,
       institution: 'Universidad Mayor de San Simón',
-      title: 'Ingeniería de Sistemas',
-      graduationYear: '2020',
+      title: 'Licenciatura en Ingeniería de Sistemas',
+      graduationYear: '2018',
       degree: 'Licenciatura',
+      backupFile: 'respaldo.pdf',
     },
     {
       id: 'edu-2',
       ownerId: CURRENT_GRADUATE_ID,
       institution: 'Universidad Católica Boliviana',
-      title: 'Diplomado en Gestión de Proyectos TI',
+      title: 'Maestría en Gestión de TI',
       graduationYear: '2021',
-      degree: 'Diplomado',
-    },
-    {
-      id: 'edu-3',
-      ownerId: CURRENT_GRADUATE_ID,
-      institution: 'Universidad Privada del Valle',
-      title: 'Maestría en Ciencia de Datos',
-      graduationYear: '2023',
       degree: 'Maestría',
+      backupFile: 'respaldo.pdf',
     },
   ],
   experience: [
@@ -48,6 +43,14 @@ export const PROFILE_RECORDS_MOCK: ProfileRecords = {
       startDate: '2021-01-04',
       endDate: '2023-06-30',
     },
+    {
+      id: 'exp-3',
+      ownerId: CURRENT_GRADUATE_ID,
+      company: 'Banco Mercantil Santa Cruz',
+      position: 'Analista de Sistemas',
+      startDate: '2019-01-07',
+      endDate: '2020-12-31',
+    },
   ],
   certification: [
     {
@@ -57,6 +60,8 @@ export const PROFILE_RECORDS_MOCK: ProfileRecords = {
       issuer: 'Amazon Web Services',
       degree: 'Profesional',
       issueYear: '2022',
+      backupFile: 'respaldo.pdf',
+      backupVerified: true,
     },
     {
       id: 'cert-2',
@@ -65,13 +70,22 @@ export const PROFILE_RECORDS_MOCK: ProfileRecords = {
       issuer: 'Scrum.org',
       degree: 'Asociado',
       issueYear: '2021',
+      backupFile: 'respaldo.pdf',
+      backupVerified: true,
+    },
+    {
+      id: 'cert-3',
+      ownerId: CURRENT_GRADUATE_ID,
+      name: 'Google Cloud Engineer',
+      issuer: 'Google',
+      degree: 'Profesional',
+      issueYear: '2023',
     },
   ],
 };
 
 export const SECTION_LABELS: Record<RecordSection, string> = {
-  education: 'Formación académica',
-  experience: 'Experiencia laboral',
+  education: 'Educación',
+  experience: 'Experiencia',
   certification: 'Certificaciones',
 };
-

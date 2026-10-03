@@ -2,7 +2,11 @@
 
 import { useState } from 'react';
 import { Camera, FileText, Check } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
+
+import { useProfileStore } from '@/modules/profile/state/profile-store';
+import type { CertificationRecord } from '@/modules/profile/types/profile-record';
 
 type CertificationFormData = {
   name: string;
@@ -11,22 +15,45 @@ type CertificationFormData = {
   degree: string;
 };
 
-const initialCertification: CertificationFormData = {
-  name: 'AWS Cloud Practitioner',
-  issuer: 'Amazon Web Services',
-  year: '2024',
-  degree: 'Profesional',
-};
+// Mismos grados que el formulario de certificaciones de "Completar perfil"
+const DEGREES = ['Fundamentos', 'Asociado', 'Profesional', 'Especialista', 'Experto'];
 
 export function EditCertificationForm() {
+  const { id } = useParams<{ id: string }>();
+  const { records } = useProfileStore();
+  const certification = (records.certification as CertificationRecord[]).find((record) => record.id === id);
+
+  if (!certification) {
+    return (
+      <div className="flex flex-col items-start gap-4 rounded-2xl border border-umss-ink/10 bg-white p-6">
+        <h1 className="text-xl font-bold text-umss-navy">No encontramos esta certificación</h1>
+        <p className="text-sm text-umss-navy/70">Puede que haya sido eliminada. Vuelve a tus registros para elegir otra.</p>
+        <Link
+          href="/profile/records"
+          className="rounded-lg border border-umss-sand bg-white px-5 py-2.5 text-sm font-semibold text-umss-navy transition hover:bg-umss-cream"
+        >
+          Volver a mis registros
+        </Link>
+      </div>
+    );
+  }
+
+  return <EditCertificationFields key={certification.id} certification={certification} />;
+}
+
+function EditCertificationFields({ certification }: { certification: CertificationRecord }) {
   const router = useRouter();
+  const { updateRecord } = useProfileStore();
 
-  const [formData, setFormData] =
-    useState<CertificationFormData>(initialCertification);
+  const [formData, setFormData] = useState<CertificationFormData>({
+    name: certification.name,
+    issuer: certification.issuer,
+    year: certification.issueYear,
+    degree: certification.degree,
+  });
 
-  const [documentName, setDocumentName] = useState(
-    'aws-cloud-practitioner-cert.pdf',
-  );
+  const [documentName, setDocumentName] = useState(certification.backupFile ?? '');
+  const [isNewDocument, setIsNewDocument] = useState(false);
 
   const [isSaved, setIsSaved] = useState(false);
 
@@ -50,6 +77,7 @@ export function EditCertificationForm() {
 
     if (file) {
       setDocumentName(file.name);
+      setIsNewDocument(true);
       setIsSaved(false);
     }
   }
@@ -57,13 +85,25 @@ export function EditCertificationForm() {
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    // Frontend solamente. El backend se conectará posteriormente.
+    // Frontend solamente: actualiza el estado compartido del perfil. El backend se conectará posteriormente.
+    updateRecord('certification', {
+      ...certification,
+      name: formData.name.trim(),
+      issuer: formData.issuer.trim(),
+      issueYear: formData.year,
+      degree: formData.degree,
+      backupFile: documentName || undefined,
+      // Un respaldo nuevo vuelve a quedar en revisión
+      backupVerified: isNewDocument ? false : certification.backupVerified,
+    });
     setIsSaved(true);
   }
 
   function handleCancel() {
     router.push('/profile/records');
   }
+
+  const isVerified = Boolean(documentName) && !isNewDocument && certification.backupVerified;
 
   return (
     <div className="flex flex-col gap-6">
@@ -98,7 +138,7 @@ export function EditCertificationForm() {
                 </h2>
 
                 <p className="text-xs text-umss-navy/60">
-                  Certifica tus conocimientos para tu perfil.
+                  Credenciales que respaldan tu perfil
                 </p>
               </div>
             </div>
@@ -188,10 +228,11 @@ export function EditCertificationForm() {
               required
               className="rounded-lg border border-umss-sand bg-white px-4 py-3 text-sm text-umss-navy outline-none transition focus:border-umss-terracotta"
             >
-              <option value="Básico">Básico</option>
-              <option value="Intermedio">Intermedio</option>
-              <option value="Avanzado">Avanzado</option>
-              <option value="Profesional">Profesional</option>
+              {DEGREES.map((degree) => (
+                <option key={degree} value={degree}>
+                  {degree}
+                </option>
+              ))}
             </select>
           </div>
         </div>
@@ -205,8 +246,12 @@ export function EditCertificationForm() {
             <div className="mb-4 flex flex-wrap items-center gap-2">
               {documentName && (
                 <>
-                  <span className="rounded-full bg-green-100 px-2.5 py-1 text-[11px] font-semibold text-green-700">
-                    Respaldo verificado
+                  <span
+                    className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                      isVerified ? 'bg-green-100 text-green-700' : 'bg-[#FFF3CD] text-[#664D03]'
+                    }`}
+                  >
+                    {isVerified ? 'Respaldo verificado' : 'Respaldo en revisión'}
                   </span>
 
                   <span className="flex items-center gap-1 text-xs text-umss-navy/70">

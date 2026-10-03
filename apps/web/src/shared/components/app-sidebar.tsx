@@ -1,7 +1,6 @@
 import {
   Briefcase,
   CalendarDays,
-  GraduationCap,
   Home,
   Info,
   MessageSquare,
@@ -9,6 +8,7 @@ import {
   Users,
   type LucideIcon,
 } from 'lucide-react';
+import Image from 'next/image';
 
 import { cn } from '@/shared/utils/cn';
 
@@ -36,9 +36,7 @@ type AppSidebarProps = {
 export function BrandMark() {
   return (
     <div className="flex items-center gap-3">
-      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-umss-ink">
-        <GraduationCap className="h-6 w-6 text-umss-orange" aria-hidden="true" />
-      </span>
+      <Image src="/umsspira-logo.png" alt="" width={44} height={44} className="h-11 w-11 shrink-0" priority />
       <span className="flex flex-col">
         <span className="text-base font-extrabold leading-5 text-white">UMSSPIRA</span>
         <span className="text-[10px] font-bold uppercase text-umss-orange">Red de Egresados</span>

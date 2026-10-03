@@ -11,6 +11,8 @@ export type EducationRecord = OwnedRecord & {
   title: string;
   graduationYear: string;
   degree: string;
+  // Nombre del archivo de respaldo (sin respaldo = undefined)
+  backupFile?: string;
 };
 
 export type ExperienceRecord = OwnedRecord & {
@@ -27,6 +29,9 @@ export type CertificationRecord = OwnedRecord & {
   issuer: string;
   degree: string;
   issueYear: string;
+  // Nombre del archivo de respaldo y si la administración ya lo validó
+  backupFile?: string;
+  backupVerified?: boolean;
 };
 
 export type ProfileRecord = EducationRecord | ExperienceRecord | CertificationRecord;
