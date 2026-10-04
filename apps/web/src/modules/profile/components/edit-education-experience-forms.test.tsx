@@ -91,3 +91,32 @@ describe('EditExperienceForm', () => {
     expect(push).toHaveBeenCalledWith('/profile/records');
   });
 });
+
+describe('Edición · validaciones (T2.9)', () => {
+  beforeEach(() => push.mockClear());
+
+  it('no guarda una formación con campos vacíos o año futuro', () => {
+    routeId = 'edu-1';
+    renderWith(<EditEducationForm />);
+
+    fireEvent.change(screen.getByLabelText('Institución'), { target: { value: '   ' } });
+    fireEvent.change(screen.getByLabelText('Año de egreso'), { target: { value: String(new Date().getFullYear() + 1) } });
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+
+    expect(screen.getByText('La institución es obligatoria.')).toBeInTheDocument();
+    expect(screen.getByText('El año de egreso no puede ser posterior al año actual.')).toBeInTheDocument();
+    expect(screen.queryByText('Guardado')).not.toBeInTheDocument();
+    expect(screen.getByTestId('guardado')).toHaveTextContent('Universidad Mayor de San Simón|2018');
+  });
+
+  it('no guarda una experiencia con fecha fin anterior a la de inicio', () => {
+    routeId = 'exp-2';
+    renderWith(<EditExperienceForm />);
+
+    fireEvent.change(screen.getByLabelText('Fecha fin'), { target: { value: '2020-01-01' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+
+    expect(screen.getByText('La fecha fin debe ser posterior a la fecha inicio.')).toBeInTheDocument();
+    expect(screen.getByTestId('guardado')).toHaveTextContent('Jalasoft|2023-06-30');
+  });
+});
