@@ -4,6 +4,7 @@ import { Camera, Check, FileText } from 'lucide-react';
 import Link from 'next/link';
 
 import { SAMPLE_BACKUP_URL } from '@/modules/profile/utils/backup-url';
+import { MensajeError } from '@/modules/profile/validation/mensaje-error';
 
 // Campos de la v3 del Figma: fondo crema, borde arena y esquinas de 8px
 export const INPUT_CLASS =
@@ -41,7 +42,7 @@ export function EditRecordLayout({
         <p className="text-sm text-[#6D716F]">{description}</p>
       </header>
 
-      <form onSubmit={onSubmit} className="flex flex-col gap-5 rounded-2xl bg-[#FFFCF7] p-4 md:p-6">
+      <form onSubmit={onSubmit} noValidate className="flex flex-col gap-5 rounded-2xl bg-[#FFFCF7] p-4 md:p-6">
         {/* Encabezado de sección */}
         <div className="flex items-center gap-3">
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-umss-navy text-[13px] font-bold text-white">
@@ -85,13 +86,17 @@ export function EditRecordLayout({
   );
 }
 
-export function FormField({ id, label, children }: { id: string; label: string; children: React.ReactNode }) {
+type FormFieldProps = { id: string; label: string; error?: string; children: React.ReactNode };
+
+// El mensaje de error usa el id `error-<id>`, que el campo puede referenciar con aria-describedby
+export function FormField({ id, label, error, children }: FormFieldProps) {
   return (
     <div className="flex flex-col gap-[7px]">
       <label htmlFor={id} className="text-[13px] font-semibold text-umss-navy">
         {label}
       </label>
       {children}
+      <MensajeError id={`error-${id}`} mensaje={error} />
     </div>
   );
 }
