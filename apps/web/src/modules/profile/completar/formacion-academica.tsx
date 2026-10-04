@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { GraduationCap, Plus } from 'lucide-react';
+import { MensajeError, claseCampo } from '@/modules/profile/validation/mensaje-error';
+import { type ErroresFormulario, validarFormacion } from '@/modules/profile/validation/reglas-perfil';
 
 const GRADOS = ['Técnico superior', 'Licenciatura', 'Maestría', 'Doctorado'];
 
@@ -26,13 +28,22 @@ const inputClase =
 
 export function FormacionAcademicaForm({ formaciones, onAgregar }: FormacionAcademicaFormProps) {
   const [datos, setDatos] = useState<FormacionAcademica>(VACIO);
+  const [errores, setErrores] = useState<ErroresFormulario<keyof FormacionAcademica>>({});
+  // Los errores se muestran desde el primer intento de agregar y se recalculan mientras se corrige
+  const [intentado, setIntentado] = useState(false);
 
   function cambiar(campo: keyof FormacionAcademica, valor: string) {
-    setDatos({ ...datos, [campo]: valor });
+    const nuevos = { ...datos, [campo]: valor };
+    setDatos(nuevos);
+    if (intentado) setErrores(validarFormacion(nuevos));
   }
 
   function agregar(evento: React.FormEvent<HTMLFormElement>) {
     evento.preventDefault();
+    const encontrados = validarFormacion(datos);
+    setIntentado(true);
+    setErrores(encontrados);
+    if (Object.keys(encontrados).length > 0) return;
     onAgregar({
       institucion: datos.institucion.trim(),
       titulo: datos.titulo.trim(),
@@ -40,6 +51,7 @@ export function FormacionAcademicaForm({ formaciones, onAgregar }: FormacionAcad
       grado: datos.grado,
     });
     setDatos(VACIO);
+    setIntentado(false);
   }
 
   return (
@@ -72,7 +84,7 @@ export function FormacionAcademicaForm({ formaciones, onAgregar }: FormacionAcad
 
       <p className={subtituloClase}>Agregar nueva formación</p>
 
-      <form onSubmit={agregar} className="mt-4 space-y-4">
+      <form onSubmit={agregar} noValidate className="mt-4 space-y-4">
         <div>
           <label htmlFor="institucion" className={labelClase}>Institución</label>
           <input
@@ -82,8 +94,11 @@ export function FormacionAcademicaForm({ formaciones, onAgregar }: FormacionAcad
             placeholder="Ej. Universidad Mayor de San Simón"
             value={datos.institucion}
             onChange={(e) => cambiar('institucion', e.target.value)}
-            className={inputClase}
+            aria-invalid={Boolean(errores.institucion)}
+            aria-describedby="error-institucion"
+            className={claseCampo(inputClase, errores.institucion)}
           />
+          <MensajeError id="error-institucion" mensaje={errores.institucion} />
         </div>
 
         <div>
@@ -95,8 +110,11 @@ export function FormacionAcademicaForm({ formaciones, onAgregar }: FormacionAcad
             placeholder="Ej. Ingeniería de Sistemas"
             value={datos.titulo}
             onChange={(e) => cambiar('titulo', e.target.value)}
-            className={inputClase}
+            aria-invalid={Boolean(errores.titulo)}
+            aria-describedby="error-titulo"
+            className={claseCampo(inputClase, errores.titulo)}
           />
+          <MensajeError id="error-titulo" mensaje={errores.titulo} />
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
@@ -114,8 +132,11 @@ export function FormacionAcademicaForm({ formaciones, onAgregar }: FormacionAcad
               placeholder="AAAA"
               value={datos.anioEgreso}
               onChange={(e) => cambiar('anioEgreso', e.target.value.replace(/\D/g, ''))}
-              className={inputClase}
+              aria-invalid={Boolean(errores.anioEgreso)}
+              aria-describedby="error-anioEgreso"
+              className={claseCampo(inputClase, errores.anioEgreso)}
             />
+            <MensajeError id="error-anioEgreso" mensaje={errores.anioEgreso} />
           </div>
 
           <div>
@@ -125,13 +146,16 @@ export function FormacionAcademicaForm({ formaciones, onAgregar }: FormacionAcad
               required
               value={datos.grado}
               onChange={(e) => cambiar('grado', e.target.value)}
-              className={inputClase}
+              aria-invalid={Boolean(errores.grado)}
+              aria-describedby="error-grado"
+              className={claseCampo(inputClase, errores.grado)}
             >
               <option value="" disabled>Selecciona un grado</option>
               {GRADOS.map((grado) => (
                 <option key={grado} value={grado}>{grado}</option>
               ))}
             </select>
+            <MensajeError id="error-grado" mensaje={errores.grado} />
           </div>
         </div>
 
