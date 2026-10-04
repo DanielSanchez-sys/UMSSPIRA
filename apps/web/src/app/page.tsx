@@ -49,10 +49,11 @@ export default function Home() {
           {activeView === 'recruiter' ? (
             <div className="space-y-10 animate-fadeIn">
               <section>
-                <NlpSearch
+               <NlpSearch
                   onSearchCompleted={handleSearchCompleted}
                   isSearching={isSearching}
                   setIsSearching={setIsSearching}
+                  totalCandidates={candidatesData.candidates.length}
                 />
               </section>
 

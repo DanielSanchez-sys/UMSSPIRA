@@ -21,12 +21,14 @@ interface NlpSearchProps {
   onSearchCompleted: (results: SearchCandidateResult[], query: string) => void;
   isSearching: boolean;
   setIsSearching: (searching: boolean) => void;
+  totalCandidates?: number;
 }
 
 export const NlpSearch: React.FC<NlpSearchProps> = ({
   onSearchCompleted,
   isSearching,
   setIsSearching,
+  totalCandidates = 0,
 }) => {
   const [jobDescription, setJobDescription] = useState<string>(
     'Senior Full Stack, Cloud & Microservicios'
@@ -98,7 +100,7 @@ export const NlpSearch: React.FC<NlpSearchProps> = ({
         {/* Stats Pill Card */}
         <div className="bg-blue-fantastic/5 border border-blue-fantastic/10 p-3.5 rounded-xl flex items-center space-x-3 shrink-0">
           <div className="w-10 h-10 rounded-lg bg-abyssal-blue text-burning-flame flex items-center justify-center font-black text-lg">
-            8
+            {totalCandidates}
           </div>
           <div>
             <span className="text-xs font-bold text-abyssal-blue block">TITULADOS</span>
