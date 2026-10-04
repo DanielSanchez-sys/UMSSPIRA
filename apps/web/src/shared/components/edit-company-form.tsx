@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Lock, Globe, MapPin, Phone, Mail, Save, Pencil } from 'lucide-react';
+import { Lock, Globe, MapPin, Phone, Mail, Save, Pencil, Loader2 } from 'lucide-react';
 import { cn } from '@/shared/utils/cn';
 import type { Company, UpdateCompanyPayload } from '@umsspira/shared-types';
 
@@ -90,12 +90,19 @@ export function EditCompanyForm({ company, onCancel, onSubmit }: EditCompanyForm
     return cn(
       'w-full px-3 py-2 border rounded-lg text-sm leading-[22px] text-[#182632] bg-white focus:outline-none focus:ring-2 focus:ring-[#FFB162]/40 transition-colors',
       errors[field]
-        ? 'border-red-500'
+        ? 'border-red-500 ring-1 ring-red-200 bg-red-50/30'
         : value && value.trim()
         ? 'border-green-500'
         : 'border-[#C9C1B1]'
     );
   };
+
+  const counterColor = (() => {
+    const len = formData.descripcion.length;
+    if (len >= MAX_DESCRIPTION_LENGTH) return 'text-red-500 font-semibold';
+    if (len > MAX_DESCRIPTION_LENGTH * 0.9) return 'text-[#A35139] font-medium';
+    return 'text-[#C9C1B1]';
+  })();
 
   return (
     <form
@@ -186,7 +193,9 @@ export function EditCompanyForm({ company, onCancel, onSubmit }: EditCompanyForm
             rows={4}
             className={cn(
               'w-full px-3 py-2 mt-1 border rounded-lg resize-none text-sm leading-[22px] text-[#182632] bg-white focus:outline-none focus:ring-2 focus:ring-[#FFB162]/40',
-              errors.descripcion ? 'border-red-500' : 'border-[#C9C1B1]'
+              errors.descripcion
+                ? 'border-red-500 ring-1 ring-red-200 bg-red-50/30'
+                : 'border-[#C9C1B1]'
             )}
           />
           <div className="flex justify-between mt-1">
@@ -195,7 +204,7 @@ export function EditCompanyForm({ company, onCancel, onSubmit }: EditCompanyForm
             ) : (
               <span />
             )}
-            <p className="text-[11px] leading-[14px] text-[#C9C1B1]">
+            <p className={cn('text-[11px] leading-[14px] transition-colors', counterColor)}>
               {formData.descripcion.length}/{MAX_DESCRIPTION_LENGTH}
             </p>
           </div>
@@ -239,16 +248,20 @@ export function EditCompanyForm({ company, onCancel, onSubmit }: EditCompanyForm
           type="button"
           onClick={onCancel}
           disabled={isSubmitting}
-          className="px-5 py-2 bg-[#C9C1B1] text-[#182632] text-sm font-semibold tracking-[0.5px] rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
+          className="px-5 py-2 bg-[#C9C1B1] text-[#182632] text-sm font-semibold tracking-[0.5px] rounded-lg hover:bg-[#B5AC9A] disabled:opacity-50 transition-colors"
         >
           Cancelar
         </button>
         <button
           type="submit"
           disabled={isSubmitting}
-          className="flex items-center gap-2 px-5 py-2 bg-[#FFB162] text-white text-sm font-semibold tracking-[0.5px] rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
+          className="flex items-center gap-2 px-5 py-2 bg-[#FFB162] text-[#182632] text-sm font-semibold tracking-[0.5px] rounded-lg hover:bg-[#FFA048] disabled:opacity-50 transition-colors"
         >
-          <Save className="w-4 h-4" />
+          {isSubmitting ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Save className="w-4 h-4" />
+          )}
           {isSubmitting ? 'Guardando...' : 'Guardar cambios'}
         </button>
       </div>
