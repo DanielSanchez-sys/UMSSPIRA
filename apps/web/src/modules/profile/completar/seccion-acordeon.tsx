@@ -1,17 +1,19 @@
 'use client';
 import { useState } from 'react';
-import { Check, ChevronDown, ChevronUp } from 'lucide-react';
+import { AlertCircle, Check, ChevronDown, ChevronUp } from 'lucide-react';
 
 type SeccionAcordeonProps = {
   numero: number;
   titulo: string;
   descripcion: string;
   cantidad: number;
+  // Campos con errores sin corregir en el formulario de la sección
+  errores?: number;
   children?: React.ReactNode;
 };
 
 // Cabecera de sección según la v3 del Figma: número o check, título en mayúsculas y estado
-export function SeccionAcordeon({ numero, titulo, descripcion, cantidad, children }: SeccionAcordeonProps) {
+export function SeccionAcordeon({ numero, titulo, descripcion, cantidad, errores = 0, children }: SeccionAcordeonProps) {
   const [abierta, setAbierta] = useState(false);
   const completa = cantidad > 0;
 
@@ -37,7 +39,7 @@ export function SeccionAcordeon({ numero, titulo, descripcion, cantidad, childre
   return (
     <section
       className={`rounded-2xl border bg-white transition-colors ${
-        abierta ? 'border-umss-terracotta' : 'border-umss-ink/10'
+        abierta || errores > 0 ? 'border-umss-terracotta' : 'border-umss-ink/10'
       }`}
     >
       <button
@@ -59,14 +61,25 @@ export function SeccionAcordeon({ numero, titulo, descripcion, cantidad, childre
           </span>
         </span>
 
-        {abierta ? (
-          <ChevronUp className="h-5 w-5 shrink-0 text-umss-navy" aria-hidden="true" />
-        ) : (
-          <ChevronDown className="h-5 w-5 shrink-0 text-umss-navy" aria-hidden="true" />
-        )}
+        <span className="flex shrink-0 items-center gap-2">
+          {errores > 0 && (
+            <span className="flex items-center gap-1 rounded-full bg-[#FDECEA] px-2.5 py-1 text-[11px] font-bold text-umss-terracotta">
+              <AlertCircle className="h-3.5 w-3.5" aria-hidden="true" />
+              {errores} {errores === 1 ? 'error' : 'errores'}
+            </span>
+          )}
+          {abierta ? (
+            <ChevronUp className="h-5 w-5 shrink-0 text-umss-navy" aria-hidden="true" />
+          ) : (
+            <ChevronDown className="h-5 w-5 shrink-0 text-umss-navy" aria-hidden="true" />
+          )}
+        </span>
       </button>
 
-      {abierta && <div className="border-t border-umss-sand/70 px-4 py-4 md:px-6 md:py-5">{children}</div>}
+      {/* Se oculta en vez de desmontarse para no perder lo escrito ni los errores al cerrar la sección */}
+      <div hidden={!abierta} className="border-t border-umss-sand/70 px-4 py-4 md:px-6 md:py-5">
+        {children}
+      </div>
     </section>
   );
 }
