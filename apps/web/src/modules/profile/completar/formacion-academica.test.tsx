@@ -53,3 +53,37 @@ describe('FormacionAcademicaForm', () => {
     expect(screen.getByText('Ingeniería de Sistemas')).toBeInTheDocument();
   });
 });
+
+describe('FormacionAcademicaForm · validaciones', () => {
+  it('muestra el error junto al campo vacío y no agrega el registro', () => {
+    const onAgregar = jest.fn();
+    render(<FormacionAcademicaForm formaciones={[]} onAgregar={onAgregar} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /agregar formación/i }));
+
+    expect(screen.getByText('La institución es obligatoria.')).toBeInTheDocument();
+    expect(screen.getByLabelText('Institución')).toHaveAttribute('aria-invalid', 'true');
+    expect(onAgregar).not.toHaveBeenCalled();
+  });
+
+  it('no guarda un año de egreso posterior al actual', () => {
+    const onAgregar = jest.fn();
+    render(<FormacionAcademicaForm formaciones={[]} onAgregar={onAgregar} />);
+    llenarFormulario();
+    fireEvent.change(screen.getByLabelText('Año de egreso'), { target: { value: String(new Date().getFullYear() + 1) } });
+
+    fireEvent.click(screen.getByRole('button', { name: /agregar formación/i }));
+
+    expect(screen.getByText('El año de egreso no puede ser posterior al año actual.')).toBeInTheDocument();
+    expect(onAgregar).not.toHaveBeenCalled();
+  });
+
+  it('quita el error cuando el campo se corrige', () => {
+    render(<FormacionAcademicaForm formaciones={[]} onAgregar={jest.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: /agregar formación/i }));
+
+    fireEvent.change(screen.getByLabelText('Institución'), { target: { value: 'UMSS' } });
+
+    expect(screen.queryByText('La institución es obligatoria.')).not.toBeInTheDocument();
+  });
+});
