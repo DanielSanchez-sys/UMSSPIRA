@@ -12,6 +12,8 @@ import {
 } from '@/modules/profile/components/edit-record-layout';
 import { useProfileStore } from '@/modules/profile/state/profile-store';
 import type { EducationRecord } from '@/modules/profile/types/profile-record';
+import { claseCampo } from '@/modules/profile/validation/mensaje-error';
+import { validarFormacion } from '@/modules/profile/validation/reglas-perfil';
 
 type EducationFormData = {
   institution: string;
@@ -20,8 +22,27 @@ type EducationFormData = {
   degree: string;
 };
 
+type EducationErrors = Partial<Record<keyof EducationFormData, string>>;
+
 // Mismos grados que el formulario de formación académica de "Completar perfil"
 const DEGREES = ['Técnico superior', 'Licenciatura', 'Maestría', 'Doctorado'];
+
+// Mismas reglas que al crear el registro, con los nombres de campo de esta pantalla
+function validate(data: EducationFormData): EducationErrors {
+  const errors = validarFormacion({
+    institucion: data.institution,
+    titulo: data.title,
+    anioEgreso: data.graduationYear,
+    grado: data.degree,
+  });
+  const result: EducationErrors = {
+    institution: errors.institucion,
+    title: errors.titulo,
+    graduationYear: errors.anioEgreso,
+    degree: errors.grado,
+  };
+  return Object.fromEntries(Object.entries(result).filter(([, message]) => message));
+}
 
 export function EditEducationForm() {
   const { id } = useParams<{ id: string }>();
@@ -46,13 +67,14 @@ function EditEducationFields({ education }: { education: EducationRecord }) {
   const [documentName, setDocumentName] = useState(education.backupFile ?? '');
   const [isNewDocument, setIsNewDocument] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [errors, setErrors] = useState<EducationErrors>({});
+  const [hasTriedToSave, setHasTriedToSave] = useState(false);
 
   function handleChange(event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     const { name, value } = event.target;
-    setFormData((current) => ({
-      ...current,
-      [name]: name === 'graduationYear' ? value.replace(/\D/g, '') : value,
-    }));
+    const next = { ...formData, [name]: name === 'graduationYear' ? value.replace(/\D/g, '') : value };
+    setFormData(next);
+    if (hasTriedToSave) setErrors(validate(next));
     setIsSaved(false);
   }
 
@@ -67,6 +89,10 @@ function EditEducationFields({ education }: { education: EducationRecord }) {
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const found = validate(formData);
+    setHasTriedToSave(true);
+    setErrors(found);
+    if (Object.keys(found).length > 0) return;
     // Frontend solamente: actualiza el estado compartido del perfil. El backend se conectará posteriormente.
     updateRecord('education', {
       ...education,
@@ -91,13 +117,33 @@ function EditEducationFields({ education }: { education: EducationRecord }) {
       onCancel={() => router.push('/profile/records')}
     >
       <div className="grid gap-4 md:grid-cols-2">
-        <FormField id="institution" label="Institución">
-          <input id="institution" name="institution" type="text" value={formData.institution} onChange={handleChange} required className={INPUT_CLASS} />
+        <FormField id="institution" label="Institución" error={errors.institution}>
+          <input
+            id="institution"
+            name="institution"
+            type="text"
+            value={formData.institution}
+            onChange={handleChange}
+            required
+            aria-invalid={Boolean(errors.institution)}
+            aria-describedby="error-institution"
+            className={claseCampo(INPUT_CLASS, errors.institution)}
+          />
         </FormField>
-        <FormField id="title" label="Título">
-          <input id="title" name="title" type="text" value={formData.title} onChange={handleChange} required className={INPUT_CLASS} />
+        <FormField id="title" label="Título" error={errors.title}>
+          <input
+            id="title"
+            name="title"
+            type="text"
+            value={formData.title}
+            onChange={handleChange}
+            required
+            aria-invalid={Boolean(errors.title)}
+            aria-describedby="error-title"
+            className={claseCampo(INPUT_CLASS, errors.title)}
+          />
         </FormField>
-        <FormField id="graduationYear" label="Año de egreso">
+        <FormField id="graduationYear" label="Año de egreso" error={errors.graduationYear}>
           <input
             id="graduationYear"
             name="graduationYear"
@@ -109,11 +155,22 @@ function EditEducationFields({ education }: { education: EducationRecord }) {
             value={formData.graduationYear}
             onChange={handleChange}
             required
-            className={INPUT_CLASS}
+            aria-invalid={Boolean(errors.graduationYear)}
+            aria-describedby="error-graduationYear"
+            className={claseCampo(INPUT_CLASS, errors.graduationYear)}
           />
         </FormField>
-        <FormField id="degree" label="Grado">
-          <select id="degree" name="degree" value={formData.degree} onChange={handleChange} required className={INPUT_CLASS}>
+        <FormField id="degree" label="Grado" error={errors.degree}>
+          <select
+            id="degree"
+            name="degree"
+            value={formData.degree}
+            onChange={handleChange}
+            required
+            aria-invalid={Boolean(errors.degree)}
+            aria-describedby="error-degree"
+            className={claseCampo(INPUT_CLASS, errors.degree)}
+          >
             {DEGREES.map((degree) => (
               <option key={degree} value={degree}>
                 {degree}

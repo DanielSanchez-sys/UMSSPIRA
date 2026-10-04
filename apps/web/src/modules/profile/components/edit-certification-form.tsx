@@ -12,6 +12,8 @@ import {
 } from '@/modules/profile/components/edit-record-layout';
 import { useProfileStore } from '@/modules/profile/state/profile-store';
 import type { CertificationRecord } from '@/modules/profile/types/profile-record';
+import { claseCampo } from '@/modules/profile/validation/mensaje-error';
+import { validarCertificacion } from '@/modules/profile/validation/reglas-perfil';
 
 type CertificationFormData = {
   name: string;
@@ -20,8 +22,27 @@ type CertificationFormData = {
   degree: string;
 };
 
+type CertificationErrors = Partial<Record<keyof CertificationFormData, string>>;
+
 // Mismos grados que el formulario de certificaciones de "Completar perfil"
 const DEGREES = ['Fundamentos', 'Asociado', 'Profesional', 'Especialista', 'Experto'];
+
+// Mismas reglas que al crear el registro, con los nombres de campo de esta pantalla
+function validate(data: CertificationFormData): CertificationErrors {
+  const errors = validarCertificacion({
+    nombre: data.name,
+    entidadEmisora: data.issuer,
+    anioEmision: data.year,
+    grado: data.degree,
+  });
+  const result: CertificationErrors = {
+    name: errors.nombre,
+    issuer: errors.entidadEmisora,
+    year: errors.anioEmision,
+    degree: errors.grado,
+  };
+  return Object.fromEntries(Object.entries(result).filter(([, message]) => message));
+}
 
 export function EditCertificationForm() {
   const { id } = useParams<{ id: string }>();
@@ -46,10 +67,14 @@ function EditCertificationFields({ certification }: { certification: Certificati
   const [documentName, setDocumentName] = useState(certification.backupFile ?? '');
   const [isNewDocument, setIsNewDocument] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [errors, setErrors] = useState<CertificationErrors>({});
+  const [hasTriedToSave, setHasTriedToSave] = useState(false);
 
   function handleChange(event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     const { name, value } = event.target;
-    setFormData((current) => ({ ...current, [name]: value }));
+    const next = { ...formData, [name]: name === 'year' ? value.replace(/\D/g, '') : value };
+    setFormData(next);
+    if (hasTriedToSave) setErrors(validate(next));
     setIsSaved(false);
   }
 
@@ -64,6 +89,10 @@ function EditCertificationFields({ certification }: { certification: Certificati
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const found = validate(formData);
+    setHasTriedToSave(true);
+    setErrors(found);
+    if (Object.keys(found).length > 0) return;
     // Frontend solamente: actualiza el estado compartido del perfil. El backend se conectará posteriormente.
     updateRecord('certification', {
       ...certification,
@@ -90,13 +119,33 @@ function EditCertificationFields({ certification }: { certification: Certificati
       onCancel={() => router.push('/profile/records')}
     >
       <div className="grid gap-4 md:grid-cols-2">
-        <FormField id="name" label="Nombre de la certificación">
-          <input id="name" name="name" type="text" value={formData.name} onChange={handleChange} required className={INPUT_CLASS} />
+        <FormField id="name" label="Nombre de la certificación" error={errors.name}>
+          <input
+            id="name"
+            name="name"
+            type="text"
+            value={formData.name}
+            onChange={handleChange}
+            required
+            aria-invalid={Boolean(errors.name)}
+            aria-describedby="error-name"
+            className={claseCampo(INPUT_CLASS, errors.name)}
+          />
         </FormField>
-        <FormField id="issuer" label="Entidad emisora">
-          <input id="issuer" name="issuer" type="text" value={formData.issuer} onChange={handleChange} required className={INPUT_CLASS} />
+        <FormField id="issuer" label="Entidad emisora" error={errors.issuer}>
+          <input
+            id="issuer"
+            name="issuer"
+            type="text"
+            value={formData.issuer}
+            onChange={handleChange}
+            required
+            aria-invalid={Boolean(errors.issuer)}
+            aria-describedby="error-issuer"
+            className={claseCampo(INPUT_CLASS, errors.issuer)}
+          />
         </FormField>
-        <FormField id="year" label="Año">
+        <FormField id="year" label="Año" error={errors.year}>
           <input
             id="year"
             name="year"
@@ -107,11 +156,22 @@ function EditCertificationFields({ certification }: { certification: Certificati
             value={formData.year}
             onChange={handleChange}
             required
-            className={INPUT_CLASS}
+            aria-invalid={Boolean(errors.year)}
+            aria-describedby="error-year"
+            className={claseCampo(INPUT_CLASS, errors.year)}
           />
         </FormField>
-        <FormField id="degree" label="Grado">
-          <select id="degree" name="degree" value={formData.degree} onChange={handleChange} required className={INPUT_CLASS}>
+        <FormField id="degree" label="Grado" error={errors.degree}>
+          <select
+            id="degree"
+            name="degree"
+            value={formData.degree}
+            onChange={handleChange}
+            required
+            aria-invalid={Boolean(errors.degree)}
+            aria-describedby="error-degree"
+            className={claseCampo(INPUT_CLASS, errors.degree)}
+          >
             {DEGREES.map((degree) => (
               <option key={degree} value={degree}>
                 {degree}
