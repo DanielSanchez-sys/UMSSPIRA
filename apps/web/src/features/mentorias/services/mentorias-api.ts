@@ -32,11 +32,11 @@ async function requestProfile(path: string, options: RequestInit): Promise<Mento
 }
 
 export function getMentorProfile(signal?: AbortSignal) {
-  return requestProfile('/mentorias/mi-perfil', { method: 'GET', signal });
+  return requestProfile('/mentorship/mi-perfil', { method: 'GET', signal });
 }
 
 export function updateMentorParticipation(isActive: boolean, signal?: AbortSignal) {
-  return requestProfile('/mentorias/mi-perfil/participacion', {
+  return requestProfile('/mentorship/mi-perfil/participacion', {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ isActive }),
