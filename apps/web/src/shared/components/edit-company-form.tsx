@@ -88,28 +88,32 @@ export function EditCompanyForm({ company, onCancel, onSubmit }: EditCompanyForm
   const inputClass = (field: string) => {
     const value = formData[field as keyof Company] as string;
     return cn(
-      'w-full pl-9 pr-3 py-2 border rounded-md text-sm leading-[22px] text-abyssal focus:outline-none focus:ring-2 focus:ring-burning-flame/40',
+      'w-full px-3 py-2 border rounded-lg text-sm leading-[22px] text-[#182632] bg-white focus:outline-none focus:ring-2 focus:ring-[#FFB162]/40 transition-colors',
       errors[field]
         ? 'border-red-500'
         : value && value.trim()
         ? 'border-green-500'
-        : 'border-gray-300'
+        : 'border-[#C9C1B1]'
     );
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white rounded-lg p-6 border border-gray-200">
-      <div className="flex items-center gap-2 mb-6">
-        <Pencil className="w-5 h-5 text-burning-flame" />
-        <h2 className="text-2xl font-semibold text-abyssal leading-[30px]">
+    <form
+      onSubmit={handleSubmit}
+      className="w-full bg-white rounded-2xl p-6 shadow-sm border border-[#C9C1B1]"
+    >
+      <div className="flex items-center gap-3 mb-6">
+        <div className="p-2 rounded-lg bg-[#EEE9DF] text-[#A35139] border border-[#C9C1B1]">
+          <Pencil className="w-5 h-5" />
+        </div>
+        <h2 className="text-lg font-semibold text-[#182632]">
           Editar perfil de la empresa
         </h2>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* NIT/RUC - bloqueado */}
         <div>
-          <label className="text-[13px] font-semibold text-abyssal leading-[18px]">
+          <label className="text-[13px] font-semibold text-[#182632] leading-[18px]">
             NIT / RUC <span className="text-red-500">*</span>
           </label>
           <div className="relative mt-1">
@@ -117,22 +121,21 @@ export function EditCompanyForm({ company, onCancel, onSubmit }: EditCompanyForm
               type="text"
               value={formData.nit}
               disabled
-              className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-sm leading-[22px] text-gray-500 cursor-not-allowed"
+              className="w-full px-3 py-2 bg-[#EEE9DF] border border-[#C9C1B1] rounded-lg text-sm leading-[22px] text-[#2C3B40] cursor-not-allowed"
             />
-            <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#C9C1B1]" />
           </div>
-          <p className="text-[11px] leading-[14px] text-gray-500 mt-1">No editable</p>
+          <p className="text-[11px] leading-[14px] text-[#C9C1B1] mt-1">No editable</p>
         </div>
 
-        {/* Tamano */}
         <div>
-          <label className="text-[13px] font-semibold text-abyssal leading-[18px]">
+          <label className="text-[13px] font-semibold text-[#182632] leading-[18px]">
             Tamano de la empresa <span className="text-red-500">*</span>
           </label>
           <select
             value={formData.tamano}
             onChange={(e) => handleChange('tamano', e.target.value)}
-            className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md text-sm leading-[22px] text-abyssal focus:outline-none focus:ring-2 focus:ring-burning-flame/40"
+            className="w-full px-3 py-2 mt-1 border border-[#C9C1B1] rounded-lg text-sm leading-[22px] text-[#182632] bg-white focus:outline-none focus:ring-2 focus:ring-[#FFB162]/40"
           >
             {TAMANO_OPTIONS.map((opt) => (
               <option key={opt} value={opt}>
@@ -142,44 +145,35 @@ export function EditCompanyForm({ company, onCancel, onSubmit }: EditCompanyForm
           </select>
         </div>
 
-        {/* Sitio web */}
         <div>
-          <label className="text-[13px] font-semibold text-abyssal leading-[18px]">
+          <label className="text-[13px] font-semibold text-[#182632] leading-[18px]">
             Sitio web <span className="text-red-500">*</span>
           </label>
-          <div className="relative mt-1">
-            <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              value={formData.sitioWeb}
-              onChange={(e) => handleChange('sitioWeb', e.target.value)}
-              className={inputClass('sitioWeb')}
-            />
-          </div>
+          <input
+            type="text"
+            value={formData.sitioWeb}
+            onChange={(e) => handleChange('sitioWeb', e.target.value)}
+            className={cn(inputClass('sitioWeb'), 'mt-1')}
+          />
           {errors.sitioWeb && (
             <p className="text-[11px] leading-[14px] text-red-500 mt-1">{errors.sitioWeb}</p>
           )}
         </div>
 
-        {/* Ubicacion */}
         <div>
-          <label className="text-[13px] font-semibold text-abyssal leading-[18px]">
+          <label className="text-[13px] font-semibold text-[#182632] leading-[18px]">
             Ubicacion <span className="text-red-500">*</span>
           </label>
-          <div className="relative mt-1">
-            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              value={formData.direccion}
-              onChange={(e) => handleChange('direccion', e.target.value)}
-              className={inputClass('direccion')}
-            />
-          </div>
+          <input
+            type="text"
+            value={formData.direccion}
+            onChange={(e) => handleChange('direccion', e.target.value)}
+            className={cn(inputClass('direccion'), 'mt-1')}
+          />
         </div>
 
-        {/* Descripcion */}
         <div className="md:col-span-2">
-          <label className="text-[13px] font-semibold text-abyssal leading-[18px]">
+          <label className="text-[13px] font-semibold text-[#182632] leading-[18px]">
             Descripcion <span className="text-red-500">*</span>
           </label>
           <textarea
@@ -191,8 +185,8 @@ export function EditCompanyForm({ company, onCancel, onSubmit }: EditCompanyForm
             }}
             rows={4}
             className={cn(
-              'w-full px-3 py-2 mt-1 border rounded-md resize-none text-sm leading-[22px] text-abyssal focus:outline-none focus:ring-2 focus:ring-burning-flame/40',
-              errors.descripcion ? 'border-red-500' : 'border-gray-300'
+              'w-full px-3 py-2 mt-1 border rounded-lg resize-none text-sm leading-[22px] text-[#182632] bg-white focus:outline-none focus:ring-2 focus:ring-[#FFB162]/40',
+              errors.descripcion ? 'border-red-500' : 'border-[#C9C1B1]'
             )}
           />
           <div className="flex justify-between mt-1">
@@ -201,44 +195,37 @@ export function EditCompanyForm({ company, onCancel, onSubmit }: EditCompanyForm
             ) : (
               <span />
             )}
-            <p className="text-[11px] leading-[14px] text-gray-500">
+            <p className="text-[11px] leading-[14px] text-[#C9C1B1]">
               {formData.descripcion.length}/{MAX_DESCRIPTION_LENGTH}
             </p>
           </div>
         </div>
 
-        {/* Contacto */}
         <div className="md:col-span-2">
-          <label className="text-[13px] font-semibold text-abyssal leading-[18px]">
+          <label className="text-[13px] font-semibold text-[#182632] leading-[18px]">
             Contacto <span className="text-red-500">*</span>
           </label>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-1">
             <div>
-              <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="tel"
-                  value={formData.telefono}
-                  onChange={(e) => handleChange('telefono', e.target.value)}
-                  placeholder="+591 71234567"
-                  className={inputClass('telefono')}
-                />
-              </div>
+              <input
+                type="tel"
+                value={formData.telefono}
+                onChange={(e) => handleChange('telefono', e.target.value)}
+                placeholder="+591 71234567"
+                className={inputClass('telefono')}
+              />
               {errors.telefono && (
                 <p className="text-[11px] leading-[14px] text-red-500 mt-1">{errors.telefono}</p>
               )}
             </div>
             <div>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="email"
-                  value={formData.correo}
-                  onChange={(e) => handleChange('correo', e.target.value)}
-                  placeholder="contacto@empresa.com"
-                  className={inputClass('correo')}
-                />
-              </div>
+              <input
+                type="email"
+                value={formData.correo}
+                onChange={(e) => handleChange('correo', e.target.value)}
+                placeholder="contacto@empresa.com"
+                className={inputClass('correo')}
+              />
               {errors.correo && (
                 <p className="text-[11px] leading-[14px] text-red-500 mt-1">{errors.correo}</p>
               )}
@@ -247,19 +234,19 @@ export function EditCompanyForm({ company, onCancel, onSubmit }: EditCompanyForm
         </div>
       </div>
 
-      <div className="flex justify-end gap-3 mt-6">
+      <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-[#C9C1B1]">
         <button
           type="button"
           onClick={onCancel}
           disabled={isSubmitting}
-          className="px-5 py-2 bg-oatmeal text-abyssal text-sm font-semibold tracking-[0.5px] rounded-md hover:opacity-90 disabled:opacity-50"
+          className="px-5 py-2 bg-[#C9C1B1] text-[#182632] text-sm font-semibold tracking-[0.5px] rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
         >
           Cancelar
         </button>
         <button
           type="submit"
           disabled={isSubmitting}
-          className="flex items-center gap-2 px-5 py-2 bg-burning-flame text-white text-sm font-semibold tracking-[0.5px] rounded-md hover:opacity-90 disabled:opacity-50"
+          className="flex items-center gap-2 px-5 py-2 bg-[#FFB162] text-white text-sm font-semibold tracking-[0.5px] rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
         >
           <Save className="w-4 h-4" />
           {isSubmitting ? 'Guardando...' : 'Guardar cambios'}

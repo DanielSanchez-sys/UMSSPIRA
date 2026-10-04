@@ -17,15 +17,17 @@ export default function TestFormPage() {
   };
 
   return (
-    <main className="max-w-4xl mx-auto px-4 py-6">
-      <EditCompanyForm
-        company={company}
-        onSubmit={async (data) => {
-          console.log('Payload:', data);
-          alert('Guardado (mock)');
-        }}
-        onCancel={() => alert('Cancelado')}
-      />
+    <main className="min-h-screen bg-[#EEE9DF] py-6">
+      <div className="max-w-7xl mx-auto px-6">
+        <EditCompanyForm
+          company={company}
+          onSubmit={async (data) => {
+            console.log('Payload:', data);
+            alert('Guardado (mock)');
+          }}
+          onCancel={() => alert('Cancelado')}
+        />
+      </div>
     </main>
   );
 }
