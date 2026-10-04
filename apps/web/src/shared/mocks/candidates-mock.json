@@ -15,7 +15,7 @@
       ],
       "professionalDescription": "Egresado orientado al desarrollo de software y aplicaciones web. Cuenta con conocimientos en diseño de soluciones digitales, bases de datos y desarrollo de sistemas. Destaca por su capacidad de análisis, aprendizaje y trabajo colaborativo.",
       "affinity": 92.5,
-      "featured": true,
+      "featured": false,
       "areas": [
         { "area": "desarrollo de software", "affinity": 95 },
         { "area": "cloud & devops", "affinity": 64 },
@@ -40,7 +40,7 @@
       ],
       "professionalDescription": "Ingeniera apasionada por la ciencia de datos, inteligencia artificial y analítica avanzada. Experiencia en modelos predictivos, visualización de datos de negocio y procesamiento de grandes volúmenes de datos.",
       "affinity": 88.0,
-      "featured": true,
+      "featured": false,
       "areas": [
         { "area": "desarrollo de software", "affinity": 65 },
         { "area": "cloud & devops", "affinity": 50 },
@@ -115,7 +115,7 @@
       ],
       "professionalDescription": "Desarrollador frontend y diseñador de experiencia de usuario. Enfocado en la creación de interfaces web intuitivas, accesibles, adaptativas y con altos estándares estéticos.",
       "affinity": 84.7,
-      "featured": true,
+      "featured": false,
       "areas": [
         { "area": "desarrollo de software", "affinity": 91 },
         { "area": "cloud & devops", "affinity": 45 },
@@ -190,7 +190,7 @@
       ],
       "professionalDescription": "Desarrollador backend especializado en arquitectura de microservicios y servicios REST con Java y Spring Boot. Enfocado en alto rendimiento, escalabilidad y buenas prácticas de desarrollo.",
       "affinity": 89.1,
-      "featured": true,
+      "featured": false,
       "areas": [
         { "area": "desarrollo de software", "affinity": 94 },
         { "area": "cloud & devops", "affinity": 75 },

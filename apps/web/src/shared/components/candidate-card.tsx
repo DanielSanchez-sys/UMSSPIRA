@@ -182,7 +182,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
           }}
           className="flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold border border-slate-300 text-slate-700 hover:bg-slate-50 transition-all flex items-center justify-center space-x-1"
         >
-          <span>Ver Perfil</span>
+          <span>Ver Detalle</span>
           <ChevronRight className="w-3.5 h-3.5" />
         </button>
       </div>
