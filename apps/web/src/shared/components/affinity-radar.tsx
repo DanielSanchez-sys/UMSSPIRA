@@ -57,12 +57,11 @@ export default function AffinityRadar({
   const isMini = variant === 'mini';
 
   // Único criterio de estado vacío
-  const isRadarEmpty = !hasData     || affinityData.length === 0;
+  const isRadarEmpty = !hasData || affinityData.length === 0;
 
   // Mapear los datos al orden fijo y aplicar utilidades de porcentaje
   const chartData = AXES_ORDER.map((id) => {
-    const found = affinityData.find((a) => a.area === id || a.area === AREA_LABELS[id] || a.area?.toLowerCase() === id.toLowerCase()
-);
+    const found = affinityData.find((a) => a.area === id || a.area === AREA_LABELS[id] || a.area?.toLowerCase() === id.toLowerCase());
     const rawValue = found ? found.affinity : 0;
     
     return {
@@ -154,11 +153,12 @@ export default function AffinityRadar({
             />
           )}
 
-          {/* Vértices interactivos solo en la variante completa (solo si hay datos) */}
+          {/* Vértices interactivos y puntos amarillos condicionados SOLO a changedAreaIds */}
           {!isRadarEmpty &&
             chartData.map((data, i) => {
               const { x, y } = getCoordinatesForValue(data.value, i);
               const isSelected = selectedArea === data.id;
+              const isChanged = changedAreaIds.includes(data.id);
 
               if (isMini) {
                 return (
@@ -182,14 +182,28 @@ export default function AffinityRadar({
                 >
                   {/* Área de clic expandida transparente */}
                   <circle cx={x} cy={y} r={15} fill="transparent" />
-                  <circle
-                    cx={x}
-                    cy={y}
-                    r={5}
-                    className={`transition-transform duration-200 ${
-                      isSelected ? 'fill-blue-700 scale-125' : 'fill-blue-500 hover:scale-125'
-                    }`}
-                  />
+                  
+                  {/* Si el área cambió, mostramos el punto amarillo destacado */}
+                  {isChanged ? (
+                    <circle
+                      cx={x}
+                      cy={y}
+                      r={6}
+                      className={`transition-transform duration-200 ${
+                        isSelected ? 'fill-amber-600 scale-125' : 'fill-amber-500 hover:scale-125'
+                      }`}
+                    />
+                  ) : (
+                    /* Opcional: un punto sutil o invisible si no ha cambiado, para mantener el área de clic */
+                    <circle
+                      cx={x}
+                      cy={y}
+                      r={3}
+                      className={`transition-transform duration-200 ${
+                        isSelected ? 'fill-blue-700 scale-125' : 'fill-blue-400 hover:scale-125 opacity-70'
+                      }`}
+                    />
+                  )}
                 </g>
               );
             })}
@@ -197,7 +211,6 @@ export default function AffinityRadar({
           {/* Etiquetas (Labels) */}
           {chartData.map((data, i) => {
             if (isMini) {
-              // Mini vacía: solo cuadrícula, sin etiquetas ni porcentajes (CA-HU2-05)
               if (isRadarEmpty) return null;
 
               const { x, y } = getCoordinatesForValue(118, i);
