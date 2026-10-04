@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { Briefcase, Check, Eye, ShieldCheck } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { AlertCircle, Briefcase, Check, Eye, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { BarraProgreso } from './barra-progreso';
@@ -21,6 +21,25 @@ export function AcordeonPerfil() {
   const { records, addEducation, addExperience, addCertification } = useProfileStore();
   const router = useRouter();
   const [avisoBorrador, setAvisoBorrador] = useState(false);
+  // Campos con errores sin corregir de cada sección (formación, experiencia, certificaciones)
+  const [errores, setErrores] = useState({ formacion: 0, experiencia: 0, certificacion: 0 });
+  const [intentoGuardar, setIntentoGuardar] = useState(false);
+
+  const erroresFormacion = useCallback((cantidad: number) => setErrores((e) => ({ ...e, formacion: cantidad })), []);
+  const erroresExperiencia = useCallback((cantidad: number) => setErrores((e) => ({ ...e, experiencia: cantidad })), []);
+  const erroresCertificacion = useCallback(
+    (cantidad: number) => setErrores((e) => ({ ...e, certificacion: cantidad })),
+    [],
+  );
+  const seccionesConErrores = Object.values(errores).filter((cantidad) => cantidad > 0).length;
+
+  function guardarPerfil() {
+    if (seccionesConErrores > 0) {
+      setIntentoGuardar(true);
+      return;
+    }
+    router.push('/profile');
+  }
 
   useEffect(() => {
     if (!avisoBorrador) return;
@@ -75,6 +94,11 @@ export function AcordeonPerfil() {
             <span className="text-sm font-semibold text-umss-terracotta">
               {completas} de 3 secciones completas
             </span>
+            {seccionesConErrores > 0 && (
+              <span className="rounded-full bg-[#FDECEA] px-3 py-1 text-xs font-bold text-umss-terracotta">
+                {seccionesConErrores} {seccionesConErrores === 1 ? 'sección con errores' : 'secciones con errores'}
+              </span>
+            )}
             <Link
               href="/profile"
               className="inline-flex items-center gap-2 rounded-lg border border-umss-navy px-3 py-1.5 text-sm font-semibold text-umss-navy transition hover:bg-umss-cream"
@@ -86,6 +110,19 @@ export function AcordeonPerfil() {
         </div>
         <BarraProgreso completas={completas} total={3} />
       </header>
+
+      {intentoGuardar && seccionesConErrores > 0 && (
+        <div role="alert" className="flex items-start gap-3 rounded-xl border border-umss-terracotta bg-[#FDECEA] px-4 py-3">
+          <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-umss-terracotta" aria-hidden="true" />
+          <div>
+            <p className="text-sm font-bold text-umss-terracotta">No se pudo guardar tu perfil</p>
+            <p className="text-[13px] text-umss-navy/80">
+              Revisa los campos marcados en rojo en {seccionesConErrores === 1 ? 'la sección' : `las ${seccionesConErrores} secciones`} y
+              vuelve a intentarlo.
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
         {/* Tarjeta informativa (v3: "Tu Base de Datos Egresado") */}
@@ -115,9 +152,11 @@ export function AcordeonPerfil() {
         titulo="Formación académica"
         descripcion="Tu formación académica principal"
         cantidad={formaciones.length}
+        errores={errores.formacion}
       >
         <FormacionAcademicaForm
           formaciones={formaciones}
+          onErroresChange={erroresFormacion}
           onAgregar={(formacion) =>
             addEducation({
               institution: formacion.institucion,
@@ -133,9 +172,11 @@ export function AcordeonPerfil() {
         titulo="Experiencia laboral"
         descripcion="Tu experiencia profesional más relevante"
         cantidad={experiencias.length}
+        errores={errores.experiencia}
       >
         <FormularioExperiencia
           experiencias={experiencias}
+          onErroresChange={erroresExperiencia}
           onAgregar={(experiencia) =>
             addExperience({
               company: experiencia.empresa,
@@ -151,9 +192,11 @@ export function AcordeonPerfil() {
         titulo="Certificaciones"
         descripcion="Credenciales que respaldan tu perfil"
         cantidad={certificaciones.length}
+        errores={errores.certificacion}
       >
         <FormularioCertificaciones
           certificaciones={certificaciones}
+          onErroresChange={erroresCertificacion}
           onAgregar={(certificacion) =>
             addCertification({
               name: certificacion.nombre,
@@ -172,7 +215,7 @@ export function AcordeonPerfil() {
           <div className="flex flex-col gap-3 pt-2 sm:flex-row">
             <button
               type="button"
-              onClick={() => router.push('/profile')}
+              onClick={guardarPerfil}
               className="h-12 flex-1 rounded-lg bg-umss-orange text-base font-bold text-umss-ink transition hover:brightness-95"
             >
               Guardar perfil profesional
