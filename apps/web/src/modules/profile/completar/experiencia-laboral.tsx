@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { Briefcase } from 'lucide-react';
+import { MensajeError, claseCampo } from '@/modules/profile/validation/mensaje-error';
+import { type ErroresFormulario, validarExperiencia } from '@/modules/profile/validation/reglas-perfil';
 
 export type Experiencia = {
   empresa: string;
@@ -38,14 +40,24 @@ function mostrarFecha(fecha: string) {
 export function FormularioExperiencia({experiencias, onAgregar }: FormularioExperienciaProps) {
   const [datos, setDatos] = useState<Datos>(VACIO);
   const [trabajoActual, setTrabajoActual] = useState(false);
-  const completo = CAMPOS.every((campo) => (campo.nombre === 'fechaFin' && trabajoActual) || datos[campo.nombre].trim() !== '',
-  );
+  const [errores, setErrores] = useState<ErroresFormulario<keyof Datos>>({});
+  // Los errores se muestran desde el primer intento de agregar y se recalculan mientras se corrige
+  const [intentado, setIntentado] = useState(false);
+
+  function actualizar(nuevos: Datos, actual: boolean) {
+    setDatos(nuevos);
+    setTrabajoActual(actual);
+    if (intentado) setErrores(validarExperiencia(nuevos, actual));
+  }
 
   const ordenadas = [...experiencias].sort((a, b) => b.fechaInicio.localeCompare(a.fechaInicio));
 
   function agregar(evento: React.FormEvent<HTMLFormElement>) {
     evento.preventDefault();
-    if (!completo) return;
+    const encontrados = validarExperiencia(datos, trabajoActual);
+    setIntentado(true);
+    setErrores(encontrados);
+    if (Object.keys(encontrados).length > 0) return;
     onAgregar({
       empresa: datos.empresa.trim(),
       cargo: datos.cargo.trim(),
@@ -54,6 +66,7 @@ export function FormularioExperiencia({experiencias, onAgregar }: FormularioExpe
     });
     setDatos(VACIO);
     setTrabajoActual(false);
+    setIntentado(false);
   }
   return (
     <div className="flex flex-col gap-5">
@@ -78,7 +91,7 @@ export function FormularioExperiencia({experiencias, onAgregar }: FormularioExpe
           ))}
         </ul>
       )}
-      <form onSubmit={agregar} className="flex flex-col gap-4">  
+      <form onSubmit={agregar} noValidate className="flex flex-col gap-4">  
         <div className="grid gap-4 md:grid-cols-2">
         {CAMPOS.map((campo) => {
           const esFin = campo.nombre === 'fechaFin';
@@ -93,11 +106,17 @@ export function FormularioExperiencia({experiencias, onAgregar }: FormularioExpe
             <input
               type={campo.tipo}
               value={datos[campo.nombre]}
-              onChange={(e) => setDatos({ ...datos, [campo.nombre]: e.target.value })}
+              onChange={(e) => actualizar({ ...datos, [campo.nombre]: e.target.value }, trabajoActual)}
               placeholder={campo.ejemplo}
               disabled={deshabilitado}
-              className="h-11 rounded-lg border border-[#C9C1B1] bg-[#EEE9DF] px-3 text-sm text-[#1B2632] outline-none placeholder:text-[#2C3B4D]/40 focus:border-2 focus:border-[#2C3B4D] focus:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+              aria-invalid={Boolean(errores[campo.nombre])}
+              aria-describedby={`error-${campo.nombre}`}
+              className={claseCampo(
+                'h-11 rounded-lg border border-[#C9C1B1] bg-[#EEE9DF] px-3 text-sm text-[#1B2632] outline-none placeholder:text-[#2C3B4D]/40 focus:border-2 focus:border-[#2C3B4D] focus:bg-white disabled:cursor-not-allowed disabled:opacity-50',
+                errores[campo.nombre],
+              )}
             />
+            <MensajeError id={`error-${campo.nombre}`} mensaje={errores[campo.nombre]} />
           </label>
         );
       })}
@@ -106,10 +125,7 @@ export function FormularioExperiencia({experiencias, onAgregar }: FormularioExpe
           <input
             type="checkbox"
             checked={trabajoActual}
-            onChange={(e) => {
-              setTrabajoActual(e.target.checked);
-              setDatos({ ...datos, fechaFin: '' });
-            }}
+            onChange={(e) => actualizar({ ...datos, fechaFin: '' }, e.target.checked)}
             className="h-4 w-4 accent-[#A35139]"
           />
           Actualmente trabajo aquí
@@ -118,7 +134,6 @@ export function FormularioExperiencia({experiencias, onAgregar }: FormularioExpe
       <div className="flex justify-end">
           <button
             type="submit"
-            disabled={!completo}
             className="h-11 rounded-lg bg-[#FFB162] px-6 text-sm font-semibold text-[#1B2632] transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Agregar experiencia
