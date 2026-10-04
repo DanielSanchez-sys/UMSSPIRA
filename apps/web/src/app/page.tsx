@@ -49,10 +49,11 @@ export default function Home() {
           {activeView === 'recruiter' ? (
             <div className="space-y-10 animate-fadeIn">
               <section>
-                <NlpSearch
+               <NlpSearch
                   onSearchCompleted={handleSearchCompleted}
                   isSearching={isSearching}
                   setIsSearching={setIsSearching}
+                  totalCandidates={candidatesData.candidates.length}
                 />
               </section>
 
@@ -62,7 +63,7 @@ export default function Home() {
                     <div className="flex items-center space-x-2">
                       <span className="w-2.5 h-2.5 rounded-full bg-truffle-trouble" />
                       <h3 className="text-lg font-black text-abyssal-blue tracking-tight uppercase">
-                        Comparativa de Egresados & Hexágonos de Afinidad
+                        Comparativa de Titulados & Hexágonos de Afinidad
                       </h3>
                     </div>
                     <p className="text-xs text-slate-600 mt-0.5">
