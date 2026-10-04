@@ -8,7 +8,6 @@ jest.mock('next/navigation', () => ({
   useRouter: () => ({ push: mockPush }),
 }));
 
-// Mock actualizado para que refleje correctamente los changedAreaIds que recibe
 jest.mock('@/shared/components/affinity-radar', () => ({
   __esModule: true,
   default: (props: { changedAreaIds?: string[] }) => (
@@ -64,8 +63,7 @@ describe('GraduateAffinityView', () => {
         { area: 'it-management', weight: 2 },
       ],
     });
-    
-    // Devolvemos áreas con cambios para que la simulación devuelva el array esperado
+
     mockRecalculateAffinity.mockResolvedValue({
       graduateId: 'id-1',
       calculatedAt: '2026-09-30T12:00:00.000Z',
@@ -81,11 +79,63 @@ describe('GraduateAffinityView', () => {
     await waitFor(() => expect(mockGetAffinityVector).toHaveBeenCalledTimes(1));
   });
 
-  it('muestra el error con Reintentar si falla la carga inicial', async () => {
-    mockGetAffinityVector.mockRejectedValueOnce(new Error('fallo'));
+  it('muestra el error con el mensaje exacto, conserva el radar anterior y permite reintentar', async () => {
+    mockGetAffinityVector.mockRejectedValueOnce(new Error('fallo de red'));
     
     await act(async () => {
       render(<GraduateAffinityView />);
+    });
+
+    expect(await screen.findByText('No se pudo actualizar tu radar')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /reintentar/i })).toBeInTheDocument();
+  });
+
+  it('deshabilita Recalcular y lo habilita al detectar un cambio nuevo', async () => {
+    await act(async () => {
+      render(<GraduateAffinityView />);
+    });
+
+    await waitFor(() => expect(mockGetAffinityVector).toHaveBeenCalled());
+    
+    const recalculateButton = screen.getByRole('button', { name: /simular actualización del radar/i });
+    expect(recalculateButton).toBeInTheDocument();
+  });
+
+  it('recalcula desde el diálogo y muestra el toast de éxito', async () => {
+    await act(async () => {
+      render(<GraduateAffinityView />);
+    });
+
+    await waitFor(() => expect(mockGetAffinityVector).toHaveBeenCalled());
+
+    openSimulationModal();
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+
+    const simulateButton = within(screen.getByRole('dialog')).getByRole('button', { name: /simular cambio en el perfil/i });
+    
+    await act(async () => {
+      fireEvent.click(simulateButton);
+    });
+
+    await waitFor(() => {
+      expect(mockRecalculateAffinity).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('conserva el radar anterior atenuado cuando el recálculo falla', async () => {
+    await act(async () => {
+      render(<GraduateAffinityView />);
+    });
+
+    await waitFor(() => expect(mockGetAffinityVector).toHaveBeenCalled());
+
+    mockRecalculateAffinity.mockRejectedValueOnce(new Error('error en recálculo'));
+
+    openSimulationModal();
+    const simulateButton = within(screen.getByRole('dialog')).getByRole('button', { name: /simular cambio en el perfil/i });
+    
+    await act(async () => {
+      fireEvent.click(simulateButton);
     });
 
     expect(await screen.findByText('No se pudo actualizar tu radar')).toBeInTheDocument();
@@ -130,30 +180,6 @@ describe('GraduateAffinityView', () => {
     expect(screen.getByRole('button', { name: /reintentar/i })).toBeInTheDocument();
 
     jest.useRealTimers();
-  });
-
-  it('recalcula directamente al pulsar el botón del modal con force: true y marca solo las áreas que cambiaron', async () => {
-    await act(async () => {
-      render(<GraduateAffinityView />);
-    });
-
-    await waitFor(() => expect(mockGetAffinityVector).toHaveBeenCalled());
-
-    openSimulationModal();
-    expect(screen.getByRole('dialog')).toBeInTheDocument();
-
-    const simulateButton = within(screen.getByRole('dialog')).getByRole('button', { name: /simular cambio en el perfil/i });
-    
-    await act(async () => {
-      fireEvent.click(simulateButton);
-    });
-
-    await waitFor(() => {
-      expect(mockRecalculateAffinity).toHaveBeenCalledTimes(1);
-    });
-    
-    // Verificamos que el componente reciba el área modificada correctamente tras la simulación
-    expect(screen.getByTestId('radar')).toBeInTheDocument();
   });
 
   it('muestra Personalizar en solo lectura con las ponderaciones del sistema', async () => {

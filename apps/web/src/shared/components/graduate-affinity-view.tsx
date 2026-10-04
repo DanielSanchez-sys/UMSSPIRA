@@ -14,6 +14,7 @@ import { AFFINITY_AREAS, type AffinityArea, type AffinityAreaScore } from '@umss
 import { ArrowLeft, Code, Database, Cloud, ShieldAlert, Lock, Target, ArrowRight, Sparkles, CheckCircle2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
+// Ruta de Épica 2 almacenada en una constante a nivel de módulo
 const RUTA_EPICA_2_CERTIFICACIONES = '/epica-2/certificaciones/nueva?returnTo=/afinidad';
 
 const AREA_ICONS: Record<AffinityArea, React.ElementType> = {
@@ -164,7 +165,6 @@ export const GraduateAffinityView: React.FC = () => {
     };
   });
   
-  // Ordenamiento estricto por AFFINITY_AREAS para alinear perfectamente los puntos amarillos con los vértices
   const orderedCandidateAreas = AFFINITY_AREAS.map((areaKey) => {
     const found = candidateAreas.find((item) => item.area === areaKey);
     return found || { area: areaKey, affinity: 0 };
@@ -210,10 +210,10 @@ export const GraduateAffinityView: React.FC = () => {
 
               <div className="relative py-4 flex flex-col items-center justify-center bg-palladian/40 rounded-xl border border-oatmeal/60">
                 <div className={hasRadarError && hasValidRadar ? 'opacity-40' : undefined}>
+                  {/* Se remueve variant="full" porque el componente usa la renderización estándar */}
                   <AffinityRadar
                     affinityData={radarData}
                     hasData={hasValidRadar}
-                    variant="full"
                     isLoading={isLoading}
                     changedAreaIds={changedAreaIds}
                   />
@@ -380,3 +380,5 @@ export const GraduateAffinityView: React.FC = () => {
     </div>
   );
 };
+
+export default GraduateAffinityView;

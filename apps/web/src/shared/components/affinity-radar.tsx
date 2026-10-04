@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import { AffinityAreaScore } from '@umsspira/shared-types/src/affinity';
 import { clampPercentage, formatPercentage } from '../utils/percentage';
 
-// 1. Contrato estricto: Las 6 áreas en orden exacto
 const AXES_ORDER = [
   'software-development',
   'cloud-devops',
@@ -25,7 +24,6 @@ const AREA_LABELS: Record<AreaId, string> = {
   'it-management': 'Gestión TI',
 };
 
-// Etiquetas abreviadas para la variante miniatura
 const AREA_SHORT_LABELS: Record<AreaId, string> = {
   'software-development': 'Desarrollo',
   'cloud-devops': 'Cloud',
@@ -38,8 +36,8 @@ const AREA_SHORT_LABELS: Record<AreaId, string> = {
 interface AffinityRadarProps {
   affinityData?: AffinityAreaScore[];
   hasData?: boolean;
-  variant?: 'full' | 'mini'; // "full" = interactivo; "mini" = solo lectura para tarjetas
-  highlighted?: boolean; // Solo aplica a mini: pinta el radar en rojo (tarjeta destacada)
+  variant?: 'full' | 'mini';
+  highlighted?: boolean;
   isLoading?: boolean;
   changedAreaIds?: string[];
 }
@@ -51,25 +49,23 @@ export default function AffinityRadar({
   highlighted = false,
   isLoading = false,    
   changedAreaIds = []     
-
 }: AffinityRadarProps) {
   const [selectedArea, setSelectedArea] = useState<string | null>(null);
   const isMini = variant === 'mini';
 
-  // Único criterio de estado vacío
+  // Mini vacía: solo cuadrícula, sin etiquetas ni porcentajes (CA-HU2-05)
   const isRadarEmpty = !hasData || affinityData.length === 0;
 
-  // Mapear los datos al orden fijo y aplicar utilidades de porcentaje
   const chartData = AXES_ORDER.map((id) => {
-    const found = affinityData.find((a) => a.area === id || a.area === AREA_LABELS[id] || a.area?.toLowerCase() === id.toLowerCase());
+    const found = affinityData.find((a) => a.area === id);
     const rawValue = found ? found.affinity : 0;
     
     return {
       id,
       label: AREA_LABELS[id],
       shortLabel: AREA_SHORT_LABELS[id],
-      value: clampPercentage(rawValue), // Número para calcular coordenadas en el SVG
-      displayValue: formatPercentage(rawValue), // Texto "XX%" para mostrar en la UI
+      value: clampPercentage(rawValue),
+      displayValue: formatPercentage(rawValue),
     };
   });
 
@@ -87,7 +83,6 @@ export default function AffinityRadar({
     };
   };
 
-  // Puntos del polígono de afinidad
   const polygonPoints = chartData
     .map((data, i) => {
       const { x, y } = getCoordinatesForValue(data.value, i);
@@ -96,7 +91,6 @@ export default function AffinityRadar({
     .join(' ');
 
   const selectedData = chartData.find((d) => d.id === selectedArea);
-  // La variante mini ensancha el viewBox para que quepan las etiquetas laterales
   const viewBox = isMini ? `-100 -20 ${size + 200} ${size + 40}` : `0 0 ${size} ${size}`;
 
   return (
@@ -110,7 +104,6 @@ export default function AffinityRadar({
     >
       <div className="relative w-full aspect-square">
         <svg viewBox={viewBox} className="w-full h-full overflow-visible">
-          {/* Ejes de fondo (telaraña) */}
           {[20, 40, 60, 80, 100].map((level) => (
             <polygon
               key={`grid-${level}`}
@@ -124,7 +117,6 @@ export default function AffinityRadar({
             />
           ))}
 
-          {/* Líneas de los ejes */}
           {chartData.map((_, i) => {
             const { x, y } = getCoordinatesForValue(100, i);
             return (
@@ -139,7 +131,6 @@ export default function AffinityRadar({
             );
           })}
 
-          {/* Polígono de datos (solo si hay datos) */}
           {!isRadarEmpty && (
             <polygon
               points={polygonPoints}
@@ -153,7 +144,6 @@ export default function AffinityRadar({
             />
           )}
 
-          {/* Vértices interactivos y puntos amarillos condicionados SOLO a changedAreaIds */}
           {!isRadarEmpty &&
             chartData.map((data, i) => {
               const { x, y } = getCoordinatesForValue(data.value, i);
@@ -180,10 +170,9 @@ export default function AffinityRadar({
                   onClick={() => setSelectedArea(data.id)}
                   style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
                 >
-                  {/* Área de clic expandida transparente */}
                   <circle cx={x} cy={y} r={15} fill="transparent" />
                   
-                  {/* Si el área cambió, mostramos el punto amarillo destacado */}
+                  {/* Renderiza un punto ámbar diferenciado si el eje cambió; de lo contrario, un punto estándar con r=5 exacto */}
                   {isChanged ? (
                     <circle
                       cx={x}
@@ -194,13 +183,12 @@ export default function AffinityRadar({
                       }`}
                     />
                   ) : (
-                    /* Opcional: un punto sutil o invisible si no ha cambiado, para mantener el área de clic */
                     <circle
                       cx={x}
                       cy={y}
-                      r={3}
+                      r={5}
                       className={`transition-transform duration-200 ${
-                        isSelected ? 'fill-blue-700 scale-125' : 'fill-blue-400 hover:scale-125 opacity-70'
+                        isSelected ? 'fill-blue-700 scale-125' : 'fill-blue-400 hover:scale-125'
                       }`}
                     />
                   )}
@@ -208,7 +196,6 @@ export default function AffinityRadar({
               );
             })}
 
-          {/* Etiquetas (Labels) */}
           {chartData.map((data, i) => {
             if (isMini) {
               if (isRadarEmpty) return null;
@@ -237,6 +224,16 @@ export default function AffinityRadar({
             const isChanged = changedAreaIds.includes(data.id);
             const isSelected = selectedArea === data.id;
 
+            // Se combinan los estilos si el eje cambió y está seleccionado al mismo tiempo
+            let labelStyle = 'fill-gray-600 hover:fill-blue-500';
+            if (isChanged && isSelected) {
+              labelStyle = 'fill-amber-600 font-bold underline scale-105';
+            } else if (isChanged) {
+              labelStyle = 'fill-amber-600 font-bold';
+            } else if (isSelected) {
+              labelStyle = 'fill-blue-700 font-bold underline';
+            }
+
             return (
               <text
                 key={`label-${data.id}`}
@@ -244,13 +241,7 @@ export default function AffinityRadar({
                 y={y}
                 textAnchor="middle"
                 dominantBaseline="middle"
-                className={`text-xs md:text-sm font-medium cursor-pointer transition-colors ${
-                  isChanged 
-                    ? 'fill-amber-600 font-bold scale-105' 
-                    : isSelected 
-                      ? 'fill-blue-700 font-bold' 
-                      : 'fill-gray-600 hover:fill-blue-500'
-                }`}
+                className={`text-xs md:text-sm font-medium cursor-pointer transition-colors ${labelStyle}`}
                 onClick={() => setSelectedArea(data.id)}
               >
                 {data.label}
@@ -260,7 +251,6 @@ export default function AffinityRadar({
         </svg>
       </div>
 
-      {/* Sección inferior (solo full y con datos) */}
       {!isMini && !isRadarEmpty && (
         <div className="mt-6 w-full min-h-[100px] bg-slate-50 rounded-lg p-4 flex flex-col items-center justify-center text-center border border-slate-100">
           <p className="text-xs text-slate-500 font-semibold mb-1 tracking-wider">

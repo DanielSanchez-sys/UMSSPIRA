@@ -14,7 +14,6 @@ interface RadarChartProps {
   onAreaClick?: (area: string) => void;
   accentColor?: string;
   fillColor?: string;
-  isLoading?: boolean;
 }
 
 export const RadarChart: React.FC<RadarChartProps> = ({
@@ -22,7 +21,6 @@ export const RadarChart: React.FC<RadarChartProps> = ({
   size = 280,
   accentColor = '#A35139', // Color de acento por defecto (Truffle Trouble)
   fillColor = 'rgba(163, 81, 57, 0.25)',
-  isLoading = false,
 }) => {
   const center = size / 2;
   const radius = (size - 90) / 2;
@@ -60,7 +58,7 @@ export const RadarChart: React.FC<RadarChartProps> = ({
   const dataPointsString = getPolygonPoints(dataRatios);
 
   return (
-    <div className={`flex flex-col items-center justify-center p-1 select-none transition-all duration-500 ${isLoading ? 'opacity-50 animate-pulse' : 'opacity-100'}`}>
+    <div className="flex flex-col items-center justify-center p-1 select-none">
       <svg
         width={size}
         height={size}
@@ -130,7 +128,7 @@ export const RadarChart: React.FC<RadarChartProps> = ({
               fill="#FFFFFF"
               stroke={accentColor}
               strokeWidth="2"
-              className="transition-all duration-500 ease-out"
+              className="transition-all duration-500"
             />
           );
         })}
