@@ -4,6 +4,7 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { CompaniesService } from './companies.service';
 import { HeaderResponseDto } from './dto/header-response.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
+import { ContactResponseDto } from './dto/contact-response.dto';
 
 @Controller('api/empresa/perfil')
 @UseGuards(JwtAuthGuard)
@@ -30,5 +31,15 @@ export class CompaniesController {
     @Body() dto: UpdateCompanyDto,
   ) {
     return this.companiesService.updateProfile(empresaId, dto);
+  }
+    /**
+   * TSK-3.4: Obtener datos de contacto y detalles institucionales.
+   * Ruta: GET /api/empresa/perfil/contacto
+   */
+  @Get('contacto')
+  async getContact(
+    @CurrentUser('empresaId') empresaId: string,
+  ): Promise<ContactResponseDto> {
+    return this.companiesService.getContact(empresaId);
   }
 }
