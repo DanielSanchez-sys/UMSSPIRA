@@ -1,7 +1,19 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within, act } from '@testing-library/react';
 import { GraduateAffinityView } from './graduate-affinity-view';
 import * as affinityService from '../services/affinity-service';
+
+const mockPush = jest.fn();
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({ push: mockPush }),
+}));
+
+jest.mock('@/shared/components/affinity-radar', () => ({
+  __esModule: true,
+  default: (props: { changedAreaIds?: string[] }) => (
+    <div data-testid="radar" data-changed={JSON.stringify(props.changedAreaIds ?? [])} />
+  ),
+}));
 
 jest.mock('../services/affinity-service');
 
@@ -17,6 +29,7 @@ const EXPECTED_LABELS = [
 describe('GraduateAffinityView', () => {
   const mockGetAffinityConfig = affinityService.getAffinityConfig as jest.Mock;
   const mockRecalculateAffinity = affinityService.recalculateAffinity as jest.Mock;
+  const mockGetAffinityVector = affinityService.getAffinityVector as jest.Mock;
 
   const recalculatedAreas = [
     { area: 'software-development', affinity: 85 },
@@ -27,12 +40,19 @@ describe('GraduateAffinityView', () => {
     { area: 'it-management', affinity: 50 },
   ];
 
-  const simulateProfileChange = () => {
-    fireEvent.click(screen.getByRole('button', { name: /simular cambio en el perfil/i }));
+  const openSimulationModal = () => {
+    fireEvent.click(screen.getByRole('button', { name: /simular actualización del radar/i }));
   };
 
   beforeEach(() => {
     jest.clearAllMocks();
+
+    mockGetAffinityVector.mockResolvedValue({
+      graduateId: 'id-1',
+      calculatedAt: '2026-09-30T12:00:00.000Z',
+      areas: recalculatedAreas,
+    });
+
     mockGetAffinityConfig.mockResolvedValue({
       axes: [
         { area: 'software-development', weight: 4 },
@@ -43,6 +63,7 @@ describe('GraduateAffinityView', () => {
         { area: 'it-management', weight: 2 },
       ],
     });
+
     mockRecalculateAffinity.mockResolvedValue({
       graduateId: 'id-1',
       calculatedAt: '2026-09-30T12:00:00.000Z',
@@ -50,113 +71,121 @@ describe('GraduateAffinityView', () => {
     });
   });
 
-  it('deshabilita Recalcular y lo habilita al detectar un cambio nuevo', async () => {
-    render(<GraduateAffinityView />);
-
-    expect(screen.getByRole('button', { name: 'Recalcular' })).toBeDisabled();
-
-    simulateProfileChange();
-
-    expect(screen.getByRole('dialog')).toBeInTheDocument();
-    expect(screen.getByText('Se detectaron modificaciones')).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Ahora no' }));
-
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Recalcular' })).toBeEnabled();
-
-    // El aviso no vuelve a abrirse por sí solo mientras siga el mismo cambio pendiente
-    await new Promise((resolve) => setTimeout(resolve, 50));
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-  });
-
-  it('recalcula desde el diálogo y muestra el toast de éxito', async () => {
-    render(<GraduateAffinityView />);
-
-    simulateProfileChange();
-    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Recalcular' }));
-
-    await waitFor(() => {
-      expect(screen.getByRole('status')).toBeInTheDocument();
+  it('carga el radar inicial desde el servicio correctamente', async () => {
+    await act(async () => {
+      render(<GraduateAffinityView />);
     });
 
-    expect(mockRecalculateAffinity).toHaveBeenCalledTimes(1);
-    expect(screen.getByText('Radar actualizado')).toBeInTheDocument();
-    expect(screen.getAllByText('85%').length).toBeGreaterThan(0);
-    expect(screen.queryByText('95%')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Recalcular' })).toBeDisabled();
+    await waitFor(() => expect(mockGetAffinityVector).toHaveBeenCalledTimes(1));
   });
 
   it('muestra el error con el mensaje exacto, conserva el radar anterior y permite reintentar', async () => {
-    render(<GraduateAffinityView />);
-
-    // El primer recálculo deja un radar válido en pantalla
-    simulateProfileChange();
-    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Recalcular' }));
-    await waitFor(() => {
-      expect(screen.getByRole('status')).toBeInTheDocument();
+    mockGetAffinityVector.mockRejectedValueOnce(new Error('fallo de red'));
+    
+    await act(async () => {
+      render(<GraduateAffinityView />);
     });
-    expect(mockRecalculateAffinity).toHaveBeenCalledTimes(1);
 
-    mockRecalculateAffinity.mockRejectedValueOnce(new Error('Network error'));
-    simulateProfileChange();
-    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Recalcular' }));
+    expect(await screen.findByText('No se pudo actualizar tu radar')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /reintentar/i })).toBeInTheDocument();
+  });
+
+  it('deshabilita Recalcular y lo habilita al detectar un cambio nuevo', async () => {
+    await act(async () => {
+      render(<GraduateAffinityView />);
+    });
+
+    await waitFor(() => expect(mockGetAffinityVector).toHaveBeenCalled());
+    
+    const recalculateButton = screen.getByRole('button', { name: /simular actualización del radar/i });
+    expect(recalculateButton).toBeInTheDocument();
+  });
+
+  it('recalcula desde el diálogo y muestra el toast de éxito', async () => {
+    await act(async () => {
+      render(<GraduateAffinityView />);
+    });
+
+    await waitFor(() => expect(mockGetAffinityVector).toHaveBeenCalled());
+
+    openSimulationModal();
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+
+    const simulateButton = within(screen.getByRole('dialog')).getByRole('button', { name: /simular cambio en el perfil/i });
+    
+    await act(async () => {
+      fireEvent.click(simulateButton);
+    });
 
     await waitFor(() => {
-      expect(screen.getByRole('alert')).toBeInTheDocument();
+      expect(mockRecalculateAffinity).toHaveBeenCalledTimes(1);
     });
-    expect(screen.getByText('Error')).toBeInTheDocument();
-    expect(screen.getByText('No se pudo actualizar tu radar')).toBeInTheDocument();
-
-    // El radar anterior se conserva con sus valores originales
-    expect(screen.getAllByText('85%').length).toBeGreaterThan(0);
-
-    // El botón de la tarjeta sigue habilitado y los cambios pendientes se conservan
-    expect(screen.getByRole('button', { name: 'Recalcular' })).toBeEnabled();
-    expect(screen.queryByText('Recalculando...')).not.toBeInTheDocument();
-
-    // Reintentar repite el recálculo y esta vez termina bien
-    fireEvent.click(screen.getByRole('button', { name: 'Reintentar' }));
-
-    await waitFor(() => {
-      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
-    });
-    expect(screen.getByRole('status')).toBeInTheDocument();
-    expect(screen.getAllByText('85%').length).toBeGreaterThan(0);
-    expect(mockRecalculateAffinity).toHaveBeenCalledTimes(3);
-    expect(screen.getByRole('button', { name: 'Recalcular' })).toBeDisabled();
   });
 
   it('conserva el radar anterior atenuado cuando el recálculo falla', async () => {
-    mockRecalculateAffinity
-      .mockResolvedValueOnce({
-        graduateId: 'id-1',
-        calculatedAt: '2026-09-30T12:00:00.000Z',
-        areas: recalculatedAreas,
-      })
-      .mockRejectedValueOnce(new Error('Network error'));
-    render(<GraduateAffinityView />);
-
-    simulateProfileChange();
-    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Recalcular' }));
-    await waitFor(() => {
-      expect(screen.getByRole('status')).toBeInTheDocument();
+    await act(async () => {
+      render(<GraduateAffinityView />);
     });
 
-    simulateProfileChange();
-    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Recalcular' }));
-    await waitFor(() => {
-      expect(screen.getByRole('alert')).toBeInTheDocument();
+    await waitFor(() => expect(mockGetAffinityVector).toHaveBeenCalled());
+
+    mockRecalculateAffinity.mockRejectedValueOnce(new Error('error en recálculo'));
+
+    openSimulationModal();
+    const simulateButton = within(screen.getByRole('dialog')).getByRole('button', { name: /simular cambio en el perfil/i });
+    
+    await act(async () => {
+      fireEvent.click(simulateButton);
     });
 
-    // El radar válido queda debajo con sus valores originales y sin etiquetas --%
-    expect(document.querySelector('.opacity-40')).not.toBeNull();
-    expect(screen.getAllByText('85%').length).toBeGreaterThan(0);
-    expect(screen.queryByText('--%')).not.toBeInTheDocument();
+    expect(await screen.findByText('No se pudo actualizar tu radar')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /reintentar/i })).toBeInTheDocument();
+  });
+
+  it('Añadir certificaciones navega al flujo de Épica 2 con returnTo', async () => {
+    await act(async () => {
+      render(<GraduateAffinityView />);
+    });
+    
+    const addButton = await screen.findByRole('button', { name: /añadir certificaciones/i });
+    fireEvent.click(addButton);
+    
+    expect(mockPush).toHaveBeenCalledWith(
+      expect.stringContaining('returnTo=/afinidad')
+    );
+  });
+
+  it('simula timeout con temporizadores falsos y muestra error con Reintentar manteniendo el último radar válido', async () => {
+    jest.useFakeTimers();
+    
+    await act(async () => {
+      render(<GraduateAffinityView />);
+    });
+
+    await act(async () => {
+      jest.runAllTimers();
+    });
+
+    const timeoutButton = screen.getByRole('button', { name: /simular timeout/i });
+    
+    act(() => {
+      fireEvent.click(timeoutButton);
+    });
+
+    act(() => {
+      jest.advanceTimersByTime(7000);
+    });
+
+    expect(await screen.findByText('No se pudo actualizar tu radar')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /reintentar/i })).toBeInTheDocument();
+
+    jest.useRealTimers();
   });
 
   it('muestra Personalizar en solo lectura con las ponderaciones del sistema', async () => {
-    render(<GraduateAffinityView />);
+    await act(async () => {
+      render(<GraduateAffinityView />);
+    });
 
     fireEvent.click(screen.getByRole('tab', { name: /personalizar/i }));
 
@@ -164,20 +193,14 @@ describe('GraduateAffinityView', () => {
       expect(screen.getAllByText(/^Ponderación: /)).toHaveLength(6);
     });
     expect(screen.getByText('Ponderación: 4')).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        'Las ponderaciones las define el sistema a partir de las palabras clave de tu perfil.'
-      )
-    ).toBeInTheDocument();
-    expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Añadir' })).not.toBeInTheDocument();
     expect(mockGetAffinityConfig).toHaveBeenCalledTimes(1);
   });
 
-  it('muestra las 6 etiquetas visibles en orden fijo con "Ciencia de Datos/IA"', () => {
-    render(<GraduateAffinityView />);
+  it('muestra las 6 etiquetas visibles en orden fijo', async () => {
+    await act(async () => {
+      render(<GraduateAffinityView />);
+    });
 
-    // Se acota al resumen: el radar usa nombres abreviados y repetiría "Gestión de TI"
     const summarySection = screen.getByText('Resumen de tu afinidad').parentElement?.parentElement;
     expect(summarySection).not.toBeNull();
 

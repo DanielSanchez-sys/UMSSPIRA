@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { RadarChart } from './radar-chart';
+import AffinityRadar from '@/shared/components/affinity-radar';
 import { RecalculateButton } from './recalculate-button';
 import { AffinityTabs } from './affinity-tabs';
 import { AffinityCustomizer } from './affinity-customizer';
@@ -9,9 +9,13 @@ import { PendingChangesDialog } from './pending-changes-dialog';
 import { RadarErrorState } from './radar-error-state';
 import { SuccessToast } from './success-toast';
 import { useRecalculateState } from '../hooks/use-recalculate-state';
-import { recalculateAffinity } from '../services/affinity-service';
-import { AFFINITY_AREAS, type AffinityArea } from '@umsspira/shared-types';
-import { ArrowLeft, Code, Database, Cloud, ShieldAlert, Lock, Target, AlertTriangle, ArrowRight, Sparkles, CheckCircle2 } from 'lucide-react';
+import { recalculateAffinity, getAffinityVector } from '../services/affinity-service';
+import { AFFINITY_AREAS, type AffinityArea, type AffinityAreaScore } from '@umsspira/shared-types/src/affinity';
+import { ArrowLeft, Code, Database, Cloud, ShieldAlert, Lock, Target, ArrowRight, Sparkles, CheckCircle2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+
+// Ruta de Épica 2 almacenada en una constante a nivel de módulo
+const RUTA_EPICA_2_CERTIFICACIONES = '/epica-2/certificaciones/nueva?returnTo=/afinidad';
 
 const AREA_ICONS: Record<AffinityArea, React.ElementType> = {
   'software-development': Code,
@@ -32,39 +36,63 @@ const AREA_LABELS: Record<AffinityArea, string> = {
 };
 
 export const GraduateAffinityView: React.FC = () => {
+  const router = useRouter();
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [profileState, setProfileState] = useState<'calculated' | 'customizing'>('calculated');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [hasRadarError, setHasRadarError] = useState<boolean>(false);
-  // Distingue un radar ya calculado de los valores iniciales de referencia
   const [hasValidRadar, setHasValidRadar] = useState<boolean>(false);
   const [changeVersion, setChangeVersion] = useState<number>(0);
   const [isPendingDialogOpen, setIsPendingDialogOpen] = useState<boolean>(false);
   const [isSuccessToastOpen, setIsSuccessToastOpen] = useState<boolean>(false);
-  const [candidateAreas, setCandidateAreas] = useState([
-    { area: 'Desarrollo de Software', affinity: 95 },
-    { area: 'Cloud/DevOps e Infraestructura', affinity: 64 },
-    { area: 'Ciencia de Datos/IA', affinity: 71 },
-    { area: 'Aseguramiento de Calidad (QA)', affinity: 58 },
-    { area: 'Ciberseguridad y Redes', affinity: 42 },
-    { area: 'Gestión de TI', affinity: 50 },
+  
+  const [changedAreaIds, setChangedAreaIds] = useState<string[]>([]);
+
+  const [candidateAreas, setCandidateAreas] = useState<AffinityAreaScore[]>([
+    { area: 'software-development', affinity: 95 },
+    { area: 'cloud-devops', affinity: 64 },
+    { area: 'data-ai', affinity: 71 },
+    { area: 'quality-assurance', affinity: 58 },
+    { area: 'cybersecurity-networks', affinity: 42 },
+    { area: 'it-management', affinity: 50 },
   ]);
+
   const isRecalculatingRef = useRef<boolean>(false);
-  // El ref es la fuente de verdad del contador: se lee dentro del recálculo asíncrono
   const changeVersionRef = useRef<number>(0);
 
   const { hasPendingChanges, markPendingChanges, clearPendingChanges } = useRecalculateState();
 
-  // El diálogo se abre solo cuando hay un cambio nuevo registrado, de modo que
-  // "Ahora no" lo cierra sin que vuelva a aparecer hasta la próxima modificación.
   useEffect(() => {
     if (changeVersion === 0 || !hasPendingChanges) return;
     setIsPendingDialogOpen(true);
   }, [changeVersion, hasPendingChanges]);
 
-  const handleRecalculate = useCallback(async () => {
+  useEffect(() => {
+    async function loadInitialVector() {
+      try {
+        setIsLoading(true);
+        const result = await getAffinityVector();
+        setCandidateAreas(
+          result.areas.map((a) => ({
+            area: a.area,
+            affinity: a.affinity,
+          }))
+        );
+        setHasValidRadar(true);
+        setHasRadarError(false);
+      } catch {
+        setHasRadarError(true);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadInitialVector();
+  }, []);
+
+  const handleRecalculate = useCallback(async ({ force = false }: { force?: boolean } = {}) => {
     if (isRecalculatingRef.current) return;
-    // Con error se permite reintentar aunque no haya cambios nuevos pendientes
-    if (!hasPendingChanges && !hasRadarError) return;
+    if (!force && !hasPendingChanges && !hasRadarError) return;
 
     isRecalculatingRef.current = true;
     setIsLoading(true);
@@ -72,32 +100,40 @@ export const GraduateAffinityView: React.FC = () => {
     const versionAtStart = changeVersionRef.current;
 
     try {
+      const previousAreas = [...candidateAreas];
       const result = await recalculateAffinity();
-      setCandidateAreas(
-        result.areas.map((a) => ({
-          area: AREA_LABELS[a.area] || a.area,
-          affinity: a.affinity,
-        }))
-      );
-      // Si la versión cambió durante el recálculo, hay cambios nuevos que no se han aplicado
+      const newAreasMapped = result.areas.map((a) => ({
+        area: a.area,
+        affinity: a.affinity,
+      }));
+
+      const modifiedIds: string[] = [];
+      result.areas.forEach((newAreaItem) => {
+        const technicalKey = newAreaItem.area;
+        const oldItem = previousAreas.find((p) => p.area === technicalKey);
+        
+        if (!oldItem || oldItem.affinity !== newAreaItem.affinity) {
+          modifiedIds.push(technicalKey);
+        }
+      });
+
+      setChangedAreaIds(modifiedIds);
+      setCandidateAreas(newAreasMapped);
+
       if (changeVersionRef.current === versionAtStart) {
         clearPendingChanges();
       }
-      // El aviso de error se retira solo cuando vuelve a existir un radar válido
       setHasRadarError(false);
       setHasValidRadar(true);
       setIsSuccessToastOpen(true);
     } catch {
-      // El fallo se muestra sobre el radar; hasPendingChanges se conserva para poder reintentar
       setHasRadarError(true);
     } finally {
       isRecalculatingRef.current = false;
       setIsLoading(false);
     }
-  }, [hasPendingChanges, hasRadarError, clearPendingChanges]);
+  }, [hasPendingChanges, hasRadarError, clearPendingChanges, candidateAreas]);
 
-  // Simula una modificación del perfil: es la única fuente de cambios pendientes
-  // mientras las ponderaciones vengan de la base de datos en solo lectura.
   const handleProfileChange = useCallback(() => {
     changeVersionRef.current += 1;
     setChangeVersion(changeVersionRef.current);
@@ -112,18 +148,31 @@ export const GraduateAffinityView: React.FC = () => {
     setIsSuccessToastOpen(false);
   }, []);
 
-  const areaIcons = AFFINITY_AREAS.map((area) => ({
-    area: AREA_LABELS[area],
-    score: candidateAreas.find((c) => c.area === AREA_LABELS[area])?.affinity ?? 0,
-    icon: AREA_ICONS[area],
-  }));
+  const triggerTimeoutSimulation = useCallback(async () => {
+    setIsLoading(true);
+    setHasRadarError(false);
+    await new Promise((resolve) => setTimeout(resolve, 7000));
+    setHasRadarError(true);
+    setIsLoading(false);
+  }, []);
 
-  // Sin un radar ya calculado, las etiquetas muestran --% para no presentar
-  // como válido un porcentaje que nunca se ha obtenido del sistema.
-  const radarData =
-    hasRadarError && !hasValidRadar
-      ? candidateAreas.map((item) => ({ ...item, affinity: Number.NaN }))
-      : candidateAreas;
+  const areaIcons = AFFINITY_AREAS.map((area) => {
+    const foundItem = candidateAreas.find((c) => c.area === area);
+    return {
+      area: AREA_LABELS[area],
+      score: foundItem ? foundItem.affinity : 0,
+      icon: AREA_ICONS[area],
+    };
+  });
+  
+  const orderedCandidateAreas = AFFINITY_AREAS.map((areaKey) => {
+    const found = candidateAreas.find((item) => item.area === areaKey);
+    return found || { area: areaKey, affinity: 0 };
+  });
+
+  const radarData = hasRadarError && !hasValidRadar
+    ? orderedCandidateAreas.map((item) => ({ ...item, affinity: Number.NaN }))
+    : orderedCandidateAreas;
 
   return (
     <div className="space-y-6 animate-fadeIn">
@@ -140,7 +189,7 @@ export const GraduateAffinityView: React.FC = () => {
             Tu afinidad profesional
           </h1>
           <p className="text-[13px] sm:text-sm text-blue-fantastic mt-1 max-w-xl">
-            Visualiza las áreas profesionales que más se relacionan con tu perfil académico y experiencia.
+            Visualiza las áreas profesionales que más se relacionan con tu perfil académico mediante snapshots locales.
           </p>
         </div>
 
@@ -155,17 +204,18 @@ export const GraduateAffinityView: React.FC = () => {
                 <h3 className="font-bold text-abyssal-blue text-base">Gráfico de afinidad</h3>
                 <span className="text-xs font-mono font-semibold text-truffle-trouble bg-palladian px-2.5 py-1 rounded-md border border-oatmeal flex items-center space-x-1">
                   <CheckCircle2 className="w-3.5 h-3.5 text-truffle-trouble" />
-                  <span>Vector Calculado NLP</span>
+                  <span>Vector Calculado</span>
                 </span>
               </div>
 
               <div className="relative py-4 flex flex-col items-center justify-center bg-palladian/40 rounded-xl border border-oatmeal/60">
                 <div className={hasRadarError && hasValidRadar ? 'opacity-40' : undefined}>
-                  <RadarChart
-                    data={radarData}
-                    size={320}
-                    accentColor="#A35139"
-                    fillColor="rgba(163, 81, 57, 0.22)"
+                  {/* Se remueve variant="full" porque el componente usa la renderización estándar */}
+                  <AffinityRadar
+                    affinityData={radarData}
+                    hasData={hasValidRadar}
+                    isLoading={isLoading}
+                    changedAreaIds={changedAreaIds}
                   />
                 </div>
 
@@ -182,14 +232,14 @@ export const GraduateAffinityView: React.FC = () => {
                 Áreas profesionales, porcentaje de afinidad y palabras clave relacionadas con tu perfil.
               </p>
 
-              {/* En móvil los botones ocupan el ancho completo de la tarjeta */}
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                 <button
                   type="button"
-                  onClick={handleProfileChange}
+                  onClick={() => setIsModalOpen(true)}
+                  aria-label="Simular actualización del radar"
                   className="h-11 px-4 rounded-lg border border-oatmeal bg-white text-blue-fantastic text-sm font-semibold hover:bg-palladian transition-colors"
                 >
-                  Simular cambio en el perfil
+                  Simular actualización del radar
                 </button>
 
                 <RecalculateButton
@@ -237,28 +287,42 @@ export const GraduateAffinityView: React.FC = () => {
                   );
                 })}
               </div>
-
-              <div className="p-4 rounded-xl bg-palladian/70 border border-oatmeal/70 text-[13px] text-blue-fantastic space-y-1">
-                <div className="flex items-start space-x-2">
-                  <AlertTriangle className="w-4 h-4 text-truffle-trouble shrink-0 mt-0.5" />
-                  <p className="leading-relaxed text-xs">
-                    Los resultados se actualizarán automáticamente cada vez que agregues nuevos títulos académicos, experiencia laboral o certificaciones oficiales.
-                  </p>
-                </div>
-              </div>
             </div>
 
             <div className="pt-6">
-              <button className="w-full py-3 bg-burning-flame hover:bg-burning-flame/90 text-abyssal-blue font-semibold text-sm rounded-lg transition-all flex items-center justify-center space-x-2 h-11">
+              <button type="button" className="w-full py-3 bg-burning-flame hover:bg-burning-flame/90 text-abyssal-blue font-semibold text-sm rounded-lg transition-all flex items-center justify-center space-x-2 h-11">
                 <span>Completar perfil</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
           </div>
+          
+          <button
+            type="button"
+            onClick={triggerTimeoutSimulation}
+            className="px-3 py-1.5 text-xs font-semibold text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition-colors"
+          >
+            Simular Timeout (7s) [Demo Sprint 1]
+          </button>
         </div>
       ) : (
         <AffinityCustomizer />
       )}
+
+      <div className="mt-6 flex justify-start">
+        <button
+          type="button"
+          onClick={() => {
+            router.push(RUTA_EPICA_2_CERTIFICACIONES);
+          }}
+          className="px-6 py-2.5 bg-burning-flame hover:bg-burning-flame/90 text-slate-900 font-semibold text-sm rounded-full flex items-center justify-center gap-2 transition-all duration-200 shadow-sm"
+        >
+          <svg className="w-4 h-4 text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
+          </svg>
+          <span>Añadir certificaciones</span>
+        </button>
+      </div>
 
       <PendingChangesDialog
         open={isPendingDialogOpen}
@@ -266,6 +330,55 @@ export const GraduateAffinityView: React.FC = () => {
         onDismiss={handleDismissPendingChanges}
       />
       <SuccessToast open={isSuccessToastOpen} onClose={handleCloseToast} />
+      
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div
+            role="dialog" 
+            aria-modal="true"
+            aria-label="Modal de simulación"
+            className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl space-y-4 border border-slate-100"
+          >
+            <div className="flex justify-between items-center">
+              <h3 className="text-base font-bold text-slate-900">Añadir nueva certificación</h3>
+              <button 
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 font-bold text-lg"
+              >
+                &times;
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-500">
+              Simula el ingreso de una certificación oficial para actualizar los vectores de afinidad de forma simulada.
+            </p>
+
+            <div className="pt-4 flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  handleRecalculate({ force: true });
+                  setIsModalOpen(false);
+                }}
+                className="w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-semibold text-xs rounded-xl transition-all shadow-sm flex items-center justify-center gap-2"
+              >
+                <span>Simular cambio en el perfil</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-xs rounded-xl transition-all"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+
+export default GraduateAffinityView;
