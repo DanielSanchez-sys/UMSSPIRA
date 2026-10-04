@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { GraduationCap, Plus } from 'lucide-react';
 import { MensajeError, claseCampo } from '@/modules/profile/validation/mensaje-error';
 import { type ErroresFormulario, validarFormacion } from '@/modules/profile/validation/reglas-perfil';
@@ -17,6 +17,8 @@ export type FormacionAcademica = {
 type FormacionAcademicaFormProps = {
   formaciones: FormacionAcademica[];
   onAgregar: (formacion: FormacionAcademica) => void;
+  // Avisa al acordeón cuántos campos tienen errores sin corregir (contador del encabezado)
+  onErroresChange?: (cantidad: number) => void;
 };
 
 const VACIO: FormacionAcademica = { institucion: '', titulo: '', anioEgreso: '', grado: '' };
@@ -26,11 +28,16 @@ const labelClase = 'block text-xs font-semibold text-[#2C3B4D]';
 const inputClase =
   'mt-1.5 h-11 w-full rounded-md border border-[#C9C1B1] bg-white px-3 text-sm text-[#2C3B4D] placeholder:text-[#2C3B4D]/40 focus:border-[#FFB162] focus:outline-none';
 
-export function FormacionAcademicaForm({ formaciones, onAgregar }: FormacionAcademicaFormProps) {
+export function FormacionAcademicaForm({ formaciones, onAgregar, onErroresChange }: FormacionAcademicaFormProps) {
   const [datos, setDatos] = useState<FormacionAcademica>(VACIO);
   const [errores, setErrores] = useState<ErroresFormulario<keyof FormacionAcademica>>({});
   // Los errores se muestran desde el primer intento de agregar y se recalculan mientras se corrige
   const [intentado, setIntentado] = useState(false);
+
+  const cantidadErrores = Object.keys(errores).length;
+  useEffect(() => {
+    onErroresChange?.(cantidadErrores);
+  }, [cantidadErrores, onErroresChange]);
 
   function cambiar(campo: keyof FormacionAcademica, valor: string) {
     const nuevos = { ...datos, [campo]: valor };

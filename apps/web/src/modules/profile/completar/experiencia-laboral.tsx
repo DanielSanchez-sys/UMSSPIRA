@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Briefcase } from 'lucide-react';
 import { MensajeError, claseCampo } from '@/modules/profile/validation/mensaje-error';
 import { type ErroresFormulario, validarExperiencia } from '@/modules/profile/validation/reglas-perfil';
@@ -14,6 +14,8 @@ export type Experiencia = {
 type FormularioExperienciaProps = {
   experiencias:Experiencia[];
   onAgregar: (experiencia: Experiencia) => void;
+  // Avisa al acordeón cuántos campos tienen errores sin corregir (contador del encabezado)
+  onErroresChange?: (cantidad: number) => void;
 };
 
 type Datos = {
@@ -37,12 +39,17 @@ function mostrarFecha(fecha: string) {
   return `${mes}/${anio}`;
 }
 
-export function FormularioExperiencia({experiencias, onAgregar }: FormularioExperienciaProps) {
+export function FormularioExperiencia({ experiencias, onAgregar, onErroresChange }: FormularioExperienciaProps) {
   const [datos, setDatos] = useState<Datos>(VACIO);
   const [trabajoActual, setTrabajoActual] = useState(false);
   const [errores, setErrores] = useState<ErroresFormulario<keyof Datos>>({});
   // Los errores se muestran desde el primer intento de agregar y se recalculan mientras se corrige
   const [intentado, setIntentado] = useState(false);
+
+  const cantidadErrores = Object.keys(errores).length;
+  useEffect(() => {
+    onErroresChange?.(cantidadErrores);
+  }, [cantidadErrores, onErroresChange]);
 
   function actualizar(nuevos: Datos, actual: boolean) {
     setDatos(nuevos);

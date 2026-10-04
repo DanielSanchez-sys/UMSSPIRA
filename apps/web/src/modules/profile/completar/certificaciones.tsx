@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Award, Camera, CloudUpload, FileText, Plus } from 'lucide-react';
 import { MensajeError, claseCampo } from '@/modules/profile/validation/mensaje-error';
 import { type DatosCertificacion, type ErroresFormulario, validarCertificacion } from '@/modules/profile/validation/reglas-perfil';
@@ -18,6 +18,8 @@ export type Certificacion = {
 type FormularioCertificacionesProps = {
   certificaciones: Certificacion[];
   onAgregar: (certificacion: Certificacion) => void;
+  // Avisa al acordeón cuántos campos tienen errores sin corregir (contador del encabezado)
+  onErroresChange?: (cantidad: number) => void;
 };
 
 const VACIO: Certificacion = { nombre: '', entidadEmisora: '', anioEmision: '', grado: '', respaldo: null };
@@ -29,13 +31,18 @@ const inputClase =
 const botonRespaldoClase =
   'inline-flex h-9 items-center gap-1.5 rounded-md border border-[#C9C1B1] bg-white px-3 text-xs font-semibold text-[#2C3B4D] hover:bg-[#FAF8F4]';
 
-export function FormularioCertificaciones({ certificaciones, onAgregar }: FormularioCertificacionesProps) {
+export function FormularioCertificaciones({ certificaciones, onAgregar, onErroresChange }: FormularioCertificacionesProps) {
   const [datos, setDatos] = useState<Certificacion>(VACIO);
   const fotoRef = useRef<HTMLInputElement>(null);
   const documentoRef = useRef<HTMLInputElement>(null);
   const [errores, setErrores] = useState<ErroresFormulario<keyof DatosCertificacion>>({});
   // Los errores se muestran desde el primer intento de agregar y se recalculan mientras se corrige
   const [intentado, setIntentado] = useState(false);
+
+  const cantidadErrores = Object.keys(errores).length;
+  useEffect(() => {
+    onErroresChange?.(cantidadErrores);
+  }, [cantidadErrores, onErroresChange]);
 
   function cambiar(campo: keyof DatosCertificacion, valor: string) {
     const nuevos = { ...datos, [campo]: valor };
