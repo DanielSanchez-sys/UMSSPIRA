@@ -2,6 +2,8 @@
 
 import { useRef, useState } from 'react';
 import { Award, Camera, CloudUpload, FileText, Plus } from 'lucide-react';
+import { MensajeError, claseCampo } from '@/modules/profile/validation/mensaje-error';
+import { type DatosCertificacion, type ErroresFormulario, validarCertificacion } from '@/modules/profile/validation/reglas-perfil';
 
 const GRADOS = ['Fundamentos', 'Asociado', 'Profesional', 'Especialista', 'Experto'];
 
@@ -31,9 +33,14 @@ export function FormularioCertificaciones({ certificaciones, onAgregar }: Formul
   const [datos, setDatos] = useState<Certificacion>(VACIO);
   const fotoRef = useRef<HTMLInputElement>(null);
   const documentoRef = useRef<HTMLInputElement>(null);
+  const [errores, setErrores] = useState<ErroresFormulario<keyof DatosCertificacion>>({});
+  // Los errores se muestran desde el primer intento de agregar y se recalculan mientras se corrige
+  const [intentado, setIntentado] = useState(false);
 
-  function cambiar(campo: 'nombre' | 'entidadEmisora' | 'anioEmision' | 'grado', valor: string) {
-    setDatos({ ...datos, [campo]: valor });
+  function cambiar(campo: keyof DatosCertificacion, valor: string) {
+    const nuevos = { ...datos, [campo]: valor };
+    setDatos(nuevos);
+    if (intentado) setErrores(validarCertificacion(nuevos));
   }
 
   function elegirRespaldo(evento: React.ChangeEvent<HTMLInputElement>) {
@@ -44,12 +51,17 @@ export function FormularioCertificaciones({ certificaciones, onAgregar }: Formul
 
   function agregar(evento: React.FormEvent<HTMLFormElement>) {
     evento.preventDefault();
+    const encontrados = validarCertificacion(datos);
+    setIntentado(true);
+    setErrores(encontrados);
+    if (Object.keys(encontrados).length > 0) return;
     onAgregar({
       ...datos,
       nombre: datos.nombre.trim(),
       entidadEmisora: datos.entidadEmisora.trim(),
     });
     setDatos(VACIO);
+    setIntentado(false);
   }
 
   return (
@@ -83,7 +95,7 @@ export function FormularioCertificaciones({ certificaciones, onAgregar }: Formul
 
       <p className={subtituloClase}>Agregar nueva certificación</p>
 
-      <form onSubmit={agregar} className="mt-4 space-y-4">
+      <form onSubmit={agregar} noValidate className="mt-4 space-y-4">
         <div>
           <label htmlFor="nombreCertificacion" className={labelClase}>Nombre de certificación</label>
           <input
@@ -93,8 +105,11 @@ export function FormularioCertificaciones({ certificaciones, onAgregar }: Formul
             placeholder="Ej. AWS Cloud Practitioner"
             value={datos.nombre}
             onChange={(e) => cambiar('nombre', e.target.value)}
-            className={inputClase}
+            aria-invalid={Boolean(errores.nombre)}
+            aria-describedby="error-certificacion-nombre"
+            className={claseCampo(inputClase, errores.nombre)}
           />
+          <MensajeError id="error-certificacion-nombre" mensaje={errores.nombre} />
         </div>
 
         <div>
@@ -106,8 +121,11 @@ export function FormularioCertificaciones({ certificaciones, onAgregar }: Formul
             placeholder="Ej. Amazon Web Services"
             value={datos.entidadEmisora}
             onChange={(e) => cambiar('entidadEmisora', e.target.value)}
-            className={inputClase}
+            aria-invalid={Boolean(errores.entidadEmisora)}
+            aria-describedby="error-certificacion-entidadEmisora"
+            className={claseCampo(inputClase, errores.entidadEmisora)}
           />
+          <MensajeError id="error-certificacion-entidadEmisora" mensaje={errores.entidadEmisora} />
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
@@ -125,8 +143,11 @@ export function FormularioCertificaciones({ certificaciones, onAgregar }: Formul
               placeholder="Ej. 2023"
               value={datos.anioEmision}
               onChange={(e) => cambiar('anioEmision', e.target.value.replace(/\D/g, ''))}
-              className={inputClase}
+              aria-invalid={Boolean(errores.anioEmision)}
+              aria-describedby="error-certificacion-anioEmision"
+              className={claseCampo(inputClase, errores.anioEmision)}
             />
+            <MensajeError id="error-certificacion-anioEmision" mensaje={errores.anioEmision} />
           </div>
 
           <div>
@@ -136,13 +157,16 @@ export function FormularioCertificaciones({ certificaciones, onAgregar }: Formul
               required
               value={datos.grado}
               onChange={(e) => cambiar('grado', e.target.value)}
-              className={inputClase}
+              aria-invalid={Boolean(errores.grado)}
+              aria-describedby="error-certificacion-grado"
+              className={claseCampo(inputClase, errores.grado)}
             >
               <option value="" disabled>Selecciona un grado</option>
               {GRADOS.map((grado) => (
                 <option key={grado} value={grado}>{grado}</option>
               ))}
             </select>
+            <MensajeError id="error-certificacion-grado" mensaje={errores.grado} />
           </div>
         </div>
 
