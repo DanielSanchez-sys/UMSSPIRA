@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { RadarChart, type RadarDataPoint } from './radar-chart';
+import AffinityRadar from './affinity-radar';
+import { toAffinityAreaScores, type RawAreaPoint } from '../utils/affinity-areas';
 import { CheckCircle2, ShieldCheck, ExternalLink, Award, FileText, ChevronRight } from 'lucide-react';
 
 export interface CandidateCardProps {
@@ -15,7 +16,7 @@ export interface CandidateCardProps {
   nlpScore?: number;
   featured?: boolean;
   isSelected?: boolean;
-  areas?: RadarDataPoint[];
+  areas?: RawAreaPoint[];
   location?: string;
   sisCode?: string;
   concentrationArea?: string;
@@ -44,7 +45,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
   const scoreDisplay = nlpScore !== undefined ? nlpScore : affinity;
 
   // Fallback areas if empty
-  const defaultAreas: RadarDataPoint[] = [
+  const defaultAreas: RawAreaPoint[] = [
     { area: 'desarrollo de software', affinity: 95 },
     { area: 'cloud & devops', affinity: 64 },
     { area: 'ciencia de datos & ia', affinity: 71 },
@@ -54,6 +55,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
   ];
 
   const chartData = areas.length >= 6 ? areas : defaultAreas;
+  const radarData = toAffinityAreaScores(chartData);
 
   return (
     <div
@@ -114,12 +116,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
         </div>
 
         {/* Embedded Hexagon SVG Radar Graph */}
-        <RadarChart
-          data={chartData}
-          size={240}
-          accentColor={isSelected ? '#A35139' : '#2C3B4D'}
-          fillColor={isSelected ? 'rgba(163, 81, 57, 0.2)' : 'rgba(44, 59, 77, 0.15)'}
-        />
+                <AffinityRadar variant="mini" affinityData={radarData} highlighted={isSelected} />
 
         {/* Concentration Highlight Box */}
         <div className="w-full bg-white/90 rounded-lg p-2 mt-1 border border-slate-200 text-center text-xs">

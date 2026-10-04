@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Search, Sparkles, Cpu, RefreshCw, Zap, Award } from 'lucide-react';
-import type { RadarDataPoint } from './radar-chart';
+import type { RawAreaPoint } from '../utils/affinity-areas';
 
 export interface SearchCandidateResult {
   graduateId: string;
@@ -14,7 +14,7 @@ export interface SearchCandidateResult {
   affinity: number;
   featured: boolean;
   nlpScore?: number;
-  areas?: RadarDataPoint[];
+  areas?: RawAreaPoint[];
 }
 
 interface NlpSearchProps {
