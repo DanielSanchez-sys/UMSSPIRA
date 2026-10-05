@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
+import { MailModule } from './modules/mail/mail.module';
 
 @Module({
-  imports: [], // Aquí irán CompaniesModule y JobPostingsModule
+  imports: [MailModule],
   controllers: [],
   providers: [],
 })
