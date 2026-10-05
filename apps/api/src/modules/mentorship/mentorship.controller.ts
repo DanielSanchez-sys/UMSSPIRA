@@ -1,117 +1,77 @@
 import {
-    BadRequestException,
-    Controller,
-    ConflictException,
-    Get,
-    HttpCode,
-    HttpStatus,
-    NotFoundException,
-    Param,
-    Patch,
-    Post,
-    Body,
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Req,
+  UnauthorizedException,
 } from '@nestjs/common';
-import { MentorshipEligibilityService } from './mentorship-eligibility.service';
-import { MentorEligibilityProfile } from './mentor-eligibility.types';
-import { SupabaseService } from '../../shared/lib/supabase';
+import type { Request } from 'express';
+import { UpdateParticipationDto } from './dto/update-participation.dto';
+import { Mentor } from './mentor.model';
+import { MentorshipService, ModuleStatus } from './mentorship.service';
 
+/** Se asume que el guard de autenticación del equipo inyecta req.user.id. */
+type AuthenticatedRequest = Request & { user?: { id?: string } };
+
+// TODO: aplicar el guard de autenticación del proyecto a nivel de clase:
+// @UseGuards(AuthGuard)
 @Controller('mentorship')
 export class MentorshipController {
-    constructor(
-        private readonly mentorshipEligibilityService: MentorshipEligibilityService,
-        private readonly supabaseService: SupabaseService,
-    ) {}
+  constructor(private readonly mentorshipService: MentorshipService) {}
 
-    @Get('status')
-    getStatus() {
-        return { mode: this.supabaseService.isConfigured ? 'supabase' : 'demo' };
+  @Get('status')
+  getStatus(): Promise<ModuleStatus> {
+    return this.mentorshipService.getStatus();
+  }
+
+  @Get('profiles')
+  getProfiles(): Promise<Mentor[]> {
+    return this.mentorshipService.getActiveProfiles();
+  }
+
+  @Get('mi-perfil')
+  getMyProfile(@Req() req: AuthenticatedRequest): Promise<Mentor> {
+    return this.mentorshipService.getMyProfile(this.userId(req));
+  }
+
+  @Post('profiles/reset')
+  @HttpCode(HttpStatus.OK)
+  resetMyProfile(@Req() req: AuthenticatedRequest): Promise<Mentor> {
+    return this.mentorshipService.resetMyProfile(this.userId(req));
+  }
+
+  @Post('eligibility')
+  @HttpCode(HttpStatus.OK)
+  checkEligibility(@Req() req: AuthenticatedRequest): Promise<{ eligible: boolean }> {
+    return this.mentorshipService.checkEligibility(this.userId(req));
+  }
+
+  @Patch('mi-perfil/participacion')
+  setParticipation(
+    @Req() req: AuthenticatedRequest,
+    @Body() dto: UpdateParticipationDto,
+  ): Promise<Mentor> {
+    return this.mentorshipService.setParticipation(this.userId(req), dto);
+  }
+
+  // TODO: restringir a administradores con el guard de roles del proyecto.
+  @Patch('deactivate/:userId')
+  deactivate(@Param('userId', ParseUUIDPipe) userId: string): Promise<Mentor> {
+    return this.mentorshipService.deactivateByAdmin(userId);
+  }
+
+  /** Evita un 500 si el guard de auth aún no inyectó el usuario. */
+  private userId(req: AuthenticatedRequest): string {
+    const id = req.user?.id;
+    if (!id) {
+      throw new UnauthorizedException('Usuario no autenticado');
     }
-
-    @Get('profiles')
-    getProfiles() {
-        return this.supabaseService.getMentorProfiles();
-    }
-
-    @Get('mi-perfil')
-    async getMyMentorParticipation() {
-        const profile = await this.supabaseService.getCurrentMentorProfile();
-        return this.mentorshipEligibilityService.evaluate(profile);
-    }
-
-    @Post('profiles/reset')
-    resetProfiles() {
-        return this.supabaseService.resetDemoProfiles();
-    }
-
-    @Post('eligibility')
-    @HttpCode(HttpStatus.OK)
-    evaluateEligibility(@Body('profile') profile: unknown) {
-        return this.mentorshipEligibilityService.evaluate(profile);
-    }
-
-    @Patch('mi-perfil/participacion')
-    @HttpCode(HttpStatus.OK)
-    async updateMyMentorParticipation(@Body() body: { isActive?: boolean }) {
-        if (typeof body?.isActive !== 'boolean') {
-            throw new BadRequestException('Envía "isActive" con un valor booleano.');
-        }
-
-        const profile = await this.supabaseService.getCurrentMentorProfile();
-        const result = this.mentorshipEligibilityService.evaluate(profile);
-        if (body.isActive && (!result.requirements.egresado || !result.requirements.perfil)) {
-            throw new ConflictException(result);
-        }
-
-        if (body.isActive) {
-            await this.supabaseService.activateMentor(profile.userId);
-        } else {
-            const retainedSettings = {
-                ...profile.mentorSettings,
-                bio: profile.mentorSettings?.bio ?? profile.description,
-            };
-            await this.supabaseService.deactivateMentor(
-                profile.userId,
-                undefined,
-                retainedSettings,
-            );
-        }
-
-        return { ...result, isActive: body.isActive };
-    }
-
-    @Patch('deactivate/:userId')
-    @HttpCode(HttpStatus.OK)
-    deactivateMentor(
-        @Param('userId') userId: string,
-        @Body() body: { profile?: MentorEligibilityProfile; reason?: unknown } | null,
-    ) {
-        const requestBody = body ?? {};
-        const reason = requestBody.reason;
-        if (reason !== undefined && typeof reason !== 'string') {
-            throw new BadRequestException('El motivo de desactivación debe ser texto.');
-        }
-        return this.deactivate(userId, {
-            profile: requestBody.profile,
-            ...(typeof reason === 'string' ? { reason } : {}),
-        });
-    }
-
-    private async deactivate(
-        userId: string,
-        body: { profile?: MentorEligibilityProfile; reason?: string },
-    ) {
-        const storedProfile = await this.supabaseService.getMentorProfile(userId);
-        const profile = storedProfile
-            ?? (this.supabaseService.isConfigured ? undefined : body.profile);
-        if (!profile) {
-            throw new NotFoundException('No se encontró el perfil de mentor indicado.');
-        }
-
-        const result = this.mentorshipEligibilityService.deactivateMentorRole(profile, {
-            userId,
-            reason: body.reason,
-        });
-        await this.supabaseService.deactivateMentor(userId, body.reason, result.retainedSettings);
-        return result;
-    }
+    return id;
+  }
 }
