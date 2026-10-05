@@ -11,7 +11,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         className={cn(
-          "h-11 px-6 rounded-lg text-sm font-semibold transition-colors",
+          "h-11 px-6 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
           variant === "primary" &&
             "bg-blue-fantastic text-white hover:bg-abyssal-blue",
           variant === "secondary" &&
