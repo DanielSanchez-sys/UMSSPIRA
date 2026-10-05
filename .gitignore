@@ -2,5 +2,8 @@ node_modules/
 apps/api/.local/
 dist/
 .next/
+.next-production/
 .env
+.env.local
+.env.*.local
 .DS_Store
