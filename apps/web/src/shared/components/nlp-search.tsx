@@ -15,6 +15,9 @@ export interface SearchCandidateResult {
   featured: boolean;
   nlpScore?: number;
   areas?: RawAreaPoint[];
+  location?: string;
+  sisCode?: string;
+  concentrationArea?: string;
 }
 
 interface NlpSearchProps {
