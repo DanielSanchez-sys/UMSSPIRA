@@ -10,20 +10,25 @@ jest.mock('next/navigation', () => ({
 
 jest.mock('@/shared/components/affinity-radar', () => ({
   __esModule: true,
-  default: (props: { changedAreaIds?: string[] }) => (
-    <div data-testid="radar" data-changed={JSON.stringify(props.changedAreaIds ?? [])} />
+  default: (props: { changedAreaIds?: string[]; onSelectArea?: (id: string | null) => void }) => (
+    <div data-testid="radar" data-changed={JSON.stringify(props.changedAreaIds ?? [])}>
+      <button type="button" onClick={() => props.onSelectArea?.('cloud-devops')}>
+        Seleccionar eje de prueba
+      </button>
+    </div>
   ),
 }));
 
 jest.mock('../services/affinity-service');
 
+// Nombres que muestra el panel de inspección (HU2-C3)
 const EXPECTED_LABELS = [
   'Desarrollo de Software',
-  'Cloud/DevOps e Infraestructura',
+  'Cloud/DevOps',
   'Ciencia de Datos/IA',
-  'Aseguramiento de Calidad (QA)',
-  'Ciberseguridad y Redes',
-  'Gestión de TI',
+  'QA',
+  'Ciberseguridad',
+  'Gestión TI',
 ];
 
 describe('GraduateAffinityView', () => {
@@ -201,7 +206,7 @@ describe('GraduateAffinityView', () => {
       render(<GraduateAffinityView />);
     });
 
-    const summarySection = screen.getByText('Resumen de tu afinidad').parentElement?.parentElement;
+    const summarySection = (await screen.findByText('Resumen de Afinidad por Área')).parentElement;
     expect(summarySection).not.toBeNull();
 
     const labels = EXPECTED_LABELS.map((label) =>
@@ -214,5 +219,51 @@ describe('GraduateAffinityView', () => {
       const previous = labels[index - 1];
       expect(previous.compareDocumentPosition(label) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     });
+  });
+
+  it('muestra el resumen del panel con los porcentajes del mismo vector del radar y la indicación para inspeccionar', async () => {
+    await act(async () => {
+      render(<GraduateAffinityView />);
+    });
+
+    // 85% viene del vector del servicio; el mock del panel tiene 82.5 (se mostraría 83%)
+    expect(await screen.findByText('85%')).toBeInTheDocument();
+    expect(screen.queryByText('83%')).not.toBeInTheDocument();
+    expect(screen.getByText('Haz clic en un área para inspeccionar sus respaldos')).toBeInTheDocument();
+  });
+
+  it('al seleccionar un eje en el radar, el panel muestra el área y sus respaldos', async () => {
+    await act(async () => {
+      render(<GraduateAffinityView />);
+    });
+
+    await screen.findByText('Resumen de Afinidad por Área');
+    fireEvent.click(screen.getByRole('button', { name: 'Seleccionar eje de prueba' }));
+
+    expect(await screen.findByText(/Área: Cloud\/DevOps/)).toBeInTheDocument();
+    expect(screen.getByText('AWS Certified Cloud Practitioner')).toBeInTheDocument();
+  });
+
+  it('Volver al resumen deselecciona el área en el panel', async () => {
+    await act(async () => {
+      render(<GraduateAffinityView />);
+    });
+
+    await screen.findByText('Resumen de Afinidad por Área');
+    fireEvent.click(screen.getByRole('button', { name: 'Seleccionar eje de prueba' }));
+    fireEvent.click(await screen.findByRole('button', { name: /volver al resumen/i }));
+
+    expect(screen.queryByText(/Área: Cloud\/DevOps/)).not.toBeInTheDocument();
+  });
+
+  it('si el vector inicial falla, el panel muestra el estado vacío y no los datos por defecto', async () => {
+    mockGetAffinityVector.mockRejectedValueOnce(new Error('fallo de red'));
+
+    await act(async () => {
+      render(<GraduateAffinityView />);
+    });
+
+    expect(await screen.findByText('Sin datos de historial laboral')).toBeInTheDocument();
+    expect(screen.queryByText('Resumen de Afinidad por Área')).not.toBeInTheDocument();
   });
 });

@@ -8,32 +8,19 @@ import { AffinityCustomizer } from './affinity-customizer';
 import { PendingChangesDialog } from './pending-changes-dialog';
 import { RadarErrorState } from './radar-error-state';
 import { SuccessToast } from './success-toast';
+import RadarInspection from './radar-inspection';
+import affinityVectorMock from '../mocks/affinity-vector-mock.json';
 import { useRecalculateState } from '../hooks/use-recalculate-state';
 import { recalculateAffinity, getAffinityVector } from '../services/affinity-service';
-import { AFFINITY_AREAS, type AffinityArea, type AffinityAreaScore } from '@umsspira/shared-types/src/affinity';
-import { ArrowLeft, Code, Database, Cloud, ShieldAlert, Lock, Target, ArrowRight, Sparkles, CheckCircle2 } from 'lucide-react';
+import { AFFINITY_AREAS, type AffinityAreaScore } from '@umsspira/shared-types/src/affinity';
+import { ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 // Ruta de Épica 2 almacenada en una constante a nivel de módulo
 const RUTA_EPICA_2_CERTIFICACIONES = '/epica-2/certificaciones/nueva?returnTo=/afinidad';
 
-const AREA_ICONS: Record<AffinityArea, React.ElementType> = {
-  'software-development': Code,
-  'cloud-devops': Cloud,
-  'data-ai': Database,
-  'quality-assurance': Target,
-  'cybersecurity-networks': Lock,
-  'it-management': ShieldAlert,
-};
-
-const AREA_LABELS: Record<AffinityArea, string> = {
-  'software-development': 'Desarrollo de Software',
-  'cloud-devops': 'Cloud/DevOps e Infraestructura',
-  'data-ai': 'Ciencia de Datos/IA',
-  'quality-assurance': 'Aseguramiento de Calidad (QA)',
-  'cybersecurity-networks': 'Ciberseguridad y Redes',
-  'it-management': 'Gestión de TI',
-};
+// Áreas que espera el panel de inspección (se deriva de sus props para no duplicar el tipo)
+type InspectionAreas = NonNullable<React.ComponentProps<typeof RadarInspection>['areas']>;
 
 export const GraduateAffinityView: React.FC = () => {
   const router = useRouter();
@@ -47,6 +34,7 @@ export const GraduateAffinityView: React.FC = () => {
   const [isSuccessToastOpen, setIsSuccessToastOpen] = useState<boolean>(false);
   
   const [changedAreaIds, setChangedAreaIds] = useState<string[]>([]);
+  const [selectedAreaId, setSelectedAreaId] = useState<string | null>(null);
 
   const [candidateAreas, setCandidateAreas] = useState<AffinityAreaScore[]>([
     { area: 'software-development', affinity: 95 },
@@ -156,15 +144,6 @@ export const GraduateAffinityView: React.FC = () => {
     setIsLoading(false);
   }, []);
 
-  const areaIcons = AFFINITY_AREAS.map((area) => {
-    const foundItem = candidateAreas.find((c) => c.area === area);
-    return {
-      area: AREA_LABELS[area],
-      score: foundItem ? foundItem.affinity : 0,
-      icon: AREA_ICONS[area],
-    };
-  });
-  
   const orderedCandidateAreas = AFFINITY_AREAS.map((areaKey) => {
     const found = candidateAreas.find((item) => item.area === areaKey);
     return found || { area: areaKey, affinity: 0 };
@@ -173,6 +152,14 @@ export const GraduateAffinityView: React.FC = () => {
   const radarData = hasRadarError && !hasValidRadar
     ? orderedCandidateAreas.map((item) => ({ ...item, affinity: Number.NaN }))
     : orderedCandidateAreas;
+
+  // Los porcentajes del panel salen del mismo vector que dibuja el radar; los respaldos vienen del mock en el Sprint 1.
+  const mockAreas = affinityVectorMock.areas as unknown as InspectionAreas;
+  const inspectionAreas: InspectionAreas = orderedCandidateAreas.map((item) => ({
+    area: item.area,
+    affinity: item.affinity,
+    evidence: mockAreas.find((mock) => mock.area === item.area)?.evidence ?? [],
+  }));
 
   return (
     <div className="space-y-6 animate-fadeIn">
@@ -216,6 +203,8 @@ export const GraduateAffinityView: React.FC = () => {
                     hasData={hasValidRadar}
                     isLoading={isLoading}
                     changedAreaIds={changedAreaIds}
+                    selectedAreaId={selectedAreaId}
+                    onSelectArea={setSelectedAreaId}
                   />
                 </div>
 
@@ -251,50 +240,12 @@ export const GraduateAffinityView: React.FC = () => {
             </div>
           </div>
 
-          <div className="lg:col-span-5 bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-oatmeal flex flex-col justify-between">
-            <div className="space-y-5">
-              <div className="flex items-center justify-between border-b border-palladian pb-4">
-                <h3 className="font-bold text-abyssal-blue text-base">Resumen de tu afinidad</h3>
-                <span className="px-3 py-1 rounded-full bg-palladian text-truffle-trouble border border-oatmeal text-xs font-semibold flex items-center space-x-1">
-                  <Sparkles className="w-3.5 h-3.5 text-truffle-trouble" />
-                  <span>Verificado</span>
-                </span>
-              </div>
-
-              <p className="text-[13px] text-blue-fantastic">
-                Porcentajes de afinidad por área a partir de las palabras clave de tu perfil:
-              </p>
-
-              <div className="space-y-2.5">
-                {areaIcons.map((item, idx) => {
-                  const Icon = item.icon;
-                  return (
-                    <div
-                      key={idx}
-                      className="p-3 rounded-xl bg-palladian/50 border border-oatmeal/80 hover:border-oatmeal transition-colors flex items-center justify-between"
-                    >
-                      <div className="flex items-center space-x-3">
-                        <div className="p-2 rounded-lg bg-white border border-oatmeal text-blue-fantastic">
-                          <Icon className="w-4 h-4" />
-                        </div>
-                        <span className="text-[13px] font-semibold text-abyssal-blue">{item.area}</span>
-                      </div>
-
-                      <span className="text-[13px] font-bold text-truffle-trouble font-mono">
-                        {item.score}%
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="pt-6">
-              <button type="button" className="w-full py-3 bg-burning-flame hover:bg-burning-flame/90 text-abyssal-blue font-semibold text-sm rounded-lg transition-all flex items-center justify-center space-x-2 h-11">
-                <span>Completar perfil</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
+          <div className="lg:col-span-5">
+            <RadarInspection
+              selectedAreaId={selectedAreaId}
+              onSelectArea={setSelectedAreaId}
+              areas={hasValidRadar ? inspectionAreas : []}
+            />
           </div>
           
           <button
