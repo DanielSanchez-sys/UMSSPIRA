@@ -40,6 +40,10 @@ interface AffinityRadarProps {
   highlighted?: boolean;
   isLoading?: boolean;
   changedAreaIds?: string[];
+  /** Eje seleccionado desde el padre. Si no se pasa, el radar maneja su propia selección. */
+  selectedAreaId?: string | null;
+  /** Se llama con el id del eje cuando el usuario lo selecciona. */
+  onSelectArea?: (id: string | null) => void;
 }
 
 export default function AffinityRadar({ 
@@ -48,9 +52,19 @@ export default function AffinityRadar({
   variant = 'full',
   highlighted = false,
   isLoading = false,    
-  changedAreaIds = []     
+  changedAreaIds = [],
+  selectedAreaId,
+  onSelectArea,     
 }: AffinityRadarProps) {
-  const [selectedArea, setSelectedArea] = useState<string | null>(null);
+  const [internalSelectedArea, setInternalSelectedArea] = useState<string | null>(null);
+  const isControlled = selectedAreaId !== undefined;
+  const selectedArea = selectedAreaId !== undefined ? selectedAreaId : internalSelectedArea;
+
+  const handleSelectArea = (id: string) => {
+    if (!isControlled) setInternalSelectedArea(id);
+    onSelectArea?.(id);
+  };
+  
   const isMini = variant === 'mini';
 
   // Mini vacía: solo cuadrícula, sin etiquetas ni porcentajes (CA-HU2-05)
@@ -167,7 +181,7 @@ export default function AffinityRadar({
                 <g
                   key={`point-${data.id}`}
                   className="cursor-pointer"
-                  onClick={() => setSelectedArea(data.id)}
+                  onClick={() => handleSelectArea(data.id)}
                   style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
                 >
                   <circle cx={x} cy={y} r={15} fill="transparent" />
@@ -242,7 +256,7 @@ export default function AffinityRadar({
                 textAnchor="middle"
                 dominantBaseline="middle"
                 className={`text-xs md:text-sm font-medium cursor-pointer transition-colors ${labelStyle}`}
-                onClick={() => setSelectedArea(data.id)}
+                onClick={() => handleSelectArea(data.id)}
               >
                 {data.label}
               </text>

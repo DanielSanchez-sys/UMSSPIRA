@@ -76,6 +76,44 @@ describe('AffinityRadar Component', () => {
     // Los ejes base de la telaraña deben seguir ahí
     expect(screen.getByText('Desarrollo de Software')).toBeInTheDocument();
   });
+
+    // --- SELECCIÓN CONTROLADA DESDE EL PADRE ---
+  it('en modo controlado marca el eje indicado por selectedAreaId', () => {
+    render(<AffinityRadar affinityData={mockData as any} hasData={true} selectedAreaId="cloud-devops" />);
+
+    expect(screen.getByText('ÁREA SELECCIONADA (CLICK)')).toBeInTheDocument();
+    expect(screen.getByText('70%')).toBeInTheDocument();
+  });
+
+  it('en modo controlado avisa al padre con el id del eje y no cambia la selección por sí mismo', () => {
+    const onSelectArea = jest.fn();
+    render(
+      <AffinityRadar
+        affinityData={mockData as any}
+        hasData={true}
+        selectedAreaId={null}
+        onSelectArea={onSelectArea}
+      />
+    );
+
+    fireEvent.click(screen.getByText('Cloud/DevOps'));
+    
+    expect(onSelectArea).toHaveBeenCalledWith('cloud-devops');
+    expect(
+      screen.getByText('Selecciona un área en el radar para ver el detalle de afinidad del titulado.')
+    ).toBeInTheDocument();
+    expect(screen.queryByText('70%')).not.toBeInTheDocument();
+  });
+
+  it('sin selectedAreaId mantiene su propia selección y también avisa al padre', () => {
+    const onSelectArea = jest.fn();
+    render(<AffinityRadar affinityData={mockData as any} hasData={true} onSelectArea={onSelectArea} />);
+
+    fireEvent.click(screen.getByText('Desarrollo de Software'));
+
+    expect(onSelectArea).toHaveBeenCalledWith('software-development');
+    expect(screen.getByText('ÁREA SELECCIONADA (CLICK)')).toBeInTheDocument();
+  });
 });
 
 // Para el radar miniatura
