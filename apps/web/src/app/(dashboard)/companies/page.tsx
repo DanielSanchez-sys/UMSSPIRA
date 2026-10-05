@@ -7,6 +7,7 @@ import type {
 } from '@umsspira/shared-types';
 
 import { CompanyDetails } from './company-details';
+import { CompanyHeader } from './company-header';
 import { EditCompanyForm } from '@/shared/components/edit-company-form';
 
 const companyMock: Company = {
@@ -23,7 +24,7 @@ const companyMock: Company = {
   eslogan: 'Calidad y tradición para cada día.',
 };
 
-export default function CompanyProfilePage() {
+export default function CompaniesPage() {
   const [company, setCompany] = useState<Company>(companyMock);
   const [isEditing, setIsEditing] = useState(false);
 
@@ -63,6 +64,10 @@ export default function CompanyProfilePage() {
   return (
     <div className="min-h-screen bg-[#EEE9DF] p-6 sm:p-8">
       <div className="mx-auto max-w-7xl space-y-6">
+        {/* Componente HU-02: Banner y Encabezado de la empresa */}
+        <CompanyHeader />
+
+        {/* Componente HU-03: Detalles, Descripcion y Contacto */}
         <CompanyDetails
           description={company.descripcion}
           taxId={company.nit}
