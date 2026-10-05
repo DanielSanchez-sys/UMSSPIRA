@@ -8,6 +8,7 @@ import { AffinityCustomizer } from './affinity-customizer';
 import { PendingChangesDialog } from './pending-changes-dialog';
 import { RadarErrorState } from './radar-error-state';
 import { SuccessToast } from './success-toast';
+import { AffinitySkeleton } from './affinity-skeleton';
 import RadarInspection from './radar-inspection';
 import affinityVectorMock from '../mocks/affinity-vector-mock.json';
 import { useRecalculateState } from '../hooks/use-recalculate-state';
@@ -153,6 +154,9 @@ export const GraduateAffinityView: React.FC = () => {
     ? orderedCandidateAreas.map((item) => ({ ...item, affinity: Number.NaN }))
     : orderedCandidateAreas;
 
+  // Mientras no llega el primer vector ni ocurre un error, se muestra el skeleton para no presentar el perfil como vacío (HU-2, escenarios de carga y error).
+  const isInitialLoading = !hasValidRadar && !hasRadarError;
+
   // Los porcentajes del panel salen del mismo vector que dibuja el radar; los respaldos vienen del mock en el Sprint 1.
   const mockAreas = affinityVectorMock.areas as unknown as InspectionAreas;
   const inspectionAreas: InspectionAreas = orderedCandidateAreas.map((item) => ({
@@ -184,15 +188,21 @@ export const GraduateAffinityView: React.FC = () => {
       </div>
 
       {profileState === 'calculated' ? (
+        isInitialLoading ? (
+        <AffinitySkeleton />
+        ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
           <div className="lg:col-span-7 bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-oatmeal flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between border-b border-palladian pb-4 mb-4">
                 <h3 className="font-bold text-abyssal-blue text-base">Gráfico de afinidad</h3>
-                <span className="text-xs font-mono font-semibold text-truffle-trouble bg-palladian px-2.5 py-1 rounded-md border border-oatmeal flex items-center space-x-1">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-truffle-trouble" />
-                  <span>Vector Calculado</span>
-                </span>
+                {/* La etiqueta solo aparece cuando existe un radar válido, no durante una falla inicial */}
+                {hasValidRadar && (
+                  <span className="text-xs font-mono font-semibold text-truffle-trouble bg-palladian px-2.5 py-1 rounded-md border border-oatmeal flex items-center space-x-1">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-truffle-trouble" />
+                    <span>Vector Calculado</span>
+                  </span>
+                )}
               </div>
 
               <div className="relative py-4 flex flex-col items-center justify-center bg-palladian/40 rounded-xl border border-oatmeal/60">
@@ -241,11 +251,14 @@ export const GraduateAffinityView: React.FC = () => {
           </div>
 
           <div className="lg:col-span-5">
-            <RadarInspection
-              selectedAreaId={selectedAreaId}
-              onSelectArea={setSelectedAreaId}
-              areas={hasValidRadar ? inspectionAreas : []}
-            />
+            {/* Con error y sin un radar válido previo no se muestra el panel, para no presentar la falla como un perfil sin datos */}
+            {hasValidRadar && (
+              <RadarInspection
+                selectedAreaId={selectedAreaId}
+                onSelectArea={setSelectedAreaId}
+                areas={inspectionAreas}
+              />
+            )}
           </div>
           
           <button
@@ -256,6 +269,7 @@ export const GraduateAffinityView: React.FC = () => {
             Simular Timeout (7s) [Demo Sprint 1]
           </button>
         </div>
+        )
       ) : (
         <AffinityCustomizer />
       )}

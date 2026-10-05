@@ -263,7 +263,16 @@ describe('GraduateAffinityView', () => {
       render(<GraduateAffinityView />);
     });
 
-    expect(await screen.findByText('Sin datos de historial laboral')).toBeInTheDocument();
+    expect(await screen.findByText(/No se pudo actualizar tu radar/)).toBeInTheDocument();
+    expect(screen.queryByText('Sin datos de historial laboral')).not.toBeInTheDocument();
     expect(screen.queryByText('Resumen de Afinidad por Área')).not.toBeInTheDocument();
+  });
+
+  it('muestra el skeleton mientras carga y no presenta el perfil como vacío', () => {
+    mockGetAffinityVector.mockReturnValue(new Promise(() => {}));
+    render(<GraduateAffinityView />);
+
+    expect(screen.getByRole('status', { name: 'Cargando tu radar de afinidad' })).toBeInTheDocument();
+    expect(screen.queryByText('Sin datos de historial laboral')).not.toBeInTheDocument();
   });
 });
