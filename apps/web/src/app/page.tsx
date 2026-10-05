@@ -109,6 +109,9 @@ export default function Home() {
                       featured={cand.featured}
                       isSelected={selectedGraduateId === cand.graduateId}
                       areas={cand.areas}
+                      location={cand.location}
+                      sisCode={cand.sisCode}
+                      concentrationArea={cand.concentrationArea}
                       onSelectCandidate={(id) => setSelectedGraduateId(id)}
                     />
                   ))}
