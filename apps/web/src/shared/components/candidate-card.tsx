@@ -3,7 +3,8 @@
 import React, { useState } from 'react';
 import AffinityRadar from './affinity-radar';
 import { toAffinityAreaScores, type RawAreaPoint } from '../utils/affinity-areas';
-import { CheckCircle2, ShieldCheck, ExternalLink, Award, FileText, ChevronRight } from 'lucide-react';
+import { CheckCircle2, ShieldCheck, ExternalLink, Award, FileText, ChevronRight, MapPin } from 'lucide-react';
+import { formatPercentage } from '../utils/percentage';
 
 export interface CandidateCardProps {
   graduateId: string;
@@ -60,26 +61,26 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
   return (
     <div
       className={`bg-white rounded-2xl border transition-all duration-300 shadow-sm flex flex-col justify-between overflow-hidden relative ${
-        isSelected
-          ? 'border-truffle-trouble ring-2 ring-truffle-trouble/30 shadow-xl scale-[1.01]'
+        featured
+          ? 'border-truffle-trouble ring-2 ring-truffle-trouble/30 shadow-xl'
           : 'border-slate-200 hover:border-oatmeal hover:shadow-md'
-      }`}
+      } ${isSelected && !featured ? 'ring-2 ring-abyssal-blue/40' : ''} ${isSelected ? 'scale-[1.01]' : ''}`}
     >
-      {/* Top Banner Tag for Selected Candidate */}
-      {isSelected ? (
+      {/* Cabecera roja: depende de que el candidato esté destacado en los datos, no de la selección */}
+      {featured ? (
         <div className="bg-truffle-trouble text-white px-4 py-1.5 flex items-center justify-between text-xs font-bold tracking-wide">
           <span className="flex items-center space-x-1.5 uppercase">
             <span className="w-2 h-2 rounded-full bg-white animate-ping" />
             <span>CANDIDATO SELECCIONADO PARA AUDITORÍA</span>
           </span>
           <span className="bg-white/20 px-2 py-0.5 rounded text-[11px]">
-            {scoreDisplay}% Match
+            {formatPercentage(scoreDisplay)} Match
           </span>
         </div>
       ) : (
         <div className="bg-slate-100 border-b border-slate-200/60 px-4 py-1 flex items-center justify-between text-[11px] text-slate-600 font-medium">
           <span>COMPATIBILIDAD SIG-MATCH</span>
-          <span className="font-bold font-mono text-abyssal-blue">{scoreDisplay}% Match</span>
+          <span className="font-bold font-mono text-abyssal-blue">{formatPercentage(scoreDisplay)} Match</span>
         </div>
       )}
 
@@ -99,7 +100,10 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
               {career} • {graduationYear}
             </p>
             <div className="flex items-center space-x-2 text-[10px] text-slate-400 mt-0.5">
-              <span>📍 {location}</span>
+              <span className="flex items-center space-x-0.5">
+                <MapPin className="w-3 h-3" />
+                <span>{location}</span>
+              </span>
               <span className="px-1.5 py-0.2 bg-emerald-50 text-emerald-700 font-medium rounded border border-emerald-200">
                 Disponible
               </span>
@@ -116,7 +120,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
         </div>
 
         {/* Embedded Hexagon SVG Radar Graph */}
-                <AffinityRadar variant="mini" affinityData={radarData} highlighted={isSelected} />
+                <AffinityRadar variant="mini" affinityData={radarData} highlighted={featured} />
 
         {/* Concentration Highlight Box */}
         <div className="w-full bg-white/90 rounded-lg p-2 mt-1 border border-slate-200 text-center text-xs">
@@ -164,7 +168,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
         <button
           onClick={() => setShowBackingModal(!showBackingModal)}
           className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold text-white transition-all flex items-center justify-center space-x-1 ${
-            isSelected
+            featured
               ? 'bg-truffle-trouble hover:bg-truffle-trouble/90 shadow-sm'
               : 'bg-blue-fantastic hover:bg-abyssal-blue'
           }`}

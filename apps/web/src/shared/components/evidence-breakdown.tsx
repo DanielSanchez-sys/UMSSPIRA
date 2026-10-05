@@ -238,8 +238,9 @@ export const EvidenceBreakdown: React.FC<CandidateEvidenceProps> = ({ candidateN
 
       {/* Bottom Action Footer Bar */}
       <div className="p-4 rounded-xl bg-slate-100/90 border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
-        <span className="text-[11px] text-slate-600 font-mono max-w-xl">
-          🔒 Datos protegidos bajo el Reglamento de Protección de Datos y Privacidad Alumni FCyT (Resolución Facultativa 412/2023).
+        <span className="text-[11px] text-slate-600 font-mono max-w-xl flex items-start space-x-1.5">
+          <ShieldCheck className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+          <span>Datos protegidos bajo el Reglamento de Protección de Datos y Privacidad Alumni FCyT (Resolución Facultativa 412/2023).</span>
         </span>
 
         <div className="flex items-center space-x-3 shrink-0">
