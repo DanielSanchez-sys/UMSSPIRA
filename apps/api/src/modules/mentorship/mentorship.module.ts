@@ -1,11 +1,10 @@
 import { Module } from '@nestjs/common';
-import { MentorshipEligibilityService } from './mentorship-eligibility.service';
 import { MentorshipController } from './mentorship.controller';
-import { SupabaseService } from '../../shared/lib/supabase';
+import { MentorshipService } from './mentorship.service';
 
 @Module({
   controllers: [MentorshipController],
-  providers: [MentorshipEligibilityService, SupabaseService],
-  exports: [MentorshipEligibilityService],
+  providers: [MentorshipService],
+  exports: [MentorshipService],
 })
 export class MentorshipModule {}
