@@ -17,6 +17,7 @@ const config: Config = {
         "burning-flame": "#FFB162",
         "truffle-trouble": "#A35139",
         "abyssal-blue": "#1B2632",
+        abyssal: "#1B2632",
       },
       fontFamily: {
         display: ["var(--font-playfair)", "serif"],
