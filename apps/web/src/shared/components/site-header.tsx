@@ -72,7 +72,7 @@ export const SiteHeader: React.FC<SiteHeaderProps> = ({
                     : 'text-slate-300 hover:text-white'
                 }`}
               >
-                Modo Egresado (Mi Afinidad)
+                Modo Titulado (Mi Afinidad)
               </button>
             </div>
           )}
