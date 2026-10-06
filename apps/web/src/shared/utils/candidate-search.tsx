@@ -92,8 +92,13 @@ function percentageOf(candidate: SearchableCandidate, key: AreaKey): number {
 // Cantidad de palabras buscadas que aparecen entre las habilidades (solo desempata)
 function skillMatches(candidate: SearchableCandidate, tokens: string[]): number {
   const skillWords = new Set(candidate.skills.flatMap((skill) => tokenize(skill)));
-  return Array.from(new Set(tokens)).filter((token) => skillWords.has(token)).length;
+  
+  // Filtramos duplicados usando una función compatible con ES5 de forma nativa
+  const uniqueTokens = tokens.filter((token, index) => tokens.indexOf(token) === index);
+  
+  return uniqueTokens.filter((token) => skillWords.has(token)).length;
 }
+
 
 /**
  * Ordena los candidatos de mayor a menor promedio de afinidad en las áreas que la búsqueda menciona.
