@@ -34,6 +34,7 @@ export default function Home() {
 
   // Ajustes 2 y 3: Reiniciar paginación a 0 y seleccionar el primer resultado del buscador
   const handleSearchCompleted = (results: SearchCandidateResult[], query: string) => {
+    // TODO: [Tarea #32] - Aquí se inyectarán los resultados filtrados provenientes del backend de la Épica 2
     setCandidates(results);
     setSearchQuery(query);
     resetPagination(); // Forzar el carrusel a volver a la página 1 (Índice 0)
