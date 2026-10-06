@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Search, Bell, User, Briefcase, Calendar, Users, Award, Home } from 'lucide-react';
+import { Search, Bell, User, Briefcase, Calendar, Users, Award, Home, GraduationCap } from 'lucide-react';
 
 interface SiteHeaderProps {
   activeView?: 'recruiter' | 'graduate';
@@ -17,13 +17,14 @@ export const SiteHeader: React.FC<SiteHeaderProps> = ({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         {/* Left Brand Logo */}
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-xl bg-burning-flame text-abyssal-blue flex items-center justify-center font-black text-xl shadow-md">
-            🎓
+          <div className="w-10 h-10 rounded-xl bg-burning-flame text-abyssal-blue flex items-center justify-center shadow-md">
+            <GraduationCap className="w-6 h-6 stroke-[2.5]" />
           </div>
           <div className="flex items-center space-x-2">
             <span className="font-black text-xl tracking-tight text-white">UMSSPIRA</span>
           </div>
         </div>
+
 
         {/* Center Nav Links */}
         <nav className="hidden lg:flex items-center space-x-6 text-xs font-semibold text-slate-300">
