@@ -92,7 +92,7 @@ function percentageOf(candidate: SearchableCandidate, key: AreaKey): number {
 // Cantidad de palabras buscadas que aparecen entre las habilidades (solo desempata)
 function skillMatches(candidate: SearchableCandidate, tokens: string[]): number {
   const skillWords = new Set(candidate.skills.flatMap((skill) => tokenize(skill)));
-  return [...new Set(tokens)].filter((token) => skillWords.has(token)).length;
+  return Array.from(new Set(tokens)).filter((token) => skillWords.has(token)).length;
 }
 
 /**
