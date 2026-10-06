@@ -6,8 +6,8 @@ import { NlpSearch, type SearchCandidateResult } from '@/shared/components/nlp-s
 import { CandidateCard } from '@/shared/components/candidate-card';
 import { EvidenceBreakdown } from '@/shared/components/evidence-breakdown';
 import { GraduateAffinityView } from '@/shared/components/graduate-affinity-view';
-import { Epic2IntegrationDocs } from '@/shared/components/epic2-integration-docs';
 import { SiteFooter } from '@/shared/components/site-footer';
+import { CandidatesEmptyState } from '@/shared/components/candidates-empty-state';
 import { useCarouselPagination } from '@/shared/hooks/use-carousel-pagination';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -20,7 +20,7 @@ export default function Home() {
     candidatesData.candidates as SearchCandidateResult[]
   );
   const [selectedGraduateId, setSelectedGraduateId] = useState<string>(
-    candidatesData.candidates[0].graduateId
+    candidatesData.candidates[0]?.graduateId ?? ''
   );
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isSearching, setIsSearching] = useState<boolean>(false);
@@ -28,15 +28,18 @@ export default function Home() {
   // Hook de paginación del carrusel
   const { currentIndex, itemsPerPage, handlePrev, handleNext, resetPagination } = useCarouselPagination(candidates.length);
 
-  const selectedCandidate = candidates.find((c) => c.graduateId === selectedGraduateId) || candidates[0];
+  // Con la lista vacía no hay candidato seleccionado: se muestra el estado vacío
+  const selectedCandidate: SearchCandidateResult | undefined =
+    candidates.find((c) => c.graduateId === selectedGraduateId) ?? candidates[0];
 
+  // Ajustes 2 y 3: Reiniciar paginación a 0 y seleccionar el primer resultado del buscador
   const handleSearchCompleted = (results: SearchCandidateResult[], query: string) => {
-    // TODO: [Tarea #32] - Aquí se inyectarán los resultados filtrados provenientes del backend de la Épica 2
     setCandidates(results);
     setSearchQuery(query);
-    resetPagination();
+    resetPagination(); // Forzar el carrusel a volver a la página 1 (Índice 0)
+    
     if (results.length > 0) {
-      setSelectedGraduateId(results[0].graduateId);
+      setSelectedGraduateId(results[0].graduateId); // Sincroniza el panel de evidencia con el primer resultado
     }
   };
 
@@ -71,7 +74,11 @@ export default function Home() {
                     </p>
                   </div>
 
-                  <div className="flex items-center space-x-2 self-end sm:self-auto">
+                  <div
+                    className={
+                      candidates.length > 0 ? 'flex items-center space-x-2 self-end sm:self-auto' : 'hidden'
+                    }
+                  >
                     <span className="text-xs text-slate-500 font-mono mr-2">
                       Mostrando {candidates.length > 0 ? currentIndex + 1 : 0} - {Math.min(currentIndex + itemsPerPage, candidates.length)} de {candidates.length} candidatos
                     </span>
@@ -94,6 +101,8 @@ export default function Home() {
                   </div>
                 </div>
 
+                {candidates.length === 0 && <CandidatesEmptyState />}
+
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {candidates.slice(currentIndex, currentIndex + itemsPerPage).map((cand) => (
                     <CandidateCard
@@ -106,7 +115,8 @@ export default function Home() {
                       professionalDescription={cand.professionalDescription}
                       affinity={cand.affinity}
                       nlpScore={cand.nlpScore}
-                      featured={cand.featured}
+                      // Ajuste 1: featured se calcula dinámicamente basándose en quién es el mejor de toda la lista ordenada
+                      featured={cand.graduateId === candidates[0]?.graduateId}
                       isSelected={selectedGraduateId === cand.graduateId}
                       areas={cand.areas}
                       location={cand.location}
@@ -119,11 +129,7 @@ export default function Home() {
               </section>
 
               <section id="evidence-section">
-                <EvidenceBreakdown candidateName={selectedCandidate.name} />
-              </section>
-
-              <section>
-                <Epic2IntegrationDocs />
+                {selectedCandidate && <EvidenceBreakdown candidateName={selectedCandidate.name} />}
               </section>
             </div>
           ) : (
