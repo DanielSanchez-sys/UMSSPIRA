@@ -1,6 +1,6 @@
 // apps/api/src/modules/auth/repositories/auth.repository.ts
 import { Injectable } from '@nestjs/common';
-import { supabase } from '@/shared/lib/supabase';
+import { getSupabase } from '@/shared/lib/supabase';
 
 @Injectable()
 export class AuthRepository {
@@ -10,6 +10,6 @@ export class AuthRepository {
    * no decide si el login es válido, esa decisión es del Service.
    */
   async signInWithPassword(email: string, password: string) {
-    return supabase.auth.signInWithPassword({ email, password });
+    return getSupabase().auth.signInWithPassword({ email, password });
   }
 }
