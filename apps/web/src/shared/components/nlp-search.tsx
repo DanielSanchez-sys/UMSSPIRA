@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Search, Sparkles, Cpu, RefreshCw, Zap, Award } from 'lucide-react';
+import { Search, Cpu, RefreshCw } from 'lucide-react';
 import type { RawAreaPoint } from '../utils/affinity-areas';
+import { rankCandidatesByQuery } from '../utils/candidate-search';
 
 export interface SearchCandidateResult {
   graduateId: string;
@@ -37,47 +38,19 @@ export const NlpSearch: React.FC<NlpSearchProps> = ({
     'Senior Full Stack, Cloud & Microservicios'
   );
 
-  const handleExecuteNlpSearch = async (e?: React.FormEvent) => {
+  const handleExecuteSearch = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!jobDescription.trim()) return;
 
     setIsSearching(true);
 
     try {
-      // Try backend Express endpoint at port 3002
-      const response = await fetch('http://localhost:3002/api/nlp/search', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ jobDescription }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        onSearchCompleted(data.results, jobDescription);
-      } else {
-        throw new Error('Backend HTTP error');
-      }
-    } catch {
-      console.warn('[NLP Search] Using fallback vector calculation');
+      // TODO: [Épica 2 y cálculo de afinidad] - Sprint 1 simulado, sin backend: la búsqueda solo reordena
+      // a los candidatos del mock según el porcentaje que tienen en las áreas mencionadas.
+      // Cuando exista el backend, aquí se enviará `jobDescription` y se recibirá la lista ya filtrada.
       const mockData = await import('../mocks/candidates-mock.json');
-      const candidates = mockData.default.candidates;
-
-      const keywords = jobDescription.toLowerCase().split(/\s+/);
-      const results: SearchCandidateResult[] = candidates.map((cand) => {
-        const text = `${cand.career} ${cand.skills.join(' ')} ${cand.professionalDescription}`.toLowerCase();
-        let matches = 0;
-        keywords.forEach((kw) => {
-          if (kw.length > 2 && text.includes(kw)) matches++;
-        });
-
-        const rawScore = (matches / Math.max(3, keywords.length)) * 100 + cand.affinity * 0.4;
-        const nlpScore = Number(Math.min(99.4, Math.max(48.0, rawScore)).toFixed(2));
-
-        return { ...cand, nlpScore };
-      });
-
-      results.sort((a, b) => (b.nlpScore ?? 0) - (a.nlpScore ?? 0));
-      onSearchCompleted(results, jobDescription);
+      const candidates = mockData.default.candidates as SearchCandidateResult[];
+      onSearchCompleted(rankCandidatesByQuery(candidates, jobDescription), jobDescription);
     } finally {
       setIsSearching(false);
     }
@@ -96,7 +69,7 @@ export const NlpSearch: React.FC<NlpSearchProps> = ({
             BUSCADOR DE TALENTO Y AFINIDAD PROFESIONAL
           </h2>
           <p className="text-xs text-slate-600 mt-1 max-w-2xl">
-            Compara competencias de titulados de Sistemas e Informática mediante gráficos de afinidad calculados por NLP y valida sus respaldos académicos y certificaciones oficiales.
+            Compara competencias de titulados de Sistemas e Informática mediante gráficos de afinidad y valida sus respaldos académicos y certificaciones oficiales.
           </p>
         </div>
 
@@ -113,7 +86,7 @@ export const NlpSearch: React.FC<NlpSearchProps> = ({
       </div>
 
       {/* Search Input Bar */}
-      <form onSubmit={handleExecuteNlpSearch} className="space-y-3">
+      <form onSubmit={handleExecuteSearch} className="space-y-3">
         <label className="block text-xs font-semibold text-slate-700">
           Buscar por tecnología o habilidad (ej. React, Python, Cloud, Microservicios)
         </label>
@@ -138,7 +111,7 @@ export const NlpSearch: React.FC<NlpSearchProps> = ({
             {isSearching ? (
               <>
                 <RefreshCw className="w-4 h-4 animate-spin" />
-                <span>Calculando NLP...</span>
+                <span>Buscando...</span>
               </>
             ) : (
               <>
