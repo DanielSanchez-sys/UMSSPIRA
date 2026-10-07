@@ -4,14 +4,37 @@ import {
   Injectable,
   InternalServerErrorException,
   NotFoundException,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import type { PostgrestError } from '@supabase/supabase-js';
 // Cliente compartido del equipo (única línea a ajustar si exporta otro nombre).
 import { supabase } from '../../shared/lib/supabase';
+import { UpdateMentorAreasDto } from './dto/update-mentor-areas.dto';
 import { UpdateParticipationDto } from './dto/update-participation.dto';
 import { Mentor } from './mentor.model';
 
 const PG_UNIQUE_VIOLATION = '23505';
+const MIN_MENTOR_AREAS = 1;
+const MAX_MENTOR_AREAS = 5;
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+interface Area {
+  id: string;
+  nombre: string;
+  esta_activo: boolean;
+}
+
+interface MentorAreaLink {
+  id: string;
+  id_area: string;
+}
+
+export interface MentorAreasState {
+  areas: Array<{ id: string; name: string }>;
+  selectedAreaIds: string[];
+  selectedAreas: Array<{ id: string; name: string; isActive: boolean }>;
+}
 
 export interface ModuleStatus {
   module: string;
@@ -75,6 +98,161 @@ export class MentorshipService {
   /** POST /mentorship/eligibility */
   async checkEligibility(userId: string): Promise<{ eligible: boolean }> {
     return { eligible: await this.isApprovedGraduate(userId) };
+  }
+
+  /** GET /mentorship/my-profile/areas */
+  async getMyAreas(userId: string): Promise<MentorAreasState> {
+    await this.ensureActiveMentor(userId);
+
+    const [{ data: catalog, error: catalogError }, { data: links, error: linksError }] =
+      await Promise.all([
+        supabase
+          .from('area')
+          .select('id, nombre, esta_activo')
+          .eq('esta_activo', true)
+          .order('nombre', { ascending: true }),
+        supabase.from('mentor_area').select('id, id_area').eq('id_mentor', userId),
+      ]);
+
+    if (catalogError) this.fail(catalogError);
+    if (linksError) this.fail(linksError);
+
+    const selectedAreaIds = [
+      ...new Set(((links ?? []) as MentorAreaLink[]).map(({ id_area }) => id_area)),
+    ];
+    const { data: selectedAreas, error: selectedAreasError } = selectedAreaIds.length
+      ? await supabase
+          .from('area')
+          .select('id, nombre, esta_activo')
+          .in('id', selectedAreaIds)
+      : { data: [], error: null };
+
+    if (selectedAreasError) this.fail(selectedAreasError);
+
+    return {
+      areas: ((catalog ?? []) as Area[]).map(({ id, nombre }) => ({ id, name: nombre })),
+      selectedAreaIds,
+      selectedAreas: ((selectedAreas ?? []) as Area[]).map(
+        ({ id, nombre, esta_activo }) => ({
+          id,
+          name: nombre,
+          isActive: esta_activo,
+        }),
+      ),
+    };
+  }
+
+  /** PATCH /mentorship/my-profile/areas */
+  async updateMyAreas(
+    userId: string,
+    dto: UpdateMentorAreasDto,
+  ): Promise<MentorAreasState> {
+    await this.ensureActiveMentor(userId);
+    if (!(await this.isApprovedGraduate(userId))) {
+      throw new ForbiddenException({
+        code: 'MENTOR_NOT_ELIGIBLE',
+        message: 'Solo un egresado aprobado puede modificar sus áreas técnicas',
+      });
+    }
+
+    const requestedIds = dto?.areaIds;
+    if (
+      !Array.isArray(requestedIds) ||
+      requestedIds.length < MIN_MENTOR_AREAS ||
+      requestedIds.length > MAX_MENTOR_AREAS
+    ) {
+      throw new UnprocessableEntityException({
+        code: 'CANTIDAD_AREAS_INVALIDA',
+        message: `Debes seleccionar entre ${MIN_MENTOR_AREAS} y ${MAX_MENTOR_AREAS} áreas técnicas`,
+      });
+    }
+
+    if (requestedIds.some((id) => typeof id !== 'string' || !UUID_PATTERN.test(id))) {
+      throw new UnprocessableEntityException({
+        code: 'AREA_NO_EXISTE',
+        message: 'Las áreas deben seleccionarse usando IDs existentes del catálogo',
+      });
+    }
+
+    const areaIds = [...new Set(requestedIds)];
+    const { data: areas, error: areasError } = await supabase
+      .from('area')
+      .select('id, nombre, esta_activo')
+      .in('id', areaIds);
+    if (areasError) this.fail(areasError);
+
+    const areasById = new Map(((areas ?? []) as Area[]).map((area) => [area.id, area]));
+    const missingAreaId = areaIds.find((areaId) => !areasById.has(areaId));
+    if (missingAreaId) {
+      throw new UnprocessableEntityException({
+        code: 'AREA_NO_EXISTE',
+        message: 'Una o más áreas no existen en el catálogo',
+      });
+    }
+
+    if (areaIds.some((areaId) => !areasById.get(areaId)?.esta_activo)) {
+      throw new UnprocessableEntityException({
+        code: 'AREA_INACTIVA',
+        message: 'No se pueden asignar áreas inactivas',
+      });
+    }
+
+    const { data: links, error: linksError } = await supabase
+      .from('mentor_area')
+      .select('id, id_area')
+      .eq('id_mentor', userId);
+    if (linksError) this.fail(linksError);
+
+    const existingLinks = (links ?? []) as MentorAreaLink[];
+    const requestedIdSet = new Set(areaIds);
+    const retainedAreaIds = new Set<string>();
+    const linksToRemove: string[] = [];
+    for (const link of existingLinks) {
+      if (requestedIdSet.has(link.id_area) && !retainedAreaIds.has(link.id_area)) {
+        retainedAreaIds.add(link.id_area);
+      } else {
+        linksToRemove.push(link.id);
+      }
+    }
+
+    const linksToAdd = areaIds.filter((areaId) => !retainedAreaIds.has(areaId));
+    const { data: insertedLinks, error: insertError } = linksToAdd.length
+      ? await supabase
+          .from('mentor_area')
+          .insert(
+            linksToAdd.map((id_area) => ({
+              id_mentor: userId,
+              id_area,
+              fecha_creacion: this.today(),
+            })),
+          )
+          .select('id')
+      : { data: [], error: null };
+    if (insertError) this.fail(insertError);
+
+    if (linksToRemove.length) {
+      const { error: deleteError } = await supabase
+        .from('mentor_area')
+        .delete()
+        .in('id', linksToRemove);
+      if (deleteError) {
+        const insertedIds = (insertedLinks ?? []).map(({ id }: { id: string }) => id);
+        if (insertedIds.length) {
+          const { error: rollbackError } = await supabase
+            .from('mentor_area')
+            .delete()
+            .in('id', insertedIds);
+          if (rollbackError) {
+            throw new InternalServerErrorException(
+              `No se pudieron completar ni revertir los vínculos de áreas: ${rollbackError.message}`,
+            );
+          }
+        }
+        this.fail(deleteError);
+      }
+    }
+
+    return this.getMyAreas(userId);
   }
 
   /** PATCH /mentorship/mi-perfil/participacion (core HU-6.1) */
@@ -155,6 +333,21 @@ export class MentorshipService {
       .maybeSingle();
     if (error) this.fail(error);
     return (data as Mentor | null) ?? null;
+  }
+
+  private async ensureActiveMentor(userId: string): Promise<void> {
+    const { data, error } = await supabase
+      .from('mentor')
+      .select('id, esta_activo')
+      .eq('id', userId)
+      .maybeSingle();
+    if (error) this.fail(error);
+    if (!data || data.esta_activo !== true) {
+      throw new ForbiddenException({
+        code: 'MENTOR_PROFILE_INACTIVE',
+        message: 'Se requiere un perfil de mentor activo para consultar o modificar sus áreas',
+      });
+    }
   }
 
   private async update(userId: string, changes: Partial<Mentor>): Promise<Mentor> {
