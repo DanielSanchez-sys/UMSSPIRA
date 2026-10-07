@@ -13,7 +13,7 @@ import {
 import { useProfileStore } from '@/modules/profile/state/profile-store';
 import type { CertificationRecord } from '@/modules/profile/types/profile-record';
 import { claseCampo } from '@/modules/profile/validation/mensaje-error';
-import { validarCertificacion } from '@/modules/profile/validation/reglas-perfil';
+import { validarCertificacion, validarRespaldo } from '@/modules/profile/validation/reglas-perfil';
 
 type CertificationFormData = {
   name: string;
@@ -69,6 +69,7 @@ function EditCertificationFields({ certification }: { certification: Certificati
   const [isSaved, setIsSaved] = useState(false);
   const [errors, setErrors] = useState<CertificationErrors>({});
   const [hasTriedToSave, setHasTriedToSave] = useState(false);
+  const [backupError, setBackupError] = useState<string>();
 
   function handleChange(event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     const { name, value } = event.target;
@@ -80,7 +81,11 @@ function EditCertificationFields({ certification }: { certification: Certificati
 
   function handleDocumentChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
-    if (file) {
+    if (!file) return;
+    // Un archivo no válido no reemplaza al respaldo actual
+    const error = validarRespaldo(file);
+    setBackupError(error);
+    if (!error) {
       setDocumentName(file.name);
       setIsNewDocument(true);
       setIsSaved(false);
@@ -185,6 +190,7 @@ function EditCertificationFields({ certification }: { certification: Certificati
         documentName={documentName}
         isVerified={Boolean(documentName) && !isNewDocument && Boolean(certification.backupVerified)}
         onDocumentChange={handleDocumentChange}
+        error={backupError}
       />
     </EditRecordLayout>
   );
