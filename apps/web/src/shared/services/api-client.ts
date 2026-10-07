@@ -1,3 +1,5 @@
+import { getSupabaseClient } from '@/shared/lib/supabase';
+
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
 
@@ -13,6 +15,18 @@ export async function apiClient<TResponse>(
   const { body, headers: providedHeaders, ...requestOptions } =
     options;
   const headers = new Headers(providedHeaders);
+  const {
+    data: { session },
+    error: sessionError,
+  } = await getSupabaseClient().auth.getSession();
+
+  if (sessionError) {
+    throw new Error('No se pudo recuperar la sesión de Supabase.');
+  }
+
+  if (session?.access_token) {
+    headers.set('Authorization', `Bearer ${session.access_token}`);
+  }
 
   if (body !== undefined && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');

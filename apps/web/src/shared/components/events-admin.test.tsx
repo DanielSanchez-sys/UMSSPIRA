@@ -62,6 +62,14 @@ const draftEvent: EventItem = {
   createdAt: '2026-09-25T12:00:00Z',
 };
 
+const cancelledEvent: EventItem = {
+  ...draftEvent,
+  id: 'cancelled-1',
+  title: 'Encuentro cancelado',
+  status: EVENT_STATUS.CANCELADO,
+  startDate: '2026-11-03T14:00:00',
+};
+
 describe('Gestión administrativa de eventos HU1', () => {
   beforeEach(() => {
     mockPush.mockReset();
@@ -87,6 +95,59 @@ describe('Gestión administrativa de eventos HU1', () => {
     expect(within(metrics).getByText('1')).toBeInTheDocument();
     expect(within(metrics).getByText('2')).toBeInTheDocument();
     expect(mockGetAdminEvents).toHaveBeenCalledWith('user-1');
+  });
+
+  it('muestra el nombre del creador y la fecha de creación sin exponer su UUID', async () => {
+    mockGetAdminEvents.mockResolvedValueOnce([
+      { ...publishedEvent, creatorName: 'Dirección de Sistemas' },
+    ]);
+
+    render(<EventManagementContent userId="user-1" />);
+
+    expect(
+      await screen.findByText((_, element) =>
+        element?.tagName === 'SMALL' &&
+        element.textContent?.includes('Creado por Dirección de Sistemas'),
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText((_, element) =>
+      element?.tagName === 'SMALL' && element.textContent?.includes('Creado el'),
+    )).toBeInTheDocument();
+    expect(screen.queryByText(/78869fe3-/)).not.toBeInTheDocument();
+  });
+
+  it('abre la vista de detalle al pulsar Ver en un evento publicado', async () => {
+    mockGetAdminEvents.mockResolvedValueOnce([publishedEvent]);
+
+    render(<EventManagementContent userId="user-1" />);
+
+    fireEvent.click(await screen.findByRole('button', { name: /ver/i }));
+
+    expect(mockPush).toHaveBeenCalledWith('/events/published-1');
+  });
+
+  it('filtra los eventos por estado y mes elegidos', async () => {
+    mockGetAdminEvents.mockResolvedValueOnce([
+      publishedEvent,
+      draftEvent,
+      cancelledEvent,
+    ]);
+
+    render(<EventManagementContent userId="user-1" />);
+    await screen.findByText('Encuentro cancelado');
+
+    fireEvent.change(screen.getByLabelText('Estado'), {
+      target: { value: EVENT_STATUS.BORRADOR },
+    });
+    fireEvent.change(screen.getByLabelText('Fecha'), {
+      target: { value: '2026-10' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Filtrar' }));
+
+    expect(screen.getByText('Taller Real de Ciberseguridad')).toBeInTheDocument();
+    expect(screen.queryByText('Feria de Empleo Real')).not.toBeInTheDocument();
+    expect(screen.queryByText('Encuentro cancelado')).not.toBeInTheDocument();
+    expect(screen.getByText('Mostrando 1 de 3 eventos')).toBeInTheDocument();
   });
 
   it('muestra el bloqueo de identidad y no consulta datos', async () => {

@@ -10,6 +10,7 @@ import type {
   EventItem,
   EventStatus,
 } from '@umsspira/shared-types';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 import { supabase } from '../../shared/lib/supabase';
 import { CreateEventDto } from './dto/create-event.dto';
@@ -29,6 +30,7 @@ export class EventsService {
   async createEvent(
     createEventDto: CreateEventDto,
     userId: string,
+    authenticatedSupabase: SupabaseClient,
   ): Promise<EventItem> {
     const {
       title,
@@ -61,7 +63,7 @@ export class EventsService {
     const databaseStatus = initialStatus.toLowerCase();
     const createdAt = new Date().toISOString();
 
-    const { data, error } = await supabase
+    const { data, error } = await authenticatedSupabase
       .from('evento')
       .insert([
         {
@@ -88,8 +90,11 @@ export class EventsService {
     return this.mapEventRow(data);
   }
 
-  async getAdminEvents(userId: string): Promise<EventItem[]> {
-    const { data, error } = await supabase
+  async getAdminEvents(
+    userId: string,
+    authenticatedSupabase: SupabaseClient,
+  ): Promise<EventItem[]> {
+    const { data, error } = await authenticatedSupabase
       .from('evento')
       .select('*')
       .eq('id_usuario', userId)
@@ -103,18 +108,32 @@ export class EventsService {
       );
     }
 
+    const { data: creator, error: creatorError } = await authenticatedSupabase
+      .from('usuario')
+      .select('nombre')
+      .eq('usuario_id', userId)
+      .maybeSingle();
+
+    if (creatorError) {
+      throw new InternalServerErrorException(
+        `Error al consultar el nombre del creador de eventos: ${creatorError.message}`,
+      );
+    }
+
     return (data ?? []).map((row) =>
-      this.mapEventRow(row),
+      this.mapEventRow(row, creator?.nombre ?? 'Administrador'),
     );
   }
 
   async getAdminDraft(
     eventId: string,
     userId: string,
+    authenticatedSupabase: SupabaseClient,
   ): Promise<EventItem> {
     const event = await this.getOwnedEvent(
       eventId,
       userId,
+      authenticatedSupabase,
     );
 
     this.ensureDraft(event);
@@ -122,14 +141,41 @@ export class EventsService {
     return this.mapEventRow(event);
   }
 
+  async getAdminEvent(
+    eventId: string,
+    userId: string,
+    authenticatedSupabase: SupabaseClient,
+  ): Promise<EventItem> {
+    const event = await this.getOwnedEvent(
+      eventId,
+      userId,
+      authenticatedSupabase,
+    );
+    const { data: creator, error: creatorError } = await authenticatedSupabase
+      .from('usuario')
+      .select('nombre')
+      .eq('usuario_id', userId)
+      .maybeSingle();
+
+    if (creatorError) {
+      throw new InternalServerErrorException(
+        `Error al consultar el nombre del creador del evento: ${creatorError.message}`,
+      );
+    }
+
+    return this.mapEventRow(event, creator?.nombre ?? 'Administrador');
+  }
+
   async updateAdminDraft(
     eventId: string,
     updateEventDto: UpdateDraftEventDto,
     userId: string,
+    authenticatedSupabase: SupabaseClient,
   ): Promise<EventItem> {
     const currentEvent = await this.getOwnedEvent(
       eventId,
       userId,
+      authenticatedSupabase,
     );
 
     this.ensureDraft(currentEvent);
@@ -150,7 +196,7 @@ export class EventsService {
       maxCapacity,
     );
 
-    const { data, error } = await supabase
+    const { data, error } = await authenticatedSupabase
       .from('evento')
       .update({
         titulo: title,
@@ -163,16 +209,19 @@ export class EventsService {
       })
       .eq('id', eventId)
       .eq('id_usuario', userId)
-      .eq(
-        'estado',
-        DRAFT_EVENT_STATUS.toLowerCase(),
-      )
+      .ilike('estado', DRAFT_EVENT_STATUS)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) {
       throw new InternalServerErrorException(
         `Error al actualizar el borrador: ${error.message}`,
+      );
+    }
+
+    if (!data) {
+      throw new ConflictException(
+        'No se pudo actualizar el borrador porque dejó de estar disponible.',
       );
     }
 
@@ -182,10 +231,12 @@ export class EventsService {
   async publishAdminDraft(
     eventId: string,
     userId: string,
+    authenticatedSupabase: SupabaseClient,
   ): Promise<EventItem> {
     const currentEvent = await this.getOwnedEvent(
       eventId,
       userId,
+      authenticatedSupabase,
     );
 
     this.ensureDraft(currentEvent);
@@ -196,23 +247,26 @@ export class EventsService {
       currentEvent.cupo_maximo,
     );
 
-    const { data, error } = await supabase
+    const { data, error } = await authenticatedSupabase
       .from('evento')
       .update({
         estado: PUBLISHED_EVENT_STATUS.toLowerCase(),
       })
       .eq('id', eventId)
       .eq('id_usuario', userId)
-      .eq(
-        'estado',
-        DRAFT_EVENT_STATUS.toLowerCase(),
-      )
+      .ilike('estado', DRAFT_EVENT_STATUS)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) {
       throw new InternalServerErrorException(
         `Error al publicar el borrador: ${error.message}`,
+      );
+    }
+
+    if (!data) {
+      throw new ConflictException(
+        'No se pudo publicar el borrador porque dejó de estar disponible.',
       );
     }
 
@@ -280,8 +334,9 @@ export class EventsService {
   private async getOwnedEvent(
     eventId: string,
     userId: string,
+    authenticatedSupabase: SupabaseClient,
   ): Promise<any> {
-    const { data, error } = await supabase
+    const { data, error } = await authenticatedSupabase
       .from('evento')
       .select('*')
       .eq('id', eventId)
@@ -304,10 +359,7 @@ export class EventsService {
   }
 
   private ensureDraft(event: any): void {
-    if (
-      event.estado?.toUpperCase() !==
-      DRAFT_EVENT_STATUS
-    ) {
+    if (event.estado?.trim().toUpperCase() !== DRAFT_EVENT_STATUS) {
       throw new ConflictException(
         'El evento ya no se encuentra en estado BORRADOR',
       );
@@ -358,7 +410,7 @@ export class EventsService {
    * Convierte una fila de la tabla "evento"
    * al modelo EventItem utilizado por la API.
    */
-  private mapEventRow(row: any): EventItem {
+  private mapEventRow(row: any, creatorName?: string): EventItem {
     return {
       id: row.id,
       title: row.titulo,
@@ -369,6 +421,7 @@ export class EventsService {
       location: row.ubicacion ?? null,
       status: row.estado.toUpperCase() as EventStatus,
       createdBy: row.id_usuario,
+      ...(creatorName ? { creatorName } : {}),
       createdAt: row.fecha_creacion,
     };
   }

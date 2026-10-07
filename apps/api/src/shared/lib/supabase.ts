@@ -19,3 +19,20 @@ export const supabase = createClient(
   supabaseUrl,
   supabaseKey,
 );
+
+export function createAuthenticatedSupabaseClient(
+  accessToken: string,
+) {
+  return createClient(supabaseUrl, supabaseKey, {
+    auth: {
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+      persistSession: false,
+    },
+    global: {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    },
+  });
+}

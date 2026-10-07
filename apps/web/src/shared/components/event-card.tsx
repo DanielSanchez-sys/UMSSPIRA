@@ -51,8 +51,8 @@ export function EventCard({ event }: EventCardProps) {
   const endTime = formatEventTime(event.endDate);
 
   return (
-    <article className="flex min-h-[292px] w-full flex-col overflow-hidden rounded-[14px] border border-[#C9C1B1] bg-white shadow-[0_6px_18px_rgba(27,38,50,0.12)]">
-      <header className="relative flex h-[126px] shrink-0 items-center overflow-hidden bg-[#2C3B4D] px-5 py-4">
+    <article className="flex min-h-[292px] w-full min-w-0 flex-col overflow-hidden rounded-[14px] border border-[#C9C1B1] bg-white shadow-[0_6px_18px_rgba(27,38,50,0.12)]">
+      <header className="relative flex h-[126px] shrink-0 items-center overflow-hidden bg-[#2C3B4D] px-4 py-4 sm:px-5">
         <span
           aria-hidden="true"
           className="absolute left-0 top-6 h-[78px] w-1.5 rounded-r-full bg-[#FFB162]"
@@ -70,18 +70,18 @@ export function EventCard({ event }: EventCardProps) {
           className="absolute right-5 top-8 h-4 w-4 rounded-full bg-[#FFB162]/30"
         />
 
-        <div className="relative min-w-0">
+        <div className="relative min-w-0 max-w-full">
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#EEE9DF]">
             Evento universitario
           </p>
-          <h2 className="mt-2 line-clamp-2 text-[22px] font-semibold leading-[1.15] text-white">
+          <h2 className="mt-2 line-clamp-2 break-words text-xl font-semibold leading-[1.15] text-white sm:text-[22px]">
             {event.title}
           </h2>
         </div>
       </header>
 
-      <div className="flex flex-1 flex-col px-5 py-4">
-        <h3 className="line-clamp-1 text-lg font-semibold leading-6 text-[#1B2632]">
+      <div className="flex min-w-0 flex-1 flex-col px-4 py-4 sm:px-5">
+        <h3 className="line-clamp-1 break-words text-lg font-semibold leading-6 text-[#1B2632]">
           {event.title}
         </h3>
 
@@ -98,7 +98,7 @@ export function EventCard({ event }: EventCardProps) {
               {startTime}–{endTime}
             </span>
           </p>
-          <p>
+          <p className="break-words">
             {event.location === null
               ? 'Ubicación no especificada'
               : `Ubicación: ${event.location}`}
@@ -109,7 +109,7 @@ export function EventCard({ event }: EventCardProps) {
         <div className="mt-auto flex justify-end pt-3">
           <Link
             href={`/events/catalog/${event.id}`}
-            className="inline-flex h-[38px] items-center justify-center rounded-[9px] bg-[#FFB162] px-5 text-[13px] font-semibold text-[#1B2632] transition-colors hover:bg-[#F5A552] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2C3B4D]"
+            className="inline-flex h-[38px] shrink-0 items-center justify-center whitespace-nowrap rounded-[9px] bg-[#FFB162] px-5 text-[13px] font-semibold leading-none text-[#1B2632] transition-colors hover:bg-[#F5A552] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2C3B4D]"
           >
             Ver detalle
           </Link>

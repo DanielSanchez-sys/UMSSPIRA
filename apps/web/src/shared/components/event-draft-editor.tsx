@@ -14,6 +14,7 @@ import {
   getAdminDraft,
   updateDraftEvent,
 } from '@/shared/services/events-service';
+import { useAuthenticatedUserId } from '@/modules/auth/frontend/components/authenticated-user-context';
 
 interface EventDraftEditorProps {
   eventId: string;
@@ -22,8 +23,10 @@ interface EventDraftEditorProps {
 
 export function EventDraftEditor({
   eventId,
-  userId,
+  userId: providedUserId,
 }: EventDraftEditorProps) {
+  const authenticatedUserId = useAuthenticatedUserId();
+  const userId = providedUserId ?? authenticatedUserId;
   const router = useRouter();
   const [draft, setDraft] = useState<EventItem | null>(null);
   const [isLoading, setIsLoading] = useState(Boolean(userId));

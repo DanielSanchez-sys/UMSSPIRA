@@ -13,6 +13,8 @@ import {
   Bell,
   Check,
   ChevronDown,
+  Eye,
+  LogOut,
   Menu,
   MessageSquare,
   MoreVertical,
@@ -23,6 +25,8 @@ import {
   getAdminEvents,
   publishDraftEvent,
 } from '@/shared/services/events-service';
+import { useAuthenticatedUserId } from '@/modules/auth/frontend/components/authenticated-user-context';
+import { getSupabaseClient } from '@/shared/lib/supabase';
 
 type AdminSection = 'management' | 'create' | 'drafts';
 
@@ -30,6 +34,9 @@ export function EventsHeader({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const eventsMenuRef = useRef<HTMLDivElement>(null);
   const [isEventsMenuOpen, setIsEventsMenuOpen] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
+  const [signOutError, setSignOutError] = useState<string | null>(null);
+  const router = useRouter();
   const eventMenuItems = [
     { href: '/events', label: 'Gestión de eventos' },
     { href: '/events/create', label: 'Crear evento' },
@@ -44,6 +51,28 @@ export function EventsHeader({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setIsEventsMenuOpen(false);
   }, [pathname]);
+
+  async function handleSignOut() {
+    setIsSigningOut(true);
+    setSignOutError(null);
+
+    try {
+      const { error } = await getSupabaseClient().auth.signOut();
+
+      if (error) {
+        throw error;
+      }
+
+      router.replace('/login');
+      router.refresh();
+    } catch {
+      setSignOutError(
+        'No se pudo cerrar la sesión. Comprueba tu conexión e inténtalo nuevamente.',
+      );
+    } finally {
+      setIsSigningOut(false);
+    }
+  }
 
   useEffect(() => {
     if (!isEventsMenuOpen) return;
@@ -128,9 +157,18 @@ export function EventsHeader({ children }: { children: React.ReactNode }) {
           <span className="events-avatar">AD</span>
           <span className="events-profile-copy">
             <strong>Administración</strong>
-            <small>Sin sesión</small>
+            <small>Sesión activa</small>
           </span>
-          <ChevronDown size={15} />
+          <button
+            type="button"
+            className="events-signout-button"
+            aria-label="Cerrar sesión y volver al login"
+            title="Cerrar sesión"
+            onClick={() => void handleSignOut()}
+            disabled={isSigningOut}
+          >
+            <LogOut size={19} aria-hidden="true" />
+          </button>
         </div>
       </header>
 
@@ -146,7 +184,23 @@ export function EventsHeader({ children }: { children: React.ReactNode }) {
           />
         </Link>
         <span className="events-mobile-avatar" aria-label="Administración">AD</span>
+        <button
+          type="button"
+          className="events-signout-button events-signout-button-mobile"
+          aria-label="Cerrar sesión y volver al login"
+          title="Cerrar sesión"
+          onClick={() => void handleSignOut()}
+          disabled={isSigningOut}
+        >
+          <LogOut size={19} aria-hidden="true" />
+        </button>
       </header>
+
+      {signOutError ? (
+        <p className="events-signout-error" role="alert">
+          {signOutError}
+        </p>
+      ) : null}
 
       {children}
     </div>
@@ -181,11 +235,13 @@ const MISSING_EVENTS_IDENTITY =
 
 export function EventManagementContent({
   compact = false,
-  userId,
+  userId: providedUserId,
 }: {
   compact?: boolean;
   userId?: string;
 }) {
+  const authenticatedUserId = useAuthenticatedUserId();
+  const userId = providedUserId ?? authenticatedUserId;
   const router = useRouter();
   const {
     events,
@@ -197,6 +253,27 @@ export function EventManagementContent({
   const [pendingPublication, setPendingPublication] = useState<EventItem | null>(null);
   const [isPublishing, setIsPublishing] = useState(false);
   const [publicationSucceeded, setPublicationSucceeded] = useState(false);
+  const [searchInput, setSearchInput] = useState('');
+  const [searchFilter, setSearchFilter] = useState('');
+  const [selectedMonth, setSelectedMonth] = useState('all');
+  const [monthFilter, setMonthFilter] = useState('all');
+  const [selectedStatus, setSelectedStatus] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const filteredEvents = events.filter((event) => {
+    const matchesSearch = event.title
+      .toLocaleLowerCase('es')
+      .includes(searchFilter.trim().toLocaleLowerCase('es'));
+    const matchesMonth =
+      monthFilter === 'all' || event.startDate.slice(0, 7) === monthFilter;
+    const matchesStatus =
+      statusFilter === 'all' || event.status === statusFilter;
+
+    return matchesSearch && matchesMonth && matchesStatus;
+  });
+  const availableMonths = Array.from(
+    new Set(events.map((event) => event.startDate.slice(0, 7))),
+  ).sort();
+
   const publishedCount = events.filter(
     (event) => event.status === EVENT_STATUS.PUBLICADO,
   ).length;
@@ -252,14 +329,45 @@ export function EventManagementContent({
 
       <section className="events-list-panel">
         <div className="events-filters">
-          <input aria-label="Buscar" placeholder="Buscar eventos por título…" readOnly />
-          <select aria-label="Fecha" defaultValue="all" disabled title="El filtrado no forma parte de HU1">
+          <input
+            aria-label="Buscar"
+            placeholder="Buscar eventos por título…"
+            value={searchInput}
+            onChange={(event) => setSearchInput(event.target.value)}
+          />
+          <select
+            aria-label="Fecha"
+            value={selectedMonth}
+            onChange={(event) => setSelectedMonth(event.target.value)}
+          >
             <option value="all">Todas las fechas</option>
+            {availableMonths.map((month) => (
+              <option key={month} value={month}>
+                {formatEventMonth(month)}
+              </option>
+            ))}
           </select>
-          <select aria-label="Estado" defaultValue="all" disabled title="El filtrado no forma parte de HU1">
+          <select
+            aria-label="Estado"
+            value={selectedStatus}
+            onChange={(event) => setSelectedStatus(event.target.value)}
+          >
             <option value="all">Todos los estados</option>
+            <option value={EVENT_STATUS.BORRADOR}>Borrador</option>
+            <option value={EVENT_STATUS.PUBLICADO}>Publicado</option>
+            <option value={EVENT_STATUS.CANCELADO}>Cancelado</option>
           </select>
-          <button type="button" className="event-button event-button-primary" disabled title="El filtrado no forma parte de HU1">Filtrar</button>
+          <button
+            type="button"
+            className="event-button event-button-primary"
+            onClick={() => {
+              setSearchFilter(searchInput);
+              setMonthFilter(selectedMonth);
+              setStatusFilter(selectedStatus);
+            }}
+          >
+            Filtrar
+          </button>
         </div>
 
         <h2>Listado de eventos</h2>
@@ -272,7 +380,7 @@ export function EventManagementContent({
             <span>Evento</span><span>Fecha y hora</span><span>Ubicación</span>
             <span>Cupo</span><span>Estado</span><span>Acciones</span>
           </div>
-          {!isLoading && !errorMessage && events.map((event) => (
+          {!isLoading && !errorMessage && filteredEvents.map((event) => (
             <article className="events-table-row" role="row" key={event.id}>
               <div className="event-list-title">
                 <span className="event-thumb">
@@ -280,7 +388,11 @@ export function EventManagementContent({
                 </span>
                 <span>
                   <strong>{event.title}</strong>
-                  <small>Creado por {event.createdBy} · {formatEventDate(event.createdAt)}</small>
+                  <small>
+                    Creado por {event.creatorName || 'Administrador'}
+                    <br />
+                    Creado el {formatEventDateTime(event.createdAt)}
+                  </small>
                 </span>
               </div>
               <span className="event-date"><strong>{formatEventDate(event.startDate)}</strong><small>{formatEventTimeRange(event)}</small></span>
@@ -289,7 +401,13 @@ export function EventManagementContent({
               <StatusChip status={event.status} />
               <div className={`event-row-actions ${event.status === EVENT_STATUS.PUBLICADO ? 'is-published' : 'is-draft'}`}>
                 {event.status === EVENT_STATUS.PUBLICADO ? (
-                  <button type="button" className="event-button event-button-secondary event-action-view" disabled title="La ruta de detalle pertenece a HU2 y aún no existe">Ver</button>
+                  <button
+                    type="button"
+                    className="event-button event-button-secondary event-action-view"
+                    onClick={() => router.push(`/events/${event.id}`)}
+                  >
+                    <Eye size={15} aria-hidden="true" /> Ver
+                  </button>
                 ) : event.status === EVENT_STATUS.BORRADOR ? (
                   <>
                     <button type="button" className="event-button event-button-secondary event-action-edit" onClick={() => router.push(`/events/drafts/${event.id}`)}>Editar</button>
@@ -301,11 +419,13 @@ export function EventManagementContent({
             </article>
           ))}
         </div>
-        {!isLoading && !errorMessage && events.length === 0 ? (
+        {!isLoading && !errorMessage && filteredEvents.length === 0 ? (
           <p className="events-list-footer" role="status">No hay eventos registrados.</p>
         ) : null}
-        {!isLoading && !errorMessage && events.length > 0 ? (
-          <p className="events-list-footer">Mostrando 1–{events.length} de {events.length} eventos</p>
+        {!isLoading && !errorMessage && filteredEvents.length > 0 ? (
+          <p className="events-list-footer">
+            Mostrando {filteredEvents.length} de {events.length} eventos
+          </p>
         ) : null}
       </section>
 
@@ -325,7 +445,13 @@ export function EventManagementContent({
   );
 }
 
-export function EventDraftsContent({ userId }: { userId?: string }) {
+export function EventDraftsContent({
+  userId: providedUserId,
+}: {
+  userId?: string;
+}) {
+  const authenticatedUserId = useAuthenticatedUserId();
+  const userId = providedUserId ?? authenticatedUserId;
   const router = useRouter();
   const {
     events,
@@ -530,11 +656,40 @@ const eventTimeFormatter = new Intl.DateTimeFormat('es-BO', {
   hour12: false,
 });
 
+const eventDateTimeFormatter = new Intl.DateTimeFormat('es-BO', {
+  day: '2-digit',
+  month: 'short',
+  year: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+  hour12: false,
+});
+
+const eventMonthFormatter = new Intl.DateTimeFormat('es-BO', {
+  month: 'long',
+  year: 'numeric',
+  timeZone: 'UTC',
+});
+
 function formatEventDate(value: string): string {
   const date = new Date(value);
   return Number.isNaN(date.getTime())
     ? 'Fecha no disponible'
     : eventDateFormatter.format(date);
+}
+
+function formatEventDateTime(value: string): string {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? 'Fecha no disponible'
+    : eventDateTimeFormatter.format(date);
+}
+
+function formatEventMonth(value: string): string {
+  const month = new Date(`${value}-01T00:00:00Z`);
+  return Number.isNaN(month.getTime())
+    ? value
+    : eventMonthFormatter.format(month);
 }
 
 function formatEventTimeRange(event: EventItem): string {
