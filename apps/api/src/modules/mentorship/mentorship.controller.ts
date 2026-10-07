@@ -21,6 +21,7 @@ import {
   MentorshipService,
   ModuleStatus,
 } from './mentorship.service';
+import { MentorTestAuthGuard } from './mentor-test-auth.guard';
 
 /** Se asume que el guard de autenticación del equipo inyecta req.user.id. */
 type AuthenticatedRequest = Request & { user?: { id?: string } };
@@ -70,11 +71,13 @@ export class MentorshipController {
   }
 
   @Get('my-profile/areas')
+  @UseGuards(MentorTestAuthGuard)
   getMyAreas(@Req() req: AuthenticatedRequest): Promise<MentorAreasState> {
     return this.mentorshipService.getMyAreas(this.userId(req));
   }
 
   @Patch('my-profile/areas')
+  @UseGuards(MentorTestAuthGuard)
   updateMyAreas(
     @Req() req: AuthenticatedRequest,
     @Body() dto: UpdateMentorAreasDto,
