@@ -72,6 +72,16 @@ export function validarCertificacion(datos: DatosCertificacion): ErroresFormular
   });
 }
 
+const TIPOS_RESPALDO = ['image/jpeg', 'image/png', 'application/pdf'];
+const TAMANIO_MAXIMO_RESPALDO = 5 * 1024 * 1024;
+
+// El atributo accept del input se puede saltar eligiendo "Todos los archivos", por eso se revisa aquí
+export function validarRespaldo(archivo: File): string | undefined {
+  if (!TIPOS_RESPALDO.includes(archivo.type)) return 'Formato no permitido. Solo JPG, PNG o PDF';
+  if (archivo.size > TAMANIO_MAXIMO_RESPALDO) return 'El archivo no puede superar 5 MB';
+  return undefined;
+}
+
 export function cantidadErrores(errores: object): number {
   return Object.keys(errores).length;
 }

@@ -1,4 +1,4 @@
-import { validarCertificacion, validarExperiencia, validarFormacion } from './reglas-perfil';
+import { validarCertificacion, validarExperiencia, validarFormacion, validarRespaldo } from './reglas-perfil';
 
 const anioSiguiente = String(new Date().getFullYear() + 1);
 
@@ -70,5 +70,35 @@ describe('validarCertificacion', () => {
       validarCertificacion({ nombre: 'AWS', entidadEmisora: 'Amazon', anioEmision: anioSiguiente, grado: 'Asociado' })
         .anioEmision,
     ).toBe('El año no puede ser mayor al año actual.');
+  });
+});
+
+describe('validarRespaldo', () => {
+  function archivo(nombre: string, tipo: string, tamanio = 1024) {
+    const resultado = new File(['contenido'], nombre, { type: tipo });
+    Object.defineProperty(resultado, 'size', { value: tamanio });
+    return resultado;
+  }
+
+  it('acepta JPG, PNG y PDF', () => {
+    expect(validarRespaldo(archivo('foto.jpg', 'image/jpeg'))).toBeUndefined();
+    expect(validarRespaldo(archivo('foto.png', 'image/png'))).toBeUndefined();
+    expect(validarRespaldo(archivo('certificado.pdf', 'application/pdf'))).toBeUndefined();
+  });
+
+  it('rechaza otros formatos', () => {
+    expect(validarRespaldo(archivo('foto.gif', 'image/gif'))).toBe('Formato no permitido. Solo JPG, PNG o PDF');
+    expect(
+      validarRespaldo(
+        archivo('cv.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'),
+      ),
+    ).toBe('Formato no permitido. Solo JPG, PNG o PDF');
+  });
+
+  it('rechaza archivos de más de 5 MB y acepta exactamente 5 MB', () => {
+    expect(validarRespaldo(archivo('grande.pdf', 'application/pdf', 5 * 1024 * 1024 + 1))).toBe(
+      'El archivo no puede superar 5 MB',
+    );
+    expect(validarRespaldo(archivo('limite.pdf', 'application/pdf', 5 * 1024 * 1024))).toBeUndefined();
   });
 });
