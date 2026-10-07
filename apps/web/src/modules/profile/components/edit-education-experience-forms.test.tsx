@@ -104,7 +104,7 @@ describe('Edición · validaciones (T2.9)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
     expect(screen.getByText('La institución es obligatoria.')).toBeInTheDocument();
-    expect(screen.getByText('El año de egreso no puede ser posterior al año actual.')).toBeInTheDocument();
+    expect(screen.getByText('El año de egreso no puede ser mayor al año actual.')).toBeInTheDocument();
     expect(screen.queryByText('Guardado')).not.toBeInTheDocument();
     expect(screen.getByTestId('guardado')).toHaveTextContent('Universidad Mayor de San Simón|2018');
   });

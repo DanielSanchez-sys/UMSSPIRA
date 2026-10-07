@@ -74,7 +74,7 @@ describe('FormacionAcademicaForm · validaciones', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /agregar formación/i }));
 
-    expect(screen.getByText('El año de egreso no puede ser posterior al año actual.')).toBeInTheDocument();
+    expect(screen.getByText('El año de egreso no puede ser mayor al año actual.')).toBeInTheDocument();
     expect(onAgregar).not.toHaveBeenCalled();
   });
 

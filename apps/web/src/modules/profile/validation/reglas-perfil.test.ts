@@ -21,7 +21,7 @@ describe('validarFormacion', () => {
   it('rechaza un año de egreso posterior al actual o sin 4 dígitos', () => {
     const base = { institucion: 'UMSS', titulo: 'Sistemas', grado: 'Licenciatura' };
     expect(validarFormacion({ ...base, anioEgreso: anioSiguiente }).anioEgreso).toBe(
-      'El año de egreso no puede ser posterior al año actual.',
+      'El año de egreso no puede ser mayor al año actual.',
     );
     expect(validarFormacion({ ...base, anioEgreso: '202' }).anioEgreso).toBe('El año de egreso debe tener 4 dígitos.');
   });
@@ -69,6 +69,6 @@ describe('validarCertificacion', () => {
     expect(
       validarCertificacion({ nombre: 'AWS', entidadEmisora: 'Amazon', anioEmision: anioSiguiente, grado: 'Asociado' })
         .anioEmision,
-    ).toBe('El año no puede ser posterior al año actual.');
+    ).toBe('El año no puede ser mayor al año actual.');
   });
 });

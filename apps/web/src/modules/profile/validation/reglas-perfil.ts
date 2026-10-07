@@ -17,7 +17,7 @@ function texto(valor: string, etiqueta: string, maximo: number, femenino = false
 function anio(valor: string, etiqueta: string): string | undefined {
   if (!valor) return `${etiqueta} es obligatorio.`;
   if (!/^\d{4}$/.test(valor)) return `${etiqueta} debe tener 4 dígitos.`;
-  if (Number(valor) > new Date().getFullYear()) return `${etiqueta} no puede ser posterior al año actual.`;
+  if (Number(valor) > new Date().getFullYear()) return `${etiqueta} no puede ser mayor al año actual.`;
   return undefined;
 }
 
