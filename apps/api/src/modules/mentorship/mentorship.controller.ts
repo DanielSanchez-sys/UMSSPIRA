@@ -10,6 +10,7 @@ import {
   Post,
   Req,
   UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
 import type { Request } from 'express';
 import { UpdateMentorAreasDto } from './dto/update-mentor-areas.dto';
@@ -41,6 +42,7 @@ export class MentorshipController {
   }
 
   @Get('mi-perfil')
+  @UseGuards(MentorTestAuthGuard)
   getMyProfile(@Req() req: AuthenticatedRequest): Promise<Mentor> {
     return this.mentorshipService.getMyProfile(this.userId(req));
   }
@@ -53,11 +55,13 @@ export class MentorshipController {
 
   @Post('eligibility')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(MentorTestAuthGuard)
   checkEligibility(@Req() req: AuthenticatedRequest): Promise<{ eligible: boolean }> {
     return this.mentorshipService.checkEligibility(this.userId(req));
   }
 
   @Patch('mi-perfil/participacion')
+  @UseGuards(MentorTestAuthGuard)
   setParticipation(
     @Req() req: AuthenticatedRequest,
     @Body() dto: UpdateParticipationDto,
