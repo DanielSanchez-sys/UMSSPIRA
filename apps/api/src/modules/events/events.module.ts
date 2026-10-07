@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 
 import { EventsController } from './events.controller';
 import { EventsService } from './events.service';
+import { AdminSupabaseGuard } from '../../shared/guards/admin-supabase.guard';
 
 @Module({
   controllers: [
@@ -9,6 +10,7 @@ import { EventsService } from './events.service';
   ],
   providers: [
     EventsService,
+    AdminSupabaseGuard,
   ],
   exports: [
     EventsService,

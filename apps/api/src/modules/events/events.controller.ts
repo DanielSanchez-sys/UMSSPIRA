@@ -1,17 +1,21 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Get,
-  Headers,
   Param,
   Patch,
   Post,
+  UseGuards,
 } from '@nestjs/common';
 
 import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateDraftEventDto } from './dto/update-draft-event.dto';
+import {
+  AdminSupabaseGuard,
+  CurrentAdmin,
+  type AuthenticatedAdmin,
+} from '../../shared/guards/admin-supabase.guard';
 
 @Controller('api/events')
 export class EventsController {
@@ -20,73 +24,87 @@ export class EventsController {
   ) {}
 
   @Post()
+  @UseGuards(AdminSupabaseGuard)
   async createEvent(
     @Body() createEventDto: CreateEventDto,
-    @Headers('x-user-id') userId: string,
+    @CurrentAdmin() admin: AuthenticatedAdmin,
   ) {
-    this.requireUserId(userId);
-
     return this.eventsService.createEvent(
       createEventDto,
-      userId,
+      admin.id,
+      admin.supabase,
     );
+  }
+
+  @Get('catalog')
+  async getCatalog() {
+    return this.eventsService.getCatalog();
   }
 
   @Get('admin')
-  async getAdminEvents(
-    @Headers('x-user-id') userId: string,
-  ) {
-    this.requireUserId(userId);
-
-    return this.eventsService.getAdminEvents(userId);
+  @UseGuards(AdminSupabaseGuard)
+  async getAdminEvents(@CurrentAdmin() admin: AuthenticatedAdmin) {
+    return this.eventsService.getAdminEvents(admin.id, admin.supabase);
   }
 
-  @Get('admin/:id')
-  async getAdminDraft(
+  @Get('admin/event/:id')
+  @UseGuards(AdminSupabaseGuard)
+  async getAdminEvent(
     @Param('id') eventId: string,
-    @Headers('x-user-id') userId: string,
+    @CurrentAdmin() admin: AuthenticatedAdmin,
   ) {
-    this.requireUserId(userId);
-
-    return this.eventsService.getAdminDraft(
+    return this.eventsService.getAdminEvent(
       eventId,
-      userId,
+      admin.id,
+      admin.supabase,
     );
   }
 
+  @Get('admin/:id')
+  @UseGuards(AdminSupabaseGuard)
+  async getAdminDraft(
+    @Param('id') eventId: string,
+    @CurrentAdmin() admin: AuthenticatedAdmin,
+  ) {
+    return this.eventsService.getAdminDraft(
+      eventId,
+      admin.id,
+      admin.supabase,
+    );
+  }
+
+  @Get(':id')
+  async getEventById(
+    @Param('id') eventId: string,
+  ) {
+    return this.eventsService.getEventById(eventId);
+  }
+
   @Patch('admin/:id')
+  @UseGuards(AdminSupabaseGuard)
   async updateAdminDraft(
     @Param('id') eventId: string,
     @Body() updateEventDto: UpdateDraftEventDto,
-    @Headers('x-user-id') userId: string,
+    @CurrentAdmin() admin: AuthenticatedAdmin,
   ) {
-    this.requireUserId(userId);
-
     return this.eventsService.updateAdminDraft(
       eventId,
       updateEventDto,
-      userId,
+      admin.id,
+      admin.supabase,
     );
   }
 
   @Patch('admin/:id/publish')
+  @UseGuards(AdminSupabaseGuard)
   async publishAdminDraft(
     @Param('id') eventId: string,
-    @Headers('x-user-id') userId: string,
+    @CurrentAdmin() admin: AuthenticatedAdmin,
   ) {
-    this.requireUserId(userId);
-
     return this.eventsService.publishAdminDraft(
       eventId,
-      userId,
+      admin.id,
+      admin.supabase,
     );
-  }
-
-  private requireUserId(userId: string): void {
-    if (!userId) {
-      throw new BadRequestException(
-        'Se requiere el identificador del usuario creador',
-      );
-    }
   }
 }

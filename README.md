@@ -32,14 +32,17 @@ Esto instala las dependencias de **todos** los workspaces (`apps/api`, `apps/web
 
 ## Variables de entorno
 
-El servicio de base de datos usa un archivo `.env` en la raíz del repositorio:
+El `.env` de la raíz del repositorio se usa para configurar Supabase. El
+frontend necesita `NEXT_PUBLIC_SUPABASE_URL` y una clave pública:
+`NEXT_PUBLIC_SUPABASE_ANON_KEY` o `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
+No uses una clave `service_role` ni publiques contraseñas o claves secretas.
 
-Si crean uno pasan la informacion al grupo 
-para evitar problemas de seguridad.
-
-Por ahora solo hay uno que es de la contrasenia
-de la base de datos, se les pasara por el grupo 
-de whatsapp.
+Para iniciar sesión, el UUID de `usuario.usuario_id` debe ser el mismo que
+`auth.users.id` y el campo `usuario.rol` debe contener `administrador`,
+`titulado` o `egresado`. Aplica las migraciones de `supabase/migrations` en
+orden (`0001`, `0002`, `0003`). La API verifica el access token de Supabase y
+solo permite crear, editar y publicar eventos a cuentas con rol administrador;
+PostgreSQL también valida el propietario y el rol mediante RLS.
 
 ## Levantar servicios locales (Docker)
 

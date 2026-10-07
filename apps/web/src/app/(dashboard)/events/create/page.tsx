@@ -10,8 +10,10 @@ import {
   EventSuccessDialog,
 } from '@/shared/components/events-ui';
 import { createEvent } from '@/shared/services/events-service';
+import { useAuthenticatedUserId } from '@/modules/auth/frontend/components/authenticated-user-context';
 
 export default function CreateEventPage() {
+  const userId = useAuthenticatedUserId();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -29,7 +31,13 @@ export default function CreateEventPage() {
     setDraftSaved(false);
 
     try {
-      await createEvent(event);
+      if (!userId) {
+        throw new Error(
+          'No se pudo identificar la sesión. Vuelve a iniciar sesión.',
+        );
+      }
+
+      await createEvent(event, userId);
 
       if (event.status === EVENT_STATUS.PUBLICADO) {
         setPublished(true);

@@ -17,6 +17,7 @@ export interface EventItem {
   location: string | null;
   status: EventStatus;
   createdBy: string;
+  creatorName?: string;
   createdAt: string;
 }
 

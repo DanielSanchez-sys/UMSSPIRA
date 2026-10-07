@@ -6,6 +6,10 @@ import type {
 
 import { apiClient } from './api-client';
 
+export function getEventCatalog(): Promise<EventItem[]> {
+  return apiClient<EventItem[]>('/api/events/catalog');
+}
+
 export function createEvent(
   event: CreateEventDto,
   userId?: string,
@@ -18,9 +22,6 @@ export function createEvent(
 
   return apiClient<EventItem>('/api/events', {
     method: 'POST',
-    headers: {
-      'x-user-id': userId,
-    },
     body: event,
   });
 }
@@ -28,34 +29,25 @@ export function createEvent(
 export function getAdminEvents(
   userId?: string,
 ): Promise<EventItem[]> {
-  const authenticatedUserId = requireUserId(
+  requireUserId(
     userId,
     'consultar los eventos',
   );
 
-  return apiClient<EventItem[]>('/api/events/admin', {
-    headers: {
-      'x-user-id': authenticatedUserId,
-    },
-  });
+  return apiClient<EventItem[]>('/api/events/admin');
 }
 
 export function getAdminDraft(
   eventId: string,
   userId?: string,
 ): Promise<EventItem> {
-  const authenticatedUserId = requireUserId(
+  requireUserId(
     userId,
     'consultar el borrador',
   );
 
   return apiClient<EventItem>(
     `/api/events/admin/${encodeURIComponent(eventId)}`,
-    {
-      headers: {
-        'x-user-id': authenticatedUserId,
-      },
-    },
   );
 }
 
@@ -64,7 +56,7 @@ export function updateDraftEvent(
   event: UpdateDraftEventDto,
   userId?: string,
 ): Promise<EventItem> {
-  const authenticatedUserId = requireUserId(
+  requireUserId(
     userId,
     'actualizar el borrador',
   );
@@ -73,9 +65,6 @@ export function updateDraftEvent(
     `/api/events/admin/${encodeURIComponent(eventId)}`,
     {
       method: 'PATCH',
-      headers: {
-        'x-user-id': authenticatedUserId,
-      },
       body: event,
     },
   );
@@ -85,7 +74,7 @@ export function publishDraftEvent(
   eventId: string,
   userId?: string,
 ): Promise<EventItem> {
-  const authenticatedUserId = requireUserId(
+  requireUserId(
     userId,
     'publicar el borrador',
   );
@@ -94,9 +83,6 @@ export function publishDraftEvent(
     `/api/events/admin/${encodeURIComponent(eventId)}/publish`,
     {
       method: 'PATCH',
-      headers: {
-        'x-user-id': authenticatedUserId,
-      },
     },
   );
 }
