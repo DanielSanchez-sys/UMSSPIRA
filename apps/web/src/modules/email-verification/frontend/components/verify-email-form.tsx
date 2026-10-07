@@ -120,7 +120,7 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
             value={otpDigits}
             onChange={handleOtpChange}
             hasError={Boolean(error)}
-            disabled={isSubmitting || isVerified}
+            disabled={isSubmitting || isVerified || isExpired || maxAttemptsReached}
           />
         </div>
 
