@@ -3,7 +3,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { Award, Camera, CloudUpload, FileText, Plus } from 'lucide-react';
 import { MensajeError, claseCampo } from '@/modules/profile/validation/mensaje-error';
-import { type DatosCertificacion, type ErroresFormulario, validarCertificacion } from '@/modules/profile/validation/reglas-perfil';
+import {
+  type DatosCertificacion,
+  type ErroresFormulario,
+  validarCertificacion,
+  validarRespaldo,
+} from '@/modules/profile/validation/reglas-perfil';
 
 const GRADOS = ['Fundamentos', 'Asociado', 'Profesional', 'Especialista', 'Experto'];
 
@@ -38,6 +43,7 @@ export function FormularioCertificaciones({ certificaciones, onAgregar, onErrore
   const [errores, setErrores] = useState<ErroresFormulario<keyof DatosCertificacion>>({});
   // Los errores se muestran desde el primer intento de agregar y se recalculan mientras se corrige
   const [intentado, setIntentado] = useState(false);
+  const [errorRespaldo, setErrorRespaldo] = useState<string>();
 
   const cantidadErrores = Object.keys(errores).length;
   useEffect(() => {
@@ -52,8 +58,12 @@ export function FormularioCertificaciones({ certificaciones, onAgregar, onErrore
 
   function elegirRespaldo(evento: React.ChangeEvent<HTMLInputElement>) {
     const archivo = evento.target.files?.[0];
-    if (archivo) setDatos({ ...datos, respaldo: archivo });
     evento.target.value = '';
+    if (!archivo) return;
+    // Un archivo no válido no reemplaza al respaldo elegido antes
+    const error = validarRespaldo(archivo);
+    setErrorRespaldo(error);
+    if (!error) setDatos({ ...datos, respaldo: archivo });
   }
 
   function agregar(evento: React.FormEvent<HTMLFormElement>) {
@@ -219,6 +229,7 @@ export function FormularioCertificaciones({ certificaciones, onAgregar, onErrore
             className="hidden"
             onChange={elegirRespaldo}
           />
+          <MensajeError id="error-certificacion-respaldo" mensaje={errorRespaldo} />
         </div>
 
         <button
