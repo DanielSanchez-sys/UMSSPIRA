@@ -12,7 +12,7 @@ describe('apiClient', () => {
     jest.clearAllMocks();
     jest.mocked(getSupabaseClient).mockReturnValue({
       auth: { getSession: mockGetSession },
-    } as ReturnType<typeof getSupabaseClient>);
+    } as unknown as ReturnType<typeof getSupabaseClient>);
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
       text: async () => JSON.stringify({ success: true }),

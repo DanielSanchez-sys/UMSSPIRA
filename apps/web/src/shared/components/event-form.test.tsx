@@ -3,8 +3,10 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import { EVENT_STATUS } from '@umsspira/shared-types';
 
 import CreateEventPage from '@/app/(dashboard)/events/create/page';
+import { AuthenticatedUserProvider } from '@/modules/auth/frontend/components/authenticated-user-context';
 import EventForm from '@/shared/components/event-form';
 
+const TEST_USER_ID = '78869fe3-9744-41f6-a29e-fcf16e43c222';
 const mockPush = jest.fn();
 const mockCreateEvent = jest.fn();
 
@@ -16,6 +18,14 @@ jest.mock('next/navigation', () => ({
 jest.mock('@/shared/services/events-service', () => ({
   createEvent: (...args: unknown[]) => mockCreateEvent(...args),
 }));
+
+function renderCreateEventPage() {
+  return render(
+    <AuthenticatedUserProvider userId={TEST_USER_ID}>
+      <CreateEventPage />
+    </AuthenticatedUserProvider>,
+  );
+}
 
 function fillValidForm(
   container: HTMLElement,
@@ -160,7 +170,7 @@ describe('CreateEventPage HU1', () => {
   });
 
   it('Cancelar vuelve a /events sin guardar', () => {
-    render(<CreateEventPage />);
+    renderCreateEventPage();
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Cancelar' })[0]);
 
@@ -170,7 +180,7 @@ describe('CreateEventPage HU1', () => {
 
   it('muestra feedback después de guardar un borrador', async () => {
     mockCreateEvent.mockResolvedValueOnce({});
-    const { container } = render(<CreateEventPage />);
+    const { container } = renderCreateEventPage();
 
     fillValidForm(container);
     clickDesktopDraftButton();
@@ -178,12 +188,13 @@ describe('CreateEventPage HU1', () => {
     expect(await screen.findByRole('status')).toHaveTextContent('Borrador guardado correctamente.');
     expect(mockCreateEvent).toHaveBeenCalledWith(
       expect.objectContaining({ status: EVENT_STATUS.BORRADOR }),
+      TEST_USER_ID,
     );
   });
 
   it('muestra el error real devuelto por el servicio', async () => {
     mockCreateEvent.mockRejectedValueOnce(new Error('Se requiere una sesión autenticada.'));
-    const { container } = render(<CreateEventPage />);
+    const { container } = renderCreateEventPage();
 
     fillValidForm(container);
     clickDesktopDraftButton();
@@ -193,7 +204,7 @@ describe('CreateEventPage HU1', () => {
 
   it('muestra publicación exitosa y Volver a eventos navega a /events', async () => {
     mockCreateEvent.mockResolvedValueOnce({});
-    const { container } = render(<CreateEventPage />);
+    const { container } = renderCreateEventPage();
 
     fillValidForm(container);
     fireEvent.click(screen.getByRole('button', { name: 'Publicar evento' }));
