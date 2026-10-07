@@ -105,10 +105,11 @@ type BackupFieldProps = {
   documentName: string;
   isVerified: boolean;
   onDocumentChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  error?: string;
 };
 
 // Respaldo documental con estado, enlace al archivo y botones para subir foto o documento
-export function BackupField({ documentName, isVerified, onDocumentChange }: BackupFieldProps) {
+export function BackupField({ documentName, isVerified, onDocumentChange, error }: BackupFieldProps) {
   return (
     <div className="flex flex-col gap-[7px]">
       <span className="text-[13px] font-semibold text-umss-navy">Respaldo documental</span>
@@ -145,6 +146,7 @@ export function BackupField({ documentName, isVerified, onDocumentChange }: Back
           <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden" onChange={onDocumentChange} />
         </label>
       </div>
+      <MensajeError id="error-respaldo" mensaje={error} />
     </div>
   );
 }
