@@ -10,6 +10,7 @@ import type { PostgrestError } from '@supabase/supabase-js';
 // Cliente compartido del equipo (única línea a ajustar si exporta otro nombre).
 import { supabase } from '../../shared/lib/supabase';
 import { UpdateMentorAreasDto } from './dto/update-mentor-areas.dto';
+import { UpdateMentorProfileInformationDto } from './dto/update-mentor-profile-information.dto';
 import { UpdateParticipationDto } from './dto/update-participation.dto';
 import { Mentor } from './mentor.model';
 import { MentorshipInterestsService } from './mentorship-interests.service';
@@ -49,6 +50,15 @@ export interface MentorAreasState {
   areas: MentorAreaItem[];
   selectedIds: string[];
   intereses: MentorInterestLink[];
+}
+
+export interface MentorProfileInformationState {
+  exists: boolean;
+  profile: {
+    experiencia: string | null;
+    anios_exp: number | null;
+    fecha_actualizacion: string | null;
+  } | null;
 }
 
 export interface ModuleStatus {
@@ -97,6 +107,51 @@ export class MentorshipService {
       throw new NotFoundException('El usuario no tiene perfil de mentor');
     }
     return profile;
+  }
+
+  /** GET /mentorship/my-profile/information (read-only; does not create a profile). */
+  async getMyProfileInformation(userId: string): Promise<MentorProfileInformationState> {
+    const profile = await this.findById(userId);
+    if (!profile) {
+      return { exists: false, profile: null };
+    }
+
+    return {
+      exists: true,
+      profile: {
+        experiencia: profile.experiencia,
+        anios_exp: profile.anios_exp,
+        fecha_actualizacion: profile.fecha_actualizacion,
+      },
+    };
+  }
+
+  /** PATCH /mentorship/my-profile/information */
+  async updateMyProfileInformation(
+    userId: string,
+    dto: UpdateMentorProfileInformationDto,
+  ): Promise<MentorProfileInformationState> {
+    if (!(await this.findById(userId))) {
+      throw new NotFoundException('El usuario no tiene perfil de mentor');
+    }
+
+    const changes: Partial<Mentor> = {
+      experiencia: dto.experiencia.trim(),
+      fecha_actualizacion: this.today(),
+    };
+    if (dto.anios_exp !== undefined) {
+      changes.anios_exp = dto.anios_exp;
+    }
+
+    const profile = await this.update(userId, changes);
+    return {
+      exists: true,
+      profile: {
+        experiencia: profile.experiencia,
+        anios_exp: profile.anios_exp,
+        fecha_actualizacion: profile.fecha_actualizacion,
+      },
+    };
   }
 
   /**
