@@ -32,7 +32,7 @@ export class EmailVerificationService {
   }
 
   /**
-   * Envía el código OTP de 6 dígitos ingresado por el egresado para su validación.
+   * Envía el código OTP de 6 dígitos ingresado por el titulado para su validación.
    */
   async verifyOtp(payload: VerifyOtpPayload): Promise<VerifyOtpResponse> {
     try {
