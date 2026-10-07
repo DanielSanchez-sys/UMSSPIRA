@@ -12,6 +12,7 @@ import { supabase } from '../../shared/lib/supabase';
 import { UpdateMentorAreasDto } from './dto/update-mentor-areas.dto';
 import { UpdateParticipationDto } from './dto/update-participation.dto';
 import { Mentor } from './mentor.model';
+import { MentorshipInterestsService } from './mentorship-interests.service';
 
 const PG_UNIQUE_VIOLATION = '23505';
 const MIN_MENTOR_AREAS = 1;
@@ -23,6 +24,7 @@ interface Area {
   id: string;
   nombre: string;
   esta_activo: boolean;
+  padre_id: string | null;
 }
 
 interface MentorAreaLink {
@@ -30,10 +32,23 @@ interface MentorAreaLink {
   id_area: string;
 }
 
+/** Contrato del frontend (mentor-areas-api.ts). */
+export interface MentorAreaItem {
+  id: string;
+  nombre: string;
+  descripcion: string | null;
+}
+
+/** Interés dependiente de un área seleccionada (HU-03). */
+export interface MentorInterestLink {
+  id_area: string;
+  nombre: string;
+}
+
 export interface MentorAreasState {
-  areas: Array<{ id: string; name: string }>;
-  selectedAreaIds: string[];
-  selectedAreas: Array<{ id: string; name: string; isActive: boolean }>;
+  areas: MentorAreaItem[];
+  selectedIds: string[];
+  intereses: MentorInterestLink[];
 }
 
 export interface ModuleStatus {
@@ -45,6 +60,9 @@ export interface ModuleStatus {
 
 @Injectable()
 export class MentorshipService {
+  // HU-03 (regla 7): al quitar un área se borran sus intereses hijos con este servicio.
+  constructor(private readonly interestsService: MentorshipInterestsService) {}
+
   /** GET /mentorship/status */
   async getStatus(): Promise<ModuleStatus> {
     const { count, error } = await supabase
@@ -100,16 +118,18 @@ export class MentorshipService {
     return { eligible: await this.isApprovedGraduate(userId) };
   }
 
-  /** GET /mentorship/my-profile/areas */
+  /** GET /mentorship/mi-perfil/areas */
   async getMyAreas(userId: string): Promise<MentorAreasState> {
     await this.ensureActiveMentor(userId);
 
+    // HU-03: el catálogo son solo las áreas técnicas (raíz); los intereses son sus hijos.
     const [{ data: catalog, error: catalogError }, { data: links, error: linksError }] =
       await Promise.all([
         supabase
           .from('area')
-          .select('id, nombre, esta_activo')
+          .select('id, nombre')
           .eq('esta_activo', true)
+          .is('padre_id', null)
           .order('nombre', { ascending: true }),
         supabase.from('mentor_area').select('id, id_area').eq('id_mentor', userId),
       ]);
@@ -117,28 +137,38 @@ export class MentorshipService {
     if (catalogError) this.fail(catalogError);
     if (linksError) this.fail(linksError);
 
-    const selectedAreaIds = [
+    // HU-03: mentor_area guarda áreas e intereses; aquí solo cuentan las áreas raíz.
+    const linkedIds = [
       ...new Set(((links ?? []) as MentorAreaLink[]).map(({ id_area }) => id_area)),
     ];
-    const { data: selectedAreas, error: selectedAreasError } = selectedAreaIds.length
-      ? await supabase
-          .from('area')
-          .select('id, nombre, esta_activo')
-          .in('id', selectedAreaIds)
+    const { data: linkedAreas, error: linkedAreasError } = linkedIds.length
+      ? await supabase.from('area').select('id, padre_id').in('id', linkedIds)
       : { data: [], error: null };
+    if (linkedAreasError) this.fail(linkedAreasError);
 
-    if (selectedAreasError) this.fail(selectedAreasError);
+    const selectedIds = [
+      ...new Set(
+        ((linkedAreas ?? []) as Area[])
+          .filter((area) => area.padre_id === null)
+          .map(({ id }) => id),
+      ),
+    ];
+
+    // Intereses dependientes (HU-03): el frontend avisa qué se borraría al quitar un área.
+    const intereses = (await this.interestsService.getMyInterests(userId)).map((interest) => ({
+      id_area: interest.area.id,
+      nombre: interest.nombre,
+    }));
 
     return {
-      areas: ((catalog ?? []) as Area[]).map(({ id, nombre }) => ({ id, name: nombre })),
-      selectedAreaIds,
-      selectedAreas: ((selectedAreas ?? []) as Area[]).map(
-        ({ id, nombre, esta_activo }) => ({
-          id,
-          name: nombre,
-          isActive: esta_activo,
-        }),
-      ),
+      // La tabla area no tiene columna descripcion: se envía siempre null (contrato del frontend).
+      areas: ((catalog ?? []) as Area[]).map(({ id, nombre }) => ({
+        id,
+        nombre,
+        descripcion: null,
+      })),
+      selectedIds,
+      intereses,
     };
   }
 
@@ -177,7 +207,7 @@ export class MentorshipService {
     const areaIds = [...new Set(requestedIds)];
     const { data: areas, error: areasError } = await supabase
       .from('area')
-      .select('id, nombre, esta_activo')
+      .select('id, nombre, esta_activo, padre_id')
       .in('id', areaIds);
     if (areasError) this.fail(areasError);
 
@@ -187,6 +217,15 @@ export class MentorshipService {
       throw new UnprocessableEntityException({
         code: 'AREA_NO_EXISTE',
         message: 'Una o más áreas no existen en el catálogo',
+      });
+    }
+
+    // HU-03: solo se asignan áreas técnicas (raíz); los intereses se eligen en su HU.
+    const interestAsAreaId = areaIds.find((areaId) => areasById.get(areaId)?.padre_id !== null);
+    if (interestAsAreaId) {
+      throw new UnprocessableEntityException({
+        code: 'AREA_NO_VALIDA',
+        message: 'Solo se pueden asignar áreas técnicas del catálogo, no intereses',
       });
     }
 
@@ -204,14 +243,28 @@ export class MentorshipService {
     if (linksError) this.fail(linksError);
 
     const existingLinks = (links ?? []) as MentorAreaLink[];
+
+    // HU-03: mentor_area también guarda intereses; aquí solo se gestionan áreas raíz.
+    const linkedIds = [...new Set(existingLinks.map(({ id_area }) => id_area))];
+    const { data: linkedAreas, error: linkedAreasError } = linkedIds.length
+      ? await supabase.from('area').select('id, padre_id').in('id', linkedIds)
+      : { data: [], error: null };
+    if (linkedAreasError) this.fail(linkedAreasError);
+    const linkedRootIds = new Set(
+      ((linkedAreas ?? []) as Area[]).filter((area) => area.padre_id === null).map(({ id }) => id),
+    );
+
     const requestedIdSet = new Set(areaIds);
     const retainedAreaIds = new Set<string>();
     const linksToRemove: string[] = [];
+    const removedAreaIds = new Set<string>();
     for (const link of existingLinks) {
+      if (!linkedRootIds.has(link.id_area)) continue; // intereses: los gestiona la HU-03
       if (requestedIdSet.has(link.id_area) && !retainedAreaIds.has(link.id_area)) {
         retainedAreaIds.add(link.id_area);
       } else {
         linksToRemove.push(link.id);
+        removedAreaIds.add(link.id_area);
       }
     }
 
@@ -250,6 +303,11 @@ export class MentorshipService {
         }
         this.fail(deleteError);
       }
+    }
+
+    // Regla 7 (HU-03): al quitar un área se eliminan también sus intereses hijos.
+    for (const areaId of removedAreaIds) {
+      await this.interestsService.removeInterestsByArea(userId, areaId);
     }
 
     return this.getMyAreas(userId);

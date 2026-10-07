@@ -8,6 +8,7 @@ import {
   Post,
   Req,
   UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
 import type { Request } from 'express';
 import { AddInterestsDto } from './dto/add-interests.dto';
@@ -17,12 +18,15 @@ import {
   RemovedInterest,
 } from './mentorship-interests.model';
 import { MentorshipInterestsService } from './mentorship-interests.service';
+import { MentorTestAuthGuard } from './mentor-test-auth.guard';
 
 /** Se asume que el guard de autenticación del equipo inyecta req.user.id. */
 type AuthenticatedRequest = Request & { user?: { id?: string } };
 
 // TODO: aplicar el guard de autenticación del proyecto a nivel de clase:
 // @UseGuards(AuthGuard)
+// Mientras tanto, mismo guard de prueba que el resto del módulo (solo desarrollo).
+@UseGuards(MentorTestAuthGuard)
 @Controller('mentorship')
 export class MentorshipInterestsController {
   constructor(private readonly interestsService: MentorshipInterestsService) {}

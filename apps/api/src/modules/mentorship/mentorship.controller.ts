@@ -70,13 +70,14 @@ export class MentorshipController {
     return this.mentorshipService.setParticipation(this.userId(req), dto);
   }
 
-  @Get('my-profile/areas')
+  // El frontend llama a /mentorship/mi-perfil/areas; my-profile/areas queda como alias.
+  @Get(['mi-perfil/areas', 'my-profile/areas'])
   @UseGuards(MentorTestAuthGuard)
   getMyAreas(@Req() req: AuthenticatedRequest): Promise<MentorAreasState> {
     return this.mentorshipService.getMyAreas(this.userId(req));
   }
 
-  @Patch('my-profile/areas')
+  @Patch(['mi-perfil/areas', 'my-profile/areas'])
   @UseGuards(MentorTestAuthGuard)
   updateMyAreas(
     @Req() req: AuthenticatedRequest,

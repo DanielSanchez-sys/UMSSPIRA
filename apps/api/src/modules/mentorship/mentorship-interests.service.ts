@@ -18,7 +18,6 @@ import {
   MentorInterest,
   RemovedInterest,
 } from './mentorship-interests.model';
-import { MentorshipService } from './mentorship.service';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -28,15 +27,17 @@ interface InterestWithParent {
   parent: Area;
 }
 
-/** HU-03: intereses específicos de mentoría (catálogo controlado de `area`). */
+/**
+ * HU-03: intereses específicos de mentoría (catálogo controlado de `area`).
+ * No inyecta MentorshipService para no crear dependencia circular: MentorshipService
+ * usa este servicio para removeInterestsByArea (regla 7).
+ */
 @Injectable()
 export class MentorshipInterestsService {
-  constructor(private readonly mentorshipService: MentorshipService) {}
-
   /** GET /mentorship/intereses/catalogo */
   async getCatalog(mentorId: string): Promise<InterestCatalogGroup[]> {
     // Regla 2: el mentor debe existir en la tabla mentor.
-    await this.mentorshipService.getMyProfile(mentorId);
+    await this.requireMentor(mentorId);
 
     // Regla 1: solo intereses de las áreas raíz activas del mentor.
     const roots = (await this.findAreas([...(await this.mentorAreaIds(mentorId))])).filter(
@@ -76,7 +77,7 @@ export class MentorshipInterestsService {
   /** GET /mentorship/intereses/mis */
   async getMyInterests(mentorId: string): Promise<MentorInterest[]> {
     // Regla 2: el mentor debe existir en la tabla mentor.
-    await this.mentorshipService.getMyProfile(mentorId);
+    await this.requireMentor(mentorId);
 
     const ownAreaIds = await this.mentorAreaIds(mentorId);
     if (ownAreaIds.size === 0) return [];
@@ -104,7 +105,7 @@ export class MentorshipInterestsService {
   /** POST /mentorship/intereses */
   async addInterests(mentorId: string, dto: AddInterestsDto): Promise<MentorInterest[]> {
     // Regla 2: el mentor debe existir en la tabla mentor.
-    await this.mentorshipService.getMyProfile(mentorId);
+    await this.requireMentor(mentorId);
 
     // Regla 6: solo IDs del catálogo (validación defensiva, sin ValidationPipe global).
     const ids = this.normalizeIds(dto.ids);
@@ -156,7 +157,7 @@ export class MentorshipInterestsService {
   /** DELETE /mentorship/intereses/:idInteres */
   async removeInterest(mentorId: string, idInteres: string): Promise<RemovedInterest> {
     // Regla 2: el mentor debe existir en la tabla mentor.
-    await this.mentorshipService.getMyProfile(mentorId);
+    await this.requireMentor(mentorId);
 
     const [area] = await this.findAreas([idInteres]);
     if (!area) {
@@ -203,6 +204,19 @@ export class MentorshipInterestsService {
   }
 
   // ---------- helpers privados ----------
+
+  /** Regla 2: el mentor debe existir en la tabla mentor (404 si no). */
+  private async requireMentor(mentorId: string): Promise<void> {
+    const { data, error } = await supabase
+      .from('mentor')
+      .select('id')
+      .eq('id', mentorId)
+      .maybeSingle();
+    if (error) this.fail(error);
+    if (!data) {
+      throw new NotFoundException('El usuario no tiene perfil de mentor');
+    }
+  }
 
   /**
    * Regla 1 y 6: carga los intereses pedidos y valida que cada uno sea un `area`
