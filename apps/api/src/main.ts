@@ -22,9 +22,13 @@ async function bootstrap() {
     }),
   );
 
-  await app.listen(3000);
+  // Toma el puerto dinámico de la plataforma o usa 3000 por defecto en local
+  const port = process.env.PORT || 3000;
 
-  console.log('API ejecutándose en http://localhost:3000');
+  // '0.0.0.0' permite que la API escuche las peticiones en el servidor
+  await app.listen(port, '0.0.0.0');
+
+  console.log(`API ejecutándose en el puerto ${port}`);
 }
 
 bootstrap();
