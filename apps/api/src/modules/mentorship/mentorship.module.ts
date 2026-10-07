@@ -1,10 +1,15 @@
 import { Module } from '@nestjs/common';
+import { MentorshipInterestsController } from './mentorship-interests.controller';
+import { MentorshipInterestsService } from './mentorship-interests.service';
 import { MentorshipController } from './mentorship.controller';
 import { MentorshipService } from './mentorship.service';
+import { MentorTestAuthGuard } from './mentor-test-auth.guard';
 
 @Module({
-  controllers: [MentorshipController],
-  providers: [MentorshipService],
-  exports: [MentorshipService],
+  controllers: [MentorshipController, MentorshipInterestsController],
+  providers: [MentorshipService, MentorshipInterestsService, MentorTestAuthGuard],
+  // MentorshipInterestsService se exporta para que el módulo de áreas use
+  // removeInterestsByArea (regla 7 de HU-03).
+  exports: [MentorshipService, MentorshipInterestsService],
 })
 export class MentorshipModule {}
