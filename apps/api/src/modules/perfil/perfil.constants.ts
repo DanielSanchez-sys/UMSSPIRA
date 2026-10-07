@@ -4,14 +4,15 @@ export const SECCIONES = {
   'certificaciones': { tabla: 'certificacion' },
 } as const;
 export type Seccion = keyof typeof SECCIONES;
-export const COLUMNA_TITULADO = 'id_titulado';
-export const TABLA_TITULADO = 'titulado';
+export const COLUMNA_TITULADO = 'id_egresado';
+export const TABLA_TITULADO = 'egresado';
 export const TABLA_RESPALDO = 'certificacion_respaldo';
 // Columnas de cada sección: nombre en la API (camelCase) -> nombre en la BD
 export const COLUMNAS: Record<Seccion, Record<string, string>> = {
   'formacion-academica': {
     institucion: 'institucion',
     titulo: 'titulo',
+    grado : 'grado',
     anioEgreso: 'anio_egreso',
   },
   'experiencia-laboral': {

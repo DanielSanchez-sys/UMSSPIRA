@@ -14,9 +14,10 @@ describe('PerfilRepository', () => {
     queryMock.mockResolvedValue([
       {
         id: 'f1',
-        id_titulado: 't1',
+        id_egresado: 't1',
         institucion: 'UMSS',
         titulo: 'Ing. de Sistemas',
+        grado: 'Licenciatura',
         anio_egreso: 2024,
         fecha_creacion: new Date('2026-10-06T10:00:00Z'),
       },
@@ -25,21 +26,23 @@ describe('PerfilRepository', () => {
     const registro = await repositorio.insertar('formacion-academica', 't1', {
       institucion: 'UMSS',
       titulo: 'Ing. de Sistemas',
+      grado: 'Licenciatura',
       anioEgreso: 2024,
     });
 
     const [sql, parametros] = queryMock.mock.calls[0];
     expect(sql).toBe(
-      'INSERT INTO formacion_academica (id_titulado, institucion, titulo, anio_egreso, fecha_creacion) ' +
-        'VALUES ($1, $2, $3, $4, NOW()) RETURNING *',
+      'INSERT INTO formacion_academica (id_egresado, institucion, titulo, grado, anio_egreso, fecha_creacion) ' +
+        'VALUES ($1, $2, $3, $4, $5, NOW()) RETURNING *',
     );
-    expect(parametros).toEqual(['t1', 'UMSS', 'Ing. de Sistemas', 2024]);
+    expect(parametros).toEqual(['t1', 'UMSS', 'Ing. de Sistemas', 'Licenciatura', 2024]);
     expect(registro).toEqual({
       id: 'f1',
       idTitulado: 't1',
       fechaCreacion: '2026-10-06',
       institucion: 'UMSS',
       titulo: 'Ing. de Sistemas',
+      grado: 'Licenciatura',
       anioEgreso: 2024,
     });
   });
@@ -50,7 +53,7 @@ describe('PerfilRepository', () => {
     await repositorio.listar('experiencia-laboral', 't1');
 
     const [sql, parametros] = queryMock.mock.calls[0];
-    expect(sql).toContain('FROM experiencia_laboral WHERE id_titulado = $1');
+    expect(sql).toContain('FROM experiencia_laboral WHERE id_egresado = $1');
     expect(sql).toContain('ORDER BY fecha_creacion DESC');
     expect(parametros).toEqual(['t1']);
   });
