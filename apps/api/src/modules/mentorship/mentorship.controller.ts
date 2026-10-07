@@ -10,14 +10,18 @@ import {
   Post,
   Req,
   UnauthorizedException,
+  UsePipes,
+  ValidationPipe,
   UseGuards,
 } from '@nestjs/common';
 import type { Request } from 'express';
 import { UpdateMentorAreasDto } from './dto/update-mentor-areas.dto';
+import { UpdateMentorProfileInformationDto } from './dto/update-mentor-profile-information.dto';
 import { UpdateParticipationDto } from './dto/update-participation.dto';
 import { Mentor } from './mentor.model';
 import {
   MentorAreasState,
+  MentorProfileInformationState,
   MentorshipService,
   ModuleStatus,
 } from './mentorship.service';
@@ -46,6 +50,31 @@ export class MentorshipController {
   @UseGuards(MentorTestAuthGuard)
   getMyProfile(@Req() req: AuthenticatedRequest): Promise<Mentor> {
     return this.mentorshipService.getMyProfile(this.userId(req));
+  }
+
+  @Get(['mi-perfil/informacion', 'my-profile/information'])
+  @UseGuards(MentorTestAuthGuard)
+  getMyProfileInformation(
+    @Req() req: AuthenticatedRequest,
+  ): Promise<MentorProfileInformationState> {
+    return this.mentorshipService.getMyProfileInformation(this.userId(req));
+  }
+
+  @Patch(['mi-perfil/informacion', 'my-profile/information'])
+  @UseGuards(MentorTestAuthGuard)
+  @UsePipes(
+    new ValidationPipe({
+      transform: true,
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+    }),
+  )
+  updateMyProfileInformation(
+    @Req() req: AuthenticatedRequest,
+    @Body() dto: UpdateMentorProfileInformationDto,
+  ): Promise<MentorProfileInformationState> {
+    return this.mentorshipService.updateMyProfileInformation(this.userId(req), dto);
   }
 
   @Post('profiles/reset')
