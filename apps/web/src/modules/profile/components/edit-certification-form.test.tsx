@@ -64,3 +64,24 @@ describe('EditCertificationForm', () => {
     expect(screen.getByText('No encontramos esta certificación')).toBeInTheDocument();
   });
 });
+
+describe('EditCertificationForm · validaciones', () => {
+  beforeEach(() => {
+    routeId = 'cert-1';
+  });
+
+  it('no guarda con la entidad emisora vacía ni con un año mayor al actual', () => {
+    renderForm();
+    // El nombre cambia para comprobar que nada llega al estado compartido
+    fireEvent.change(screen.getByLabelText('Nombre de la certificación'), { target: { value: 'Nombre nuevo' } });
+    fireEvent.change(screen.getByLabelText('Entidad emisora'), { target: { value: '   ' } });
+    fireEvent.change(screen.getByLabelText('Año'), { target: { value: String(new Date().getFullYear() + 1) } });
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+
+    expect(screen.getByText('La entidad emisora es obligatoria.')).toBeInTheDocument();
+    expect(screen.getByText('El año no puede ser mayor al año actual.')).toBeInTheDocument();
+    expect(screen.queryByText('Guardado')).not.toBeInTheDocument();
+    expect(screen.getByTestId('nombre-guardado')).toHaveTextContent('AWS Solutions Architect');
+    expect(screen.getByTestId('nombre-guardado')).not.toHaveTextContent('Nombre nuevo');
+  });
+});
