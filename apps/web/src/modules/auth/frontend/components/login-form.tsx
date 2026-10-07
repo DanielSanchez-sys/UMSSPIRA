@@ -1,6 +1,5 @@
 "use client";
 
-
 import { useState, type FormEvent, type ReactNode } from "react";
 import { useAuth } from "../hooks/use-auth";
 
@@ -56,10 +55,10 @@ const EyeOffIcon = () => (
 );
 
 const fieldWrapper =
-  "flex items-center gap-2 rounded-lg bg-[#F3ECDF] px-3 text-[#6B7280] focus-within:ring-2 focus-within:ring-[#F5A24B]";
+  "flex items-center gap-2 rounded-lg bg-palladian px-3 text-gray-500 focus-within:ring-2 focus-within:ring-burning-flame";
 const fieldInput =
-  "w-full bg-transparent py-3 text-sm text-[#1F2A44] outline-none placeholder:text-gray-400";
-const labelClass = "block text-[11px] font-bold uppercase tracking-wide text-[#1F2A44]";
+  "w-full bg-transparent py-3 text-sm text-abyssal-blue outline-none placeholder:text-gray-400";
+const labelClass = "block text-[11px] font-bold uppercase tracking-wide text-abyssal-blue";
 
 export function LoginForm() {
   const { signIn, isLoading, error } = useAuth();
@@ -91,7 +90,7 @@ export function LoginForm() {
         <label htmlFor="email" className={labelClass}>
           Correo electrónico institucional o personal
         </label>
-        <div className={`${fieldWrapper} ${fieldErrors.email ? "ring-2 ring-[#A35139]" : ""}`}>
+        <div className={`${fieldWrapper} ${fieldErrors.email ? "ring-2 ring-truffle-trouble" : ""}`}>
           <MailIcon />
           <input
             id="email"
@@ -104,7 +103,7 @@ export function LoginForm() {
             className={fieldInput}
           />
         </div>
-        {fieldErrors.email && <p className="text-xs text-[#A35139]">{fieldErrors.email}</p>}
+        {fieldErrors.email && <p className="text-xs text-truffle-trouble">{fieldErrors.email}</p>}
       </div>
 
       <div className="space-y-1.5">
@@ -113,7 +112,7 @@ export function LoginForm() {
             Contraseña
           </label>
         </div>
-        <div className={`${fieldWrapper} ${fieldErrors.password ? "ring-2 ring-[#A35139]" : ""}`}>
+        <div className={`${fieldWrapper} ${fieldErrors.password ? "ring-2 ring-truffle-trouble" : ""}`}>
           <LockIcon />
           <input
             id="password"
@@ -128,26 +127,26 @@ export function LoginForm() {
             type="button"
             onClick={() => setShowPassword((visible) => !visible)}
             aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
-            className="text-[#6B7280] hover:text-[#1F2A44]"
+            className="text-gray-500 hover:text-abyssal-blue"
           >
             {showPassword ? <EyeOffIcon /> : <EyeIcon />}
           </button>
         </div>
-        {fieldErrors.password && <p className="text-xs text-[#A35139]">{fieldErrors.password}</p>}
+        {fieldErrors.password && <p className="text-xs text-truffle-trouble">{fieldErrors.password}</p>}
       </div>
 
-      <label className="flex items-center gap-2 text-xs text-[#1F2A44]">
+      <label className="flex items-center gap-2 text-xs text-abyssal-blue">
         <input
           type="checkbox"
           checked={remember}
           onChange={(event) => setRemember(event.target.checked)}
-          className="h-4 w-4 accent-[#1F2A44]"
+          className="h-4 w-4 accent-abyssal-blue"
         />
         Recordar mi sesión en este equipo
       </label>
 
       {error && (
-        <p role="alert" className="rounded-lg bg-[#A35139]/10 px-3 py-2 text-sm text-[#A35139]">
+        <p role="alert" className="rounded-lg bg-truffle-trouble/10 px-3 py-2 text-sm text-truffle-trouble">
           {error}
         </p>
       )}
@@ -155,7 +154,7 @@ export function LoginForm() {
       <button
         type="submit"
         disabled={isLoading}
-        className="w-full rounded-lg bg-[#FFA94D] px-4 py-3 text-sm font-bold text-[#1F2A44] shadow-sm transition hover:brightness-95 disabled:opacity-60"
+        className="w-full rounded-lg bg-burning-flame px-4 py-3 text-sm font-bold text-abyssal-blue shadow-sm transition hover:brightness-95 disabled:opacity-60"
       >
         {isLoading ? "Ingresando..." : "Ingresar al Portal →"}
       </button>
