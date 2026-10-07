@@ -79,6 +79,7 @@ export function FormularioCertificaciones({ certificaciones, onAgregar, onErrore
     });
     setDatos(VACIO);
     setIntentado(false);
+    setErrorRespaldo(undefined);
   }
 
   return (
