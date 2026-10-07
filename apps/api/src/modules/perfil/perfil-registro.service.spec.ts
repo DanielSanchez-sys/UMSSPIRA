@@ -30,7 +30,16 @@ describe('PerfilRegistroService', () => {
       servicio.crearFormacion('t1', { institucion: 'UMSS', titulo: 'Ing.', grado: 'Licenciatura', anioEgreso: 2024 }),
     ).rejects.toBeInstanceOf(ConflictException);
   });
+   // T1.8
+  it('guarda la certificación y devuelve el registro con su id', async () => {
+    const datos = { nombre: 'Scrum', entidadEmisora: 'Scrum.org', grado: 'Básico', anioEmision: 2025 };
+    repositorio.insertar.mockResolvedValue({ id: 'c1', idTitulado: 't1', fechaCreacion: null, ...datos });
 
+    const creado = await servicio.crearCertificacion('t1', datos);
+
+    expect(repositorio.insertar).toHaveBeenCalledWith('certificaciones', 't1', datos);
+    expect(creado.id).toBe('c1');
+  });
 
 });
 

@@ -1,5 +1,6 @@
 import { Body, Controller, HttpCode, Post, Req } from '@nestjs/common';
 import { Request } from 'express';
+import { CrearCertificacionDto } from './dto/crear-certificacion.dto';
 import { CrearFormacionAcademicaDto } from './dto/crear-formacion-academica.dto';
 import { PerfilRegistroService } from './perfil-registro.service';
 import { obtenerTituladoId } from './titulado-actual';
@@ -15,6 +16,13 @@ export class PerfilRegistroController {
   async crearFormacion(@Req() req: Request, @Body() datos: CrearFormacionAcademicaDto) {
     const tituladoId = await obtenerTituladoId(req);
     return this.servicio.crearFormacion(tituladoId, datos);
+  }
+  // T1.8: POST /api/v1/perfil/certificaciones
+  @Post('certificaciones')
+  @HttpCode(201)
+  async crearCertificacion(@Req() req: Request, @Body() datos: CrearCertificacionDto) {
+    const tituladoId = await obtenerTituladoId(req);
+    return this.servicio.crearCertificacion(tituladoId, datos);
   }
 
 }
