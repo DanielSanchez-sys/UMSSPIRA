@@ -5,6 +5,7 @@ import { PerfilRegistroController } from './perfil-registro.controller';
 import { PerfilRegistrosController } from './perfil-registros.controller';
 import { PerfilResumenController } from './perfil-resumen.controller';
 import { PerfilRepository } from './perfil.repository';
+import { PerfilRegistroService } from './perfil-registro.service';
 
 @Module({
   controllers: [
@@ -17,6 +18,7 @@ import { PerfilRepository } from './perfil.repository';
     PerfilRepository,
     { provide: FORMACION_REPOSITORIO, useExisting: PerfilRepository },
     FormacionAcademicaService,
+    PerfilRegistroService,
   ],
   exports: [PerfilRepository, FormacionAcademicaService],
 })
