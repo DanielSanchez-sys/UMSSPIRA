@@ -50,6 +50,39 @@ describe('validarExperiencia', () => {
     );
   });
 
+  it('acepta una fecha fin igual a la fecha inicio', () => {
+    expect(validarExperiencia({ ...base, fechaFin: base.fechaInicio }, false)).toEqual({});
+  });
+
+  it('rechaza una fecha inicio o fin posterior a hoy', () => {
+    const futura = `${new Date().getFullYear() + 1}-01-01`;
+    expect(validarExperiencia({ ...base, fechaInicio: futura }, true).fechaInicio).toBe(
+      'La fecha inicio no puede ser posterior a hoy.',
+    );
+    expect(validarExperiencia({ ...base, fechaFin: futura }, false).fechaFin).toBe(
+      'La fecha fin no puede ser posterior a hoy.',
+    );
+  });
+
+  describe('a las 22:00 hora local', () => {
+    beforeEach(() => {
+      jest.useFakeTimers();
+      // Constructor con año, mes y día: es hora local, no UTC (en UTC-4 ya sería el 8 de octubre)
+      jest.setSystemTime(new Date(2026, 9, 7, 22, 0));
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    it('rechaza la fecha de mañana y acepta la de hoy', () => {
+      expect(validarExperiencia({ ...base, fechaFin: '2026-10-08' }, false).fechaFin).toBe(
+        'La fecha fin no puede ser posterior a hoy.',
+      );
+      expect(validarExperiencia({ ...base, fechaFin: '2026-10-07' }, false)).toEqual({});
+    });
+  });
+
   it('limita el cargo a 100 caracteres', () => {
     expect(validarExperiencia({ ...base, cargo: 'c'.repeat(101) }, false).cargo).toBe(
       'El cargo no puede superar los 100 caracteres.',
@@ -63,6 +96,12 @@ describe('validarCertificacion', () => {
       entidadEmisora: 'La entidad emisora es obligatoria.',
       grado: 'Selecciona un grado.',
     });
+  });
+
+  it('rechaza un año sin 4 dígitos', () => {
+    expect(
+      validarCertificacion({ nombre: 'AWS', entidadEmisora: 'Amazon', anioEmision: '202', grado: 'Asociado' }).anioEmision,
+    ).toBe('El año debe tener 4 dígitos.');
   });
 
   it('rechaza un año posterior al actual', () => {
