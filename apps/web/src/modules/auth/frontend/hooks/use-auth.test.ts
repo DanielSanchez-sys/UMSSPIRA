@@ -30,15 +30,15 @@ describe("useAuth", () => {
     expect(mockPush).toHaveBeenCalledWith("/applications");
   });
 
-  it("inicia sesión como egresado y redirige a /me", async () => {
+  it("inicia sesión como titulado y redirige a /me", async () => {
     const { result } = renderHook(() => useAuth());
 
     await act(async () => {
-      await result.current.signIn({ email: "egresado@umss.edu.bo", password: "egresado1234" });
+      await result.current.signIn({ email: "titulado@umss.edu.bo", password: "titulado1234" });
     });
 
     expect(result.current.status).toBe("authenticated");
-    expect(result.current.role).toBe("egresado");
+    expect(result.current.role).toBe("titulado");
     expect(mockPush).toHaveBeenCalledWith("/me");
   });
 

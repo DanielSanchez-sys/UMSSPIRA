@@ -1,6 +1,7 @@
+
 // Servicio de autenticación del módulo auth (HU-05)
 
-export type UserRole = "administrador" | "egresado";
+export type UserRole = "administrador" | "titulado";
 
 export interface LoginCredentials {
   email: string;
@@ -28,15 +29,28 @@ async function loginMock(credentials: LoginCredentials): Promise<LoginResult> {
   const email = credentials.email.trim().toLowerCase();
 
   if (email === "admin@umss.edu.bo" && credentials.password === "admin1234") {
-    return { accessToken: "mock-token-administrador", role: "administrador" };
+    return {
+      accessToken: "mock-token-administrador",
+      role: "administrador",
+    };
   }
-  if (email === "egresado@umss.edu.bo" && credentials.password === "egresado1234") {
-    return { accessToken: "mock-token-egresado", role: "egresado" };
+
+  if (
+    email === "titulado@umss.edu.bo" &&
+    credentials.password === "titulado1234"
+  ) {
+    return {
+      accessToken: "mock-token-titulado",
+      role: "titulado",
+    };
   }
+
   throw new Error(LOGIN_ERROR_MESSAGE);
 }
 
-async function loginRequest(credentials: LoginCredentials): Promise<LoginResult> {
+async function loginRequest(
+  credentials: LoginCredentials
+): Promise<LoginResult> {
   const response = await fetch(`${API_URL}/api/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -53,7 +67,9 @@ async function loginRequest(credentials: LoginCredentials): Promise<LoginResult>
   return json.data;
 }
 
-export function login(credentials: LoginCredentials): Promise<LoginResult> {
+export function login(
+  credentials: LoginCredentials
+): Promise<LoginResult> {
   return USE_MOCK ? loginMock(credentials) : loginRequest(credentials);
 }
 
