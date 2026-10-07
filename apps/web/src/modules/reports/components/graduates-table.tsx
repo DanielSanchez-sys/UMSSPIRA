@@ -1,30 +1,15 @@
 'use client';
 
 import { Eye } from 'lucide-react';
+import type { Graduate } from '../data/graduates.mock';
 
-export type GraduateRecord = {
-  id: number;
-  registrationNumber: string;
-  fullName: string;
-  sisCode: string;
-  phone: string;
-  email: string;
-  admissionDate: string;
-  graduationDate: string;
-  studyDuration: string;
-  reviewDate: string;
-  status: 'Verificado' | 'Observado';
-  rejectionReason: string;
-};
+interface GraduatesTableProps {
+  graduates: Graduate[];
+  onViewReason: (graduate: Graduate) => void;
+}
 
-type ExpedientesTableProps = {
-  records: GraduateRecord[];
-  onViewReason: (record: GraduateRecord) => void;
-  startIndex?: number;
-};
-
-function StatusBadge({ status }: { status: GraduateRecord['status'] }) {
-  const isVerified = status === 'Verificado';
+function StatusBadge({ status }: { status: Graduate['status'] }) {
+  const isVerified = status === 'VERIFICADO';
 
   return (
     <span
@@ -37,31 +22,12 @@ function StatusBadge({ status }: { status: GraduateRecord['status'] }) {
   );
 }
 
-export function ExpedientesTable({
-  records,
-  onViewReason,
-  startIndex = 0,
-}: ExpedientesTableProps) {
-  if (records.length === 0) {
-      return (
-      <div className="flex min-h-[420px] flex-col items-center justify-center rounded-2xl border border-[#e8e1d2] bg-[#fbf8f1] px-6 py-16 text-center">
-        <h3 className="max-w-xl text-xl font-bold text-slate-900 sm:text-2xl">
-          No se encontraron egresados Observados o Verificados en el sistema
-        </h3>
-        <p className="mt-3 max-w-lg text-sm leading-relaxed text-slate-600">
-          No se han registrado postulantes ni egresados bajo los criterios de filtrado
-          seleccionados para el periodo establecido. Intente ajustando el rango de
-          titulación o restableciendo los parámetros de auditoría.
-        </p>
-      </div>
-    );
-
-  }
-
+export function GraduatesTable({ graduates, onViewReason }: GraduatesTableProps) {
   return (
     <>
-      <div className="hidden min-w-0 max-w-full overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm md:block">
-        <div className="max-w-full overflow-x-auto">
+      {/* Vista de escritorio / tablet (Scroll horizontal controlado) */}
+      <div className="hidden overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm md:block">
+        <div className="overflow-x-auto">
           <table className="w-full min-w-[1550px] border-collapse text-left text-sm">
             <thead className="bg-[#1e293b] text-xs font-bold uppercase tracking-wide text-white">
               <tr>
@@ -80,11 +46,9 @@ export function ExpedientesTable({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
-              {records.map((record, index) => (
+              {graduates.map((record, index) => (
                 <tr className="align-top hover:bg-slate-50/80" key={record.id}>
-                  <td className="whitespace-nowrap px-4 py-4">
-                    {startIndex + index + 1}
-                  </td>
+                  <td className="whitespace-nowrap px-4 py-4">{index + 1}</td>
                   <td className="whitespace-nowrap px-4 py-4 font-semibold text-slate-800">
                     {record.registrationNumber}
                   </td>
@@ -93,14 +57,14 @@ export function ExpedientesTable({
                   </td>
                   <td className="whitespace-nowrap px-4 py-4">{record.sisCode}</td>
                   <td className="whitespace-nowrap px-4 py-4">{record.phone}</td>
-                  <td className="max-w-64 break-all px-4 py-4">{record.email}</td>
+                  <td className="px-4 py-4">{record.email}</td>
                   <td className="whitespace-nowrap px-4 py-4">{record.admissionDate}</td>
-                  <td className="whitespace-nowrap px-4 py-4">{record.graduationDate}</td>
+                  <td className="whitespace-nowrap px-4 py-4">{record.degreeDate ?? '—'}</td>
                   <td className="whitespace-nowrap px-4 py-4">{record.studyDuration}</td>
                   <td className="whitespace-nowrap px-4 py-4">{record.reviewDate}</td>
                   <td className="whitespace-nowrap px-4 py-4">
-                    {record.status === 'Verificado' ? (
-                      <span aria-label="Sin motivo de rechazo" className="text-slate-500">
+                    {record.status === 'VERIFICADO' ? (
+                      <span aria-label="Sin motivo de rechazo" className="text-slate-400">
                         —
                       </span>
                     ) : (
@@ -124,8 +88,9 @@ export function ExpedientesTable({
         </div>
       </div>
 
+      {/* Vista móvil (Tarjetas colapsables semánticas) */}
       <div className="space-y-3 md:hidden">
-        {records.map((record) => (
+        {graduates.map((record) => (
           <article
             className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
             key={record.id}
@@ -140,6 +105,7 @@ export function ExpedientesTable({
               </div>
               <StatusBadge status={record.status} />
             </div>
+
             <dl className="grid grid-cols-1 gap-x-4 gap-y-3 py-4 text-sm sm:grid-cols-2">
               <div>
                 <dt className="text-xs font-semibold uppercase text-slate-500">Teléfono</dt>
@@ -161,7 +127,7 @@ export function ExpedientesTable({
                 <dt className="text-xs font-semibold uppercase text-slate-500">
                   Fecha de titulación
                 </dt>
-                <dd className="mt-0.5 text-slate-800">{record.graduationDate}</dd>
+                <dd className="mt-0.5 text-slate-800">{record.degreeDate ?? '—'}</dd>
               </div>
               <div>
                 <dt className="text-xs font-semibold uppercase text-slate-500">
@@ -176,12 +142,13 @@ export function ExpedientesTable({
                 <dd className="mt-0.5 text-slate-800">{record.reviewDate}</dd>
               </div>
             </dl>
+
             <div className="border-t border-slate-100 pt-3">
               <p className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">
                 Motivo de rechazo
               </p>
-              {record.status === 'Verificado' ? (
-                <span className="text-sm text-slate-500">—</span>
+              {record.status === 'VERIFICADO' ? (
+                <span className="text-sm text-slate-400">—</span>
               ) : (
                 <button
                   className="inline-flex min-h-9 items-center gap-2 rounded-md border border-red-300 bg-red-50 px-3 py-1.5 text-sm font-semibold text-red-700 transition hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-300"
