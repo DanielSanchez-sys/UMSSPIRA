@@ -47,3 +47,18 @@ describe('FormularioCertificaciones', () => {
     });
   });
 });
+
+describe('FormularioCertificaciones · validaciones', () => {
+  it('muestra los errores de los campos vacíos y no agrega el registro', () => {
+    const onAgregar = jest.fn();
+    render(<FormularioCertificaciones certificaciones={[]} onAgregar={onAgregar} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /agregar certificación/i }));
+
+    expect(screen.getByText('El nombre de la certificación es obligatorio.')).toBeInTheDocument();
+    expect(screen.getByText('La entidad emisora es obligatoria.')).toBeInTheDocument();
+    expect(screen.getByText('El año es obligatorio.')).toBeInTheDocument();
+    expect(screen.getByText('Selecciona un grado.')).toBeInTheDocument();
+    expect(onAgregar).not.toHaveBeenCalled();
+  });
+});
