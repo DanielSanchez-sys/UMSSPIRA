@@ -5,21 +5,21 @@ const btnBase =
   "inline-flex h-11 items-center justify-center rounded-lg px-6 text-[14px] leading-5 transition disabled:cursor-not-allowed disabled:opacity-50";
 
 // Primario: Blue Fantastic, texto blanco
-export const btnPrimary = `${btnBase} bg-[#2C3B4D] font-bold text-white`;
+export const btnPrimary = `${btnBase} bg-blue-fantastic font-bold text-white`;
 // Primario con acento: Burning Flame, texto #1B2632
-export const btnAccent = `${btnBase} bg-[#FFB162] font-bold text-[#1B2632]`;
+export const btnAccent = `${btnBase} bg-burning-flame font-bold text-abyssal-blue`;
 // Acción destructiva (Rechazar): Truffle Trouble, como en el diseño de Figma
-export const btnDanger = `${btnBase} bg-[#A35139] font-bold text-white`;
+export const btnDanger = `${btnBase} bg-truffle-trouble font-bold text-white`;
 // Secundario: Palladian, borde 1px Oatmeal, texto #1B2632
-export const btnSecondary = `${btnBase} border border-[#C9C1B1] bg-[#EEE9DF] font-semibold text-[#1B2632]`;
+export const btnSecondary = `${btnBase} border border-oatmeal bg-palladian font-semibold text-abyssal-blue`;
 
 /* ---------- Inputs (reposo, foco y error según la matriz de estados) ---------- */
 export function fieldClass(invalid: boolean) {
   const base =
-    "w-full rounded-lg p-3 text-[14px] leading-5 text-[#1B2632] outline-none placeholder:text-gray-500 disabled:opacity-60";
+    "w-full rounded-lg p-3 text-[14px] leading-5 text-abyssal-blue outline-none placeholder:text-gray-500 disabled:opacity-60";
   return invalid
-    ? `${base} border-2 border-[#A35139] bg-[#EEE9DF]`
-    : `${base} border border-[#C9C1B1] bg-[#EEE9DF] focus:border-2 focus:border-[#2C3B4D] focus:bg-white`;
+    ? `${base} border-2 border-truffle-trouble bg-palladian`
+    : `${base} border border-oatmeal bg-palladian focus:border-2 focus:border-blue-fantastic focus:bg-white`;
 }
 
 type FieldLabelProps = {
@@ -39,10 +39,10 @@ export function FieldLabel({
   return (
     <label
       htmlFor={htmlFor}
-      className="mb-1.5 block text-[13px] font-semibold text-[#1B2632]"
+      className="mb-1.5 block text-[13px] font-semibold text-abyssal-blue"
     >
       {children}
-      {required && <span className="text-[#A35139]"> *</span>}
+      {required && <span className="text-truffle-trouble"> *</span>}
       {optional && <span className="font-medium"> (Opcional)</span>}
     </label>
   );
@@ -51,7 +51,7 @@ export function FieldLabel({
 // Mensaje de error: 11px Medium, #A35139
 export function FieldError({ children }: { children: ReactNode }) {
   return (
-    <p className="mt-1 text-[11px] font-medium leading-4 text-[#A35139]">
+    <p className="mt-1 text-[11px] font-medium leading-4 text-truffle-trouble">
       {children}
     </p>
   );
@@ -60,7 +60,7 @@ export function FieldError({ children }: { children: ReactNode }) {
 // Texto de ayuda: 11px Medium, gris
 export function FieldHint({ children }: { children: ReactNode }) {
   return (
-    <p className="mt-1 text-[11px] font-medium leading-4 text-[#2C3B4D]">
+    <p className="mt-1 text-[11px] font-medium leading-4 text-blue-fantastic">
       {children}
     </p>
   );
@@ -76,8 +76,8 @@ export function InfoBox({
 }) {
   const styles =
     tone === "danger"
-      ? "border-[#A35139] bg-[#A35139]/10 font-semibold text-[#A35139]"
-      : "border-[#C9C1B1] bg-[#EEE9DF] text-[#1B2632]";
+      ? "border-truffle-trouble bg-truffle-trouble/10 font-semibold text-truffle-trouble"
+      : "border-oatmeal bg-palladian text-abyssal-blue";
   return (
     <div
       className={`rounded-lg border p-3 text-[14px] leading-5 ${styles}`}
@@ -109,8 +109,8 @@ export function CheckboxRow({
     <div>
       <label
         htmlFor={id}
-        className={`flex cursor-pointer items-start gap-3 rounded-lg bg-[#EEE9DF] p-3 text-[13px] leading-5 text-[#1B2632] ${
-          invalid ? "border-2 border-[#A35139]" : "border border-[#C9C1B1]"
+        className={`flex cursor-pointer items-start gap-3 rounded-lg bg-palladian p-3 text-[13px] leading-5 text-abyssal-blue ${
+          invalid ? "border-2 border-truffle-trouble" : "border border-oatmeal"
         }`}
       >
         <input
@@ -119,7 +119,7 @@ export function CheckboxRow({
           checked={checked}
           disabled={disabled}
           onChange={(e) => onChange(e.target.checked)}
-          className="mt-0.5 h-4 w-4 shrink-0 accent-[#2C3B4D]"
+          className="mt-0.5 h-4 w-4 shrink-0 accent-blue-fantastic"
         />
         <span>{children}</span>
       </label>
@@ -147,7 +147,7 @@ export function ModalShell({
 }: ModalShellProps) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[#1B2632]/60 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-abyssal-blue/60 p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
@@ -156,18 +156,18 @@ export function ModalShell({
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-1">
             {badge && (
-              <span className="inline-block rounded bg-[#1B2632] px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white">
+              <span className="inline-block rounded bg-abyssal-blue px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white">
                 {badge}
               </span>
             )}
             <h2
               id={titleId}
-              className="text-[24px] font-semibold leading-8 text-[#1B2632]"
+              className="text-[24px] font-semibold leading-8 text-abyssal-blue"
             >
               {title}
             </h2>
             {subtitle && (
-              <p className="font-mono text-[12px] font-medium leading-4 text-[#2C3B4D]">
+              <p className="font-mono text-[12px] font-medium leading-4 text-blue-fantastic">
                 {subtitle}
               </p>
             )}
@@ -176,7 +176,7 @@ export function ModalShell({
             type="button"
             onClick={onClose}
             aria-label="Cerrar"
-            className="rounded px-2 text-[24px] leading-none text-[#2C3B4D] hover:bg-[#EEE9DF]"
+            className="rounded px-2 text-[24px] leading-none text-blue-fantastic hover:bg-palladian"
           >
             ×
           </button>
