@@ -17,7 +17,7 @@ export function SiteHeader() {
           UMSSPIRA
         </Link>
 
-        <nav className="hidden items-center gap-6 md:flex">
+        <nav className="hidden items-center gap-6 lg:flex">
           {navLinks.map((link) => (
             <Link key={link.href} href={link.href} className="text-sm font-medium text-abyssal-blue">
               {link.label}
@@ -26,7 +26,9 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-3">
-          <Button variant="secondary">Iniciar sesion</Button>
+             <Button variant="secondary" className="whitespace-nowrap px-3 text-xs sm:px-6 sm:text-sm">
+                Iniciar sesion
+             </Button>
           <Button variant="primary">Registro</Button>
         </div>
       </div>
