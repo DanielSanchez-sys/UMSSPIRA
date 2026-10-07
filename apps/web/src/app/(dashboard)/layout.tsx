@@ -1,4 +1,5 @@
 import React from 'react';
+import { AdminNavbar } from '@/shared/components/admin-navbar';
 
 export default function DashboardLayout({
   children,
@@ -7,6 +8,7 @@ export default function DashboardLayout({
 }) {
   return (
     <div className="dashboard-container">
+      <AdminNavbar />
       {children}
     </div>
   );
