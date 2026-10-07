@@ -20,7 +20,7 @@ export function AdminNavbar() {
               "text-[11px] font-semibold uppercase tracking-wide text-burning-flame"
             )}
           >
-            Backoffice
+            MÓDULO ADMINISTRATIVO
           </span>
         </div>
 
