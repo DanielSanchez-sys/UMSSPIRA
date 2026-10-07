@@ -52,7 +52,7 @@ export function validarExperiencia(
     if (!datos.fechaFin) fechaFin = 'La fecha fin es obligatoria si no trabajas aquí actualmente.';
     else if (datos.fechaFin > hoy()) fechaFin = 'La fecha fin no puede ser posterior a hoy.';
     else if (datos.fechaInicio && datos.fechaFin < datos.fechaInicio)
-      fechaFin = 'La fecha fin debe ser posterior a la fecha inicio.';
+      fechaFin = "La fecha 'Hasta' no puede ser anterior a 'Desde'";
   }
 
   return limpiar({

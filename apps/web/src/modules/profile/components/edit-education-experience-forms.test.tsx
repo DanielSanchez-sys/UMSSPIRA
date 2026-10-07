@@ -116,7 +116,7 @@ describe('Edición · validaciones (T2.9)', () => {
     fireEvent.change(screen.getByLabelText('Fecha fin'), { target: { value: '2020-01-01' } });
     fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
-    expect(screen.getByText('La fecha fin debe ser posterior a la fecha inicio.')).toBeInTheDocument();
+    expect(screen.getByText("La fecha 'Hasta' no puede ser anterior a 'Desde'")).toBeInTheDocument();
     expect(screen.getByTestId('guardado')).toHaveTextContent('Jalasoft|2023-06-30');
   });
 });

@@ -46,7 +46,7 @@ describe('validarExperiencia', () => {
 
   it('rechaza una fecha fin anterior a la fecha inicio', () => {
     expect(validarExperiencia({ ...base, fechaFin: '2022-03-01' }, false).fechaFin).toBe(
-      'La fecha fin debe ser posterior a la fecha inicio.',
+      "La fecha 'Hasta' no puede ser anterior a 'Desde'",
     );
   });
 

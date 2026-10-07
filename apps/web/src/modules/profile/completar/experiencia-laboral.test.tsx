@@ -24,6 +24,6 @@ describe('FormularioExperiencia · validaciones', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Agregar experiencia' }));
 
-    expect(screen.getByText('La fecha fin debe ser posterior a la fecha inicio.')).toBeInTheDocument();
+    expect(screen.getByText("La fecha 'Hasta' no puede ser anterior a 'Desde'")).toBeInTheDocument();
   });
 });
