@@ -9,6 +9,11 @@ import {
 import type { PostgrestError } from '@supabase/supabase-js';
 // Cliente compartido del equipo (única línea a ajustar si exporta otro nombre).
 import { supabase } from '../../shared/lib/supabase';
+import {
+  DisponibilidadMentor,
+  MentorAvailabilityStatus,
+  latestRowByMentor,
+} from './mentorship-availability.model';
 import { UpdateMentorAreasDto } from './dto/update-mentor-areas.dto';
 import { UpdateMentorProfileInformationDto } from './dto/update-mentor-profile-information.dto';
 import { UpdateParticipationDto } from './dto/update-participation.dto';
@@ -97,7 +102,19 @@ export class MentorshipService {
       .eq('esta_activo', true)
       .order('fecha_creacion', { ascending: false });
     if (error) this.fail(error);
-    return (data ?? []) as Mentor[];
+    const mentors = (data ?? []) as Mentor[];
+
+    // Regla 7 (HU-6.4): los mentores con estado UNAVAILABLE no aparecen en el
+    // directorio público; los que no tienen fila en disponibilidad_mentor siguen.
+    const mentorIds = mentors.map(({ id }) => id);
+    const { data: rows, error: rowsError } = mentorIds.length
+      ? await supabase.from('disponibilidad_mentor').select('*').in('id_mentor', mentorIds)
+      : { data: [], error: null };
+    if (rowsError) this.fail(rowsError);
+    const current = latestRowByMentor((rows ?? []) as DisponibilidadMentor[]);
+    return mentors.filter(
+      ({ id }) => current.get(id)?.estado !== MentorAvailabilityStatus.UNAVAILABLE,
+    );
   }
 
   /** GET /mentorship/mi-perfil */
