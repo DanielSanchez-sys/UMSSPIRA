@@ -84,13 +84,13 @@ it('guarda las áreas elegidas y confirma el guardado', async () => {
   expect(await screen.findByRole('status')).toHaveTextContent('Áreas técnicas actualizadas correctamente');
 });
 
-it('permite iniciar sesión de prueba desde la pantalla dedicada', async () => {
-  getAreas.mockRejectedValueOnce(new Error('Inicia sesión para configurar tus áreas técnicas.'))
-    .mockResolvedValueOnce({ areas, selectedIds: [] });
+it('sin sesión solicita autenticación y no ofrece usuarios ficticios', async () => {
+  getAreas.mockRejectedValue(new Error('Inicia sesión para configurar tus áreas técnicas.'));
   render(<MentorAreasPage />);
-  fireEvent.click(await screen.findByRole('button', { name: 'Entrar como mentor de prueba' }));
-  expect(await screen.findByRole('list', { name: 'Catálogo de áreas técnicas' })).toBeInTheDocument();
-  expect(getAreas).toHaveBeenCalledTimes(2);
+  expect(await screen.findByRole('link', { name: 'Iniciar sesión' })).toHaveAttribute('href', '/login');
+  expect(screen.queryByRole('button', { name: 'Entrar como mentor de prueba' })).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Guardar' })).toBeDisabled();
+  expect(updateAreas).not.toHaveBeenCalled();
 });
 
 it('no inventa un catálogo si la API falla y permite reintentar', async () => {

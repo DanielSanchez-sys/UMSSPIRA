@@ -5,14 +5,12 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeftIcon, CheckIcon, PlusIcon, AlertTriangleIcon, Undo2Icon, ShieldCheckIcon, LockKeyholeIcon, BriefcaseBusinessIcon, ServerIcon, MonitorIcon, DatabaseIcon, CloudIcon, BrainCircuitIcon, SmartphoneIcon, NetworkIcon, BlocksIcon, ClipboardCheckIcon } from 'lucide-react';
 import { ConfirmModal } from '@/shared/components/confirm-modal';
-import { setAccessToken } from '@/shared/services/auth-session';
 import { SecondaryButton, PrimaryButton } from './mentor-button';
 import { getMentorProfile } from '../services/mentorias-api';
 import type { MentorState } from '@umsspira/shared-types';
 import { getMentorAreas, updateMentorAreas, MentorAreasError, type MentorArea, type MentorAreasState } from '../services/mentor-areas-api';
 
 const MAX_AREAS = 5;
-const LOCAL_MENTOR_TEST_TOKEN = 'umsspira-local-mentor-test-only';
 
 function areaIcon(name: string) {
   const value = name.toLocaleLowerCase('es');
@@ -155,11 +153,6 @@ export function MentorAreasPage() {
     }
   }
 
-  async function enterAsTestMentor() {
-    setAccessToken(LOCAL_MENTOR_TEST_TOKEN);
-    await loadAreas();
-    getMentorProfile().then(setParticipation).catch(() => {});
-  }
 
   if (forbidden) return <main className="mentorias-shell"><p role="alert">No tienes permisos para acceder a esta sección</p></main>;
 
@@ -204,9 +197,7 @@ export function MentorAreasPage() {
         {loading && <p className="mentor-areas-message" role="status">Cargando catálogo…</p>}
         {error && dialog !== 'dependencies' && <div className="mentor-areas-error" role="alert">
           <p>{error}</p>
-          {error.startsWith('Inicia sesión') && process.env.NODE_ENV !== 'production' && (
-            <SecondaryButton onClick={() => { void enterAsTestMentor(); }}>Entrar como mentor de prueba</SecondaryButton>
-          )}
+          {error.startsWith('Inicia sesión') && <Link href="/login" className="mentor-button mentor-button-secondary">Iniciar sesión</Link>}
           {!catalogFromDatabase && <SecondaryButton disabled={saving || loading} onClick={() => void loadAreas()}>Reintentar</SecondaryButton>}
         </div>}
         {!loading && catalogFromDatabase && areas.length === 0 && <p role="alert" className="mentor-areas-message">No hay áreas técnicas disponibles. Contacta al administrador</p>}
