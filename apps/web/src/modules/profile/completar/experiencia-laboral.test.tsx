@@ -26,4 +26,22 @@ describe('FormularioExperiencia · validaciones', () => {
 
     expect(screen.getByText("La fecha 'Hasta' no puede ser anterior a 'Desde'")).toBeInTheDocument();
   });
+
+  it('agrega como trabajo actual, sin fecha fin, al marcar "Actualmente trabajo aquí"', () => {
+    const onAgregar = jest.fn();
+    const { container } = render(<FormularioExperiencia experiencias={[]} onAgregar={onAgregar} />);
+    const [inicio, fin] = Array.from(container.querySelectorAll('input[type="date"]'));
+    fireEvent.change(screen.getByPlaceholderText('Ej. Jalasoft'), { target: { value: 'Jalasoft' } });
+    fireEvent.change(screen.getByPlaceholderText('Ej. Desarrollador Frontend'), { target: { value: 'Dev' } });
+    fireEvent.change(inicio, { target: { value: '2023-08-01' } });
+    // La fecha fin escrita antes de marcar la casilla no debe guardarse
+    fireEvent.change(fin, { target: { value: '2024-01-01' } });
+
+    fireEvent.click(screen.getByLabelText('Actualmente trabajo aquí'));
+    fireEvent.click(screen.getByRole('button', { name: 'Agregar experiencia' }));
+
+    expect(onAgregar).toHaveBeenCalledTimes(1);
+    expect(onAgregar.mock.calls[0][0]).toEqual({ empresa: 'Jalasoft', cargo: 'Dev', fechaInicio: '2023-08-01' });
+    expect(onAgregar.mock.calls[0][0].fechaFin).toBeUndefined();
+  });
 });
