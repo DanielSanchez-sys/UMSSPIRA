@@ -21,8 +21,12 @@ function anio(valor: string, etiqueta: string): string | undefined {
   return undefined;
 }
 
+// Fecha local AAAA-MM-DD: toISOString() usa UTC y en Bolivia (UTC-4) da el día siguiente desde las 20:00
 function hoy(): string {
-  return new Date().toISOString().slice(0, 10);
+  const ahora = new Date();
+  const mes = String(ahora.getMonth() + 1).padStart(2, '0');
+  const dia = String(ahora.getDate()).padStart(2, '0');
+  return `${ahora.getFullYear()}-${mes}-${dia}`;
 }
 
 // Quita los campos sin error para que "sin errores" sea un objeto vacío
