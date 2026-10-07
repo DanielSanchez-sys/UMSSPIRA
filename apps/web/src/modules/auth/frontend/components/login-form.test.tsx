@@ -61,7 +61,7 @@ describe("LoginForm", () => {
   it("redirige al egresado a su área personal (CA-05.3)", async () => {
     render(<LoginForm />);
 
-    fillAndSubmit("egresado@umss.edu.bo", "egresado1234");
+    fillAndSubmit("titulado@umss.edu.bo", "titulado1234");
 
     await waitFor(() => expect(mockPush).toHaveBeenCalledWith("/me"));
   });

@@ -38,7 +38,7 @@ export default function LoginPage() {
           </div>
           <span className="flex items-center gap-1.5 text-xs text-gray-600">
             <span className="h-2 w-2 rounded-full bg-green-600" />
-            Portal Seguro HU-10
+            Portal Seguro
           </span>
         </div>
 
