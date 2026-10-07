@@ -1,7 +1,6 @@
 packages:
   - 'apps/*'
   - 'packages/*'
-  - 'backend'
 allowBuilds:
   '@nestjs/core': false
   '@parcel/watcher': true
