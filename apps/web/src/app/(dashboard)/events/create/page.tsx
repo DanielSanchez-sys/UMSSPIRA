@@ -19,7 +19,7 @@ export default function CreateEventPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [draftSaved, setDraftSaved] = useState(false);
   const [validationCount, setValidationCount] = useState(0);
-  const [published, setPublished] = useState(false);
+  const [publishedEventId, setPublishedEventId] = useState<string | null>(null);
 
   const handleValidationChange = useCallback((count: number) => {
     setValidationCount(count);
@@ -37,10 +37,10 @@ export default function CreateEventPage() {
         );
       }
 
-      await createEvent(event, userId);
+      const savedEvent = await createEvent(event, userId);
 
       if (event.status === EVENT_STATUS.PUBLICADO) {
-        setPublished(true);
+        setPublishedEventId(savedEvent.id);
       } else {
         setDraftSaved(true);
       }
@@ -55,11 +55,14 @@ export default function CreateEventPage() {
     }
   };
 
-  if (published) {
+  if (publishedEventId) {
     return (
       <>
         <EventManagementContent compact />
-        <EventSuccessDialog onBack={() => router.push('/events')} />
+        <EventSuccessDialog
+          eventId={publishedEventId}
+          onBack={() => router.push('/events')}
+        />
       </>
     );
   }
@@ -70,7 +73,7 @@ export default function CreateEventPage() {
         <h1>Crear evento</h1>
         <p>
           {validationCount > 0
-            ? 'Corrige los campos marcados antes de publicar.'
+            ? 'Corrige los campos marcados para continuar.'
             : 'Completa la información del evento universitario.'}
         </p>
       </header>

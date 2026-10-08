@@ -2,7 +2,12 @@
 
 import { FormEvent, ReactNode, useEffect, useMemo, useState } from 'react';
 import {
+  EVENT_DATE_MAX_YEAR,
+  EVENT_DATE_MIN_YEAR,
+  EVENT_LOCATION_MAX_LENGTH,
+  EVENT_MAX_CAPACITY,
   EVENT_STATUS,
+  EVENT_TITLE_MAX_LENGTH,
   type CreateEventDto,
   type EventItem,
 } from '@umsspira/shared-types';
@@ -10,6 +15,12 @@ import {
   EventConfirmDialog,
   type EventSummary,
 } from '@/shared/components/events-ui';
+import {
+  formatEventInputSchedule,
+  isEventInputDateValid,
+  toDateTimeInputParts,
+  toEventIsoDateTime,
+} from '@/shared/utils/event-date-time';
 
 interface EventFormState {
   title: string;
@@ -30,6 +41,7 @@ interface EventFormErrors {
   endDate?: string;
   endTime?: string;
   maxCapacity?: string;
+  location?: string;
 }
 
 interface PendingPublication {
@@ -57,6 +69,8 @@ const initialState: EventFormState = {
   location: '',
   image: null,
 };
+
+const EVENT_TITLE_HAS_LETTER_PATTERN = new RegExp('\\p{L}', 'u');
 
 export default function EventForm({
   onSubmit,
@@ -86,7 +100,7 @@ export default function EventForm({
   }, [initialEvent]);
 
   const dateLabel = useMemo(
-    () => formatDateLabel(form.startDate, form.startTime, form.endDate, form.endTime),
+    () => formatEventInputSchedule(form.startDate, form.startTime, form.endDate, form.endTime),
     [form.endDate, form.endTime, form.startDate, form.startTime],
   );
 
@@ -97,24 +111,51 @@ export default function EventForm({
 
   const validate = (): EventFormErrors => {
     const nextErrors: EventFormErrors = {};
+    const title = form.title.trim();
 
-    if (!form.title.trim()) nextErrors.title = 'Este campo es obligatorio.';
-    if (!form.startDate) nextErrors.startDate = 'Este campo es obligatorio.';
+    if (!title) {
+      nextErrors.title = 'Este campo es obligatorio.';
+    } else if (title.length > EVENT_TITLE_MAX_LENGTH) {
+      nextErrors.title = `El título no puede superar los ${EVENT_TITLE_MAX_LENGTH} caracteres.`;
+    } else if (!EVENT_TITLE_HAS_LETTER_PATTERN.test(title)) {
+      nextErrors.title = 'El título debe contener al menos una letra.';
+    }
+
+    if (!form.startDate) {
+      nextErrors.startDate = 'Este campo es obligatorio.';
+    } else if (!isEventInputDateValid(form.startDate)) {
+      nextErrors.startDate = `Ingresa una fecha válida entre ${EVENT_DATE_MIN_YEAR} y ${EVENT_DATE_MAX_YEAR}.`;
+    }
     if (!form.startTime) nextErrors.startTime = 'Este campo es obligatorio.';
-    if (!form.endDate) nextErrors.endDate = 'Este campo es obligatorio.';
+    if (!form.endDate) {
+      nextErrors.endDate = 'Este campo es obligatorio.';
+    } else if (!isEventInputDateValid(form.endDate)) {
+      nextErrors.endDate = `Ingresa una fecha válida entre ${EVENT_DATE_MIN_YEAR} y ${EVENT_DATE_MAX_YEAR}.`;
+    }
     if (!form.endTime) nextErrors.endTime = 'Este campo es obligatorio.';
+
+    if (form.location.trim().length > EVENT_LOCATION_MAX_LENGTH) {
+      nextErrors.location = `La ubicación no puede superar los ${EVENT_LOCATION_MAX_LENGTH} caracteres.`;
+    }
 
     const capacity = Number(form.maxCapacity);
     if (
       !form.maxCapacity
+      || !/^\d+$/.test(form.maxCapacity)
       || !Number.isFinite(capacity)
       || !Number.isInteger(capacity)
-      || capacity <= 0
+      || capacity < 1
+      || capacity > EVENT_MAX_CAPACITY
     ) {
-      nextErrors.maxCapacity = 'Ingresa un cupo entero mayor a 0.';
+      nextErrors.maxCapacity = 'El cupo máximo debe ser un número entero entre 1 y 10000.';
     }
 
-    if (form.startDate && form.startTime && form.endDate && form.endTime) {
+    if (
+      !nextErrors.startDate
+      && !nextErrors.startTime
+      && !nextErrors.endDate
+      && !nextErrors.endTime
+    ) {
       const startDateTime = new Date(`${form.startDate}T${form.startTime}:00`);
       const endDateTime = new Date(`${form.endDate}T${form.endTime}:00`);
 
@@ -130,8 +171,8 @@ export default function EventForm({
   const buildEventDto = (status: 'BORRADOR' | 'PUBLICADO'): CreateEventDto => ({
     title: form.title.trim(),
     description: form.description.trim() || undefined,
-    startDate: `${form.startDate}T${form.startTime}:00`,
-    endDate: `${form.endDate}T${form.endTime}:00`,
+    startDate: toEventIsoDateTime(form.startDate, form.startTime),
+    endDate: toEventIsoDateTime(form.endDate, form.endTime),
     maxCapacity: Number(form.maxCapacity),
     location: form.location.trim() || undefined,
     status,
@@ -206,8 +247,12 @@ export default function EventForm({
             <FormField label="Título del evento" required error={errors.title} full>
               <input
                 type="text"
+                maxLength={EVENT_TITLE_MAX_LENGTH}
                 value={form.title}
-                onChange={(event) => updateField('title', event.target.value)}
+                onChange={(event) => updateField(
+                  'title',
+                  event.target.value.slice(0, EVENT_TITLE_MAX_LENGTH),
+                )}
                 placeholder="Ej. Feria de Oportunidades UMSS"
               />
             </FormField>
@@ -224,22 +269,26 @@ export default function EventForm({
           <section className="event-mobile-section">
             <h3 className="event-mobile-section-title">2 Fecha y lugar</h3>
             <FormField label="Fecha de inicio" required error={errors.startDate}>
-              <input type="date" value={form.startDate} onChange={(event) => updateField('startDate', event.target.value)} />
+              <input type="date" min="1900-01-01" max="2100-12-31" value={form.startDate} onChange={(event) => updateField('startDate', event.target.value)} />
             </FormField>
             <FormField label="Hora de inicio" required error={errors.startTime}>
               <input type="time" value={form.startTime} onChange={(event) => updateField('startTime', event.target.value)} />
             </FormField>
             <FormField label="Fecha de finalización" required error={errors.endDate}>
-              <input type="date" value={form.endDate} onChange={(event) => updateField('endDate', event.target.value)} />
+              <input type="date" min="1900-01-01" max="2100-12-31" value={form.endDate} onChange={(event) => updateField('endDate', event.target.value)} />
             </FormField>
             <FormField label="Hora de finalización" required error={errors.endTime}>
               <input type="time" value={form.endTime} onChange={(event) => updateField('endTime', event.target.value)} />
             </FormField>
-            <FormField label="Ubicación" optional location>
+            <FormField label="Ubicación" optional error={errors.location} location>
               <input
                 type="text"
+                maxLength={EVENT_LOCATION_MAX_LENGTH}
                 value={form.location}
-                onChange={(event) => updateField('location', event.target.value)}
+                onChange={(event) => updateField(
+                  'location',
+                  event.target.value.slice(0, EVENT_LOCATION_MAX_LENGTH),
+                )}
                 placeholder="Ej. Auditorio Central UMSS"
               />
             </FormField>
@@ -251,9 +300,20 @@ export default function EventForm({
               <input
                 type="number"
                 min={1}
+                max={EVENT_MAX_CAPACITY}
                 step={1}
                 value={form.maxCapacity}
-                onChange={(event) => updateField('maxCapacity', event.target.value)}
+                onKeyDown={(event) => {
+                  if (['e', 'E', '+', '-', '.', ','].includes(event.key)) {
+                    event.preventDefault();
+                  }
+                }}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  if (!value || /^\d+$/.test(value)) {
+                    updateField('maxCapacity', value);
+                  }
+                }}
                 placeholder="Ej. 150"
               />
             </FormField>
@@ -365,23 +425,8 @@ function countValidationGroups(errors: EventFormErrors) {
     + Number(Boolean(errors.startDate))
     + Number(Boolean(errors.startTime))
     + Number(Boolean(errors.endDate || errors.endTime))
-    + Number(Boolean(errors.maxCapacity));
-}
-
-function formatDateLabel(startDate: string, startTime: string, endDate: string, endTime: string) {
-  if (!startDate) return 'Fecha por definir';
-
-  const [year, month, day] = startDate.split('-').map(Number);
-  const monthNames = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-  const date = `${day} ${monthNames[month - 1] ?? ''} ${year}`;
-  const times = startTime ? `${startTime}${endTime ? `–${endTime}` : ''}` : 'Hora por definir';
-
-  if (endDate && endDate !== startDate) {
-    const [endYear, endMonth, endDay] = endDate.split('-').map(Number);
-    return `${date} · ${times} / ${endDay} ${monthNames[endMonth - 1] ?? ''} ${endYear}`;
-  }
-
-  return `${date} · ${times}`;
+    + Number(Boolean(errors.maxCapacity))
+    + Number(Boolean(errors.location));
 }
 
 function formatFileDetails(file: File) {
@@ -407,28 +452,4 @@ function createInitialState(event?: EventItem): EventFormState {
     location: event.location ?? '',
     image: null,
   };
-}
-
-function toDateTimeInputParts(value: string) {
-  const parsedDate = new Date(value);
-
-  if (Number.isNaN(parsedDate.getTime())) {
-    const [date = '', time = ''] = value.split('T');
-    return {
-      date,
-      time: time.slice(0, 5),
-    };
-  }
-
-  const date = [
-    parsedDate.getFullYear(),
-    String(parsedDate.getMonth() + 1).padStart(2, '0'),
-    String(parsedDate.getDate()).padStart(2, '0'),
-  ].join('-');
-  const time = [
-    String(parsedDate.getHours()).padStart(2, '0'),
-    String(parsedDate.getMinutes()).padStart(2, '0'),
-  ].join(':');
-
-  return { date, time };
 }

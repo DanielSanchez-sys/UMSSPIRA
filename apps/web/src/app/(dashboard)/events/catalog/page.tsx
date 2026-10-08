@@ -5,6 +5,7 @@ import { CalendarDays, ChevronDown, Search } from 'lucide-react';
 
 import EventCard from '@/shared/components/event-card';
 import { getEventCatalog } from '@/shared/services/events-service';
+import { getEventMonthKey } from '@/shared/utils/event-date-time';
 import type { EventItem } from '@umsspira/shared-types';
 
 type SortOrder = 'nearest' | 'furthest';
@@ -66,7 +67,7 @@ export default function EventsCatalogPage() {
       ]
         .join(' ')
         .toLowerCase();
-      const eventMonth = event.startDate.slice(0, 7);
+      const eventMonth = getEventMonthKey(event.startDate);
       const matchesSearch = searchableText.includes(normalizedSearch);
       const matchesDate = dateFilter === 'all' || eventMonth === dateFilter;
 

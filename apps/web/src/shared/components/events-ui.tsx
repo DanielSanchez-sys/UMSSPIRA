@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   EVENT_STATUS,
   type EventItem,
@@ -17,7 +17,6 @@ import {
   LogOut,
   Menu,
   MessageSquare,
-  MoreVertical,
   Plus,
   Search,
 } from 'lucide-react';
@@ -27,6 +26,13 @@ import {
 } from '@/shared/services/events-service';
 import { useAuthenticatedUserId } from '@/modules/auth/frontend/components/authenticated-user-context';
 import { getSupabaseClient } from '@/shared/lib/supabase';
+import {
+  formatEventDate,
+  formatEventDateTime,
+  formatEventMonth,
+  formatEventSchedule,
+  getEventMonthKey,
+} from '@/shared/utils/event-date-time';
 
 type AdminSection = 'management' | 'create' | 'drafts';
 
@@ -252,34 +258,45 @@ export function EventManagementContent({
   } = useAdminEvents(userId, !compact);
   const [pendingPublication, setPendingPublication] = useState<EventItem | null>(null);
   const [isPublishing, setIsPublishing] = useState(false);
-  const [publicationSucceeded, setPublicationSucceeded] = useState(false);
+  const [publishedEventId, setPublishedEventId] = useState<string | null>(null);
   const [searchInput, setSearchInput] = useState('');
   const [searchFilter, setSearchFilter] = useState('');
   const [selectedMonth, setSelectedMonth] = useState('all');
   const [monthFilter, setMonthFilter] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
-  const filteredEvents = events.filter((event) => {
-    const matchesSearch = event.title
-      .toLocaleLowerCase('es')
-      .includes(searchFilter.trim().toLocaleLowerCase('es'));
-    const matchesMonth =
-      monthFilter === 'all' || event.startDate.slice(0, 7) === monthFilter;
-    const matchesStatus =
-      statusFilter === 'all' || event.status === statusFilter;
+  const filteredEvents = useMemo(() => {
+    const normalizedSearch = searchFilter.trim().toLocaleLowerCase('es');
+    return events.filter((event) => {
+      const matchesSearch = event.title
+        .toLocaleLowerCase('es')
+        .includes(normalizedSearch);
+      const matchesMonth = monthFilter === 'all'
+        || getEventMonthKey(event.startDate) === monthFilter;
+      const matchesStatus = statusFilter === 'all'
+        || event.status === statusFilter;
 
-    return matchesSearch && matchesMonth && matchesStatus;
-  });
-  const availableMonths = Array.from(
-    new Set(events.map((event) => event.startDate.slice(0, 7))),
-  ).sort();
-
-  const publishedCount = events.filter(
-    (event) => event.status === EVENT_STATUS.PUBLICADO,
-  ).length;
-  const draftCount = events.filter(
-    (event) => event.status === EVENT_STATUS.BORRADOR,
-  ).length;
+      return matchesSearch && matchesMonth && matchesStatus;
+    });
+  }, [events, monthFilter, searchFilter, statusFilter]);
+  const availableMonths = useMemo(
+    () => Array.from(
+      new Set(events.map((event) => getEventMonthKey(event.startDate))),
+    ).sort(),
+    [events],
+  );
+  const { publishedCount, draftCount } = useMemo(
+    () => events.reduce(
+      (counts, event) => ({
+        publishedCount: counts.publishedCount
+          + Number(event.status === EVENT_STATUS.PUBLICADO),
+        draftCount: counts.draftCount
+          + Number(event.status === EVENT_STATUS.BORRADOR),
+      }),
+      { publishedCount: 0, draftCount: 0 },
+    ),
+    [events],
+  );
 
   const confirmPublication = async () => {
     if (!pendingPublication || !userId) return;
@@ -298,7 +315,7 @@ export function EventManagementContent({
         ),
       );
       setPendingPublication(null);
-      setPublicationSucceeded(true);
+      setPublishedEventId(publishedEvent.id);
     } catch (error) {
       setPendingPublication(null);
       setErrorMessage(getRequestErrorMessage(error));
@@ -395,7 +412,7 @@ export function EventManagementContent({
                   </small>
                 </span>
               </div>
-              <span className="event-date"><strong>{formatEventDate(event.startDate)}</strong><small>{formatEventTimeRange(event)}</small></span>
+              <span className="event-date"><strong>{formatEventSchedule(event.startDate, event.endDate)}</strong></span>
               <span className="event-location">{event.location ?? 'Sin ubicación'}</span>
               <span className="event-capacity">{event.maxCapacity}</span>
               <StatusChip status={event.status} />
@@ -414,13 +431,16 @@ export function EventManagementContent({
                     <button type="button" className="event-button event-button-primary event-action-publish" onClick={() => setPendingPublication(event)} disabled={isPublishing}>Publicar</button>
                   </>
                 ) : null}
-                {event.status === EVENT_STATUS.PUBLICADO ? <MoreVertical size={18} aria-hidden="true" /> : null}
               </div>
             </article>
           ))}
         </div>
         {!isLoading && !errorMessage && filteredEvents.length === 0 ? (
-          <p className="events-list-footer" role="status">No hay eventos registrados.</p>
+          <p className="events-list-footer" role="status">
+            {events.length === 0
+              ? 'No hay eventos registrados.'
+              : 'No se encontraron eventos que coincidan con los filtros.'}
+          </p>
         ) : null}
         {!isLoading && !errorMessage && filteredEvents.length > 0 ? (
           <p className="events-list-footer">
@@ -438,8 +458,11 @@ export function EventManagementContent({
         />
       ) : null}
 
-      {publicationSucceeded ? (
-        <EventSuccessDialog onBack={() => setPublicationSucceeded(false)} />
+      {publishedEventId ? (
+        <EventSuccessDialog
+          eventId={publishedEventId}
+          onBack={() => setPublishedEventId(null)}
+        />
       ) : null}
     </main>
   );
@@ -462,7 +485,7 @@ export function EventDraftsContent({
   } = useAdminEvents(userId);
   const [pendingPublication, setPendingPublication] = useState<EventItem | null>(null);
   const [isPublishing, setIsPublishing] = useState(false);
-  const [publicationSucceeded, setPublicationSucceeded] = useState(false);
+  const [publishedEventId, setPublishedEventId] = useState<string | null>(null);
   const drafts = events.filter(
     (event) => event.status === EVENT_STATUS.BORRADOR,
   );
@@ -484,7 +507,7 @@ export function EventDraftsContent({
         ),
       );
       setPendingPublication(null);
-      setPublicationSucceeded(true);
+      setPublishedEventId(publishedEvent.id);
     } catch (error) {
       setPendingPublication(null);
       setErrorMessage(getRequestErrorMessage(error));
@@ -529,7 +552,7 @@ export function EventDraftsContent({
                 </span>
               </div>
               <span className="draft-date">
-                <span>{formatEventDate(draft.startDate)}</span>
+                <span>{formatEventSchedule(draft.startDate, draft.endDate)}</span>
                 <span>{draft.location ?? 'Sin ubicación'}</span>
               </span>
               <StatusChip status={draft.status} />
@@ -551,8 +574,11 @@ export function EventDraftsContent({
         />
       ) : null}
 
-      {publicationSucceeded ? (
-        <EventSuccessDialog onBack={() => router.push('/events')} />
+      {publishedEventId ? (
+        <EventSuccessDialog
+          eventId={publishedEventId}
+          onBack={() => router.push('/events')}
+        />
       ) : null}
     </main>
   );
@@ -644,68 +670,6 @@ function useAdminEvents(
   };
 }
 
-const eventDateFormatter = new Intl.DateTimeFormat('es-BO', {
-  day: '2-digit',
-  month: 'short',
-  year: 'numeric',
-});
-
-const eventTimeFormatter = new Intl.DateTimeFormat('es-BO', {
-  hour: '2-digit',
-  minute: '2-digit',
-  hour12: false,
-});
-
-const eventDateTimeFormatter = new Intl.DateTimeFormat('es-BO', {
-  day: '2-digit',
-  month: 'short',
-  year: 'numeric',
-  hour: '2-digit',
-  minute: '2-digit',
-  hour12: false,
-});
-
-const eventMonthFormatter = new Intl.DateTimeFormat('es-BO', {
-  month: 'long',
-  year: 'numeric',
-  timeZone: 'UTC',
-});
-
-function formatEventDate(value: string): string {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime())
-    ? 'Fecha no disponible'
-    : eventDateFormatter.format(date);
-}
-
-function formatEventDateTime(value: string): string {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime())
-    ? 'Fecha no disponible'
-    : eventDateTimeFormatter.format(date);
-}
-
-function formatEventMonth(value: string): string {
-  const month = new Date(`${value}-01T00:00:00Z`);
-  return Number.isNaN(month.getTime())
-    ? value
-    : eventMonthFormatter.format(month);
-}
-
-function formatEventTimeRange(event: EventItem): string {
-  const start = new Date(event.startDate);
-  const end = new Date(event.endDate);
-
-  if (
-    Number.isNaN(start.getTime()) ||
-    Number.isNaN(end.getTime())
-  ) {
-    return 'Horario no disponible';
-  }
-
-  return `${eventTimeFormatter.format(start)}–${eventTimeFormatter.format(end)}`;
-}
-
 function getEventInitials(title: string): string {
   const words = title.trim().split(/\s+/).filter(Boolean);
   return words.slice(0, 2).map((word) => word[0]).join('').toUpperCase() || 'EV';
@@ -714,7 +678,7 @@ function getEventInitials(title: string): string {
 function toEventSummary(event: EventItem): EventSummary {
   return {
     title: event.title,
-    dateLabel: `${formatEventDate(event.startDate)} · ${formatEventTimeRange(event)}`,
+    dateLabel: formatEventSchedule(event.startDate, event.endDate),
     location: event.location ?? '',
     maxCapacity: event.maxCapacity,
   };
@@ -768,7 +732,13 @@ export function EventConfirmDialog({
   );
 }
 
-export function EventSuccessDialog({ onBack }: { onBack: () => void }) {
+export function EventSuccessDialog({
+  eventId,
+  onBack,
+}: {
+  eventId: string;
+  onBack: () => void;
+}) {
   return (
     <div className="event-modal-layer" role="presentation">
       <section className="event-success-dialog" role="dialog" aria-modal="true" aria-labelledby="event-success-title">
@@ -777,7 +747,12 @@ export function EventSuccessDialog({ onBack }: { onBack: () => void }) {
         <p>El evento ya está disponible en el catálogo.</p>
         <div className="event-dialog-actions">
           <button type="button" className="event-button event-button-secondary event-back-button" onClick={onBack}>Volver a eventos</button>
-          <button type="button" className="event-button event-button-primary event-view-button" disabled title="La ruta de detalle depende de HU2 y aún no existe">Ver evento</button>
+          <Link
+            href={`/events/${encodeURIComponent(eventId)}`}
+            className="event-button event-button-primary event-view-button"
+          >
+            Ver evento
+          </Link>
         </div>
       </section>
     </div>

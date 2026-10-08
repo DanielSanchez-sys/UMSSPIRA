@@ -11,17 +11,24 @@ import {
   type EventItem,
 } from '@umsspira/shared-types';
 
+import AdminEventDetailPage from '@/app/(dashboard)/events/[id]/page';
 import { EventDraftEditor } from '@/shared/components/event-draft-editor';
 import {
   EventDraftsContent,
   EventManagementContent,
 } from '@/shared/components/events-ui';
+import {
+  formatEventDateTime,
+  formatEventSchedule,
+  getEventMonthKey,
+} from '@/shared/utils/event-date-time';
 
 const mockPush = jest.fn();
 const mockGetAdminEvents = jest.fn();
 const mockGetAdminDraft = jest.fn();
 const mockUpdateDraftEvent = jest.fn();
 const mockPublishDraftEvent = jest.fn();
+const mockApiClient = jest.fn();
 
 jest.mock('next/navigation', () => ({
   usePathname: () => '/events',
@@ -34,6 +41,10 @@ jest.mock('@/shared/services/events-service', () => ({
   getAdminDraft: (...args: unknown[]) => mockGetAdminDraft(...args),
   updateDraftEvent: (...args: unknown[]) => mockUpdateDraftEvent(...args),
   publishDraftEvent: (...args: unknown[]) => mockPublishDraftEvent(...args),
+}));
+
+jest.mock('@/shared/services/api-client', () => ({
+  apiClient: (...args: unknown[]) => mockApiClient(...args),
 }));
 
 const publishedEvent: EventItem = {
@@ -77,6 +88,7 @@ describe('Gestión administrativa de eventos HU1', () => {
     mockGetAdminDraft.mockReset();
     mockUpdateDraftEvent.mockReset();
     mockPublishDraftEvent.mockReset();
+    mockApiClient.mockReset();
   });
 
   it('deriva las métricas y renderiza únicamente los eventos recibidos', async () => {
@@ -126,6 +138,15 @@ describe('Gestión administrativa de eventos HU1', () => {
     expect(mockPush).toHaveBeenCalledWith('/events/published-1');
   });
 
+  it('no muestra un affordance de menú sin acciones autorizadas', async () => {
+    mockGetAdminEvents.mockResolvedValueOnce([publishedEvent]);
+
+    render(<EventManagementContent userId="user-1" />);
+
+    const viewButton = await screen.findByRole('button', { name: /ver/i });
+    expect(viewButton.parentElement?.querySelectorAll('svg')).toHaveLength(1);
+  });
+
   it('filtra los eventos por estado y mes elegidos', async () => {
     mockGetAdminEvents.mockResolvedValueOnce([
       publishedEvent,
@@ -168,6 +189,59 @@ describe('Gestión administrativa de eventos HU1', () => {
     expect(screen.queryByText('Feria de Empleo Real')).not.toBeInTheDocument();
   });
 
+  it('distingue filtros sin coincidencias de un listado realmente vacío', async () => {
+    mockGetAdminEvents.mockResolvedValueOnce([publishedEvent]);
+
+    render(<EventManagementContent userId="user-1" />);
+    await screen.findByText('Feria de Empleo Real');
+    fireEvent.change(screen.getByLabelText('Buscar'), {
+      target: { value: 'sin coincidencias' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Filtrar' }));
+
+    expect(
+      screen.getByText('No se encontraron eventos que coincidan con los filtros.'),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('No hay eventos registrados.')).not.toBeInTheDocument();
+  });
+
+  it('filtra por el mes local que se muestra al administrador', async () => {
+    const localMonthBoundaryEvent = {
+      ...publishedEvent,
+      startDate: new Date('2026-10-31T23:59:00').toISOString(),
+      endDate: new Date('2026-11-01T00:01:00').toISOString(),
+    };
+    const visibleMonth = getEventMonthKey(localMonthBoundaryEvent.startDate);
+    mockGetAdminEvents.mockResolvedValueOnce([localMonthBoundaryEvent]);
+
+    render(<EventManagementContent userId="user-1" />);
+    await screen.findByText('Feria de Empleo Real');
+    fireEvent.change(screen.getByLabelText('Fecha'), {
+      target: { value: visibleMonth },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Filtrar' }));
+
+    expect(screen.getByText('Feria de Empleo Real')).toBeInTheDocument();
+    expect(screen.getByText('Mostrando 1 de 1 eventos')).toBeInTheDocument();
+  });
+
+  it('muestra inicio y fin en Gestión para un evento de varios días', async () => {
+    const multidayEvent = {
+      ...publishedEvent,
+      startDate: new Date('2026-10-31T23:59:00').toISOString(),
+      endDate: new Date('2026-11-01T00:01:00').toISOString(),
+    };
+    mockGetAdminEvents.mockResolvedValueOnce([multidayEvent]);
+
+    render(<EventManagementContent userId="user-1" />);
+
+    expect(
+      await screen.findByText(
+        formatEventSchedule(multidayEvent.startDate, multidayEvent.endDate),
+      ),
+    ).toBeInTheDocument();
+  });
+
   it('muestra únicamente borradores y enlaza Continuar edición al mismo id', async () => {
     mockGetAdminEvents.mockResolvedValueOnce([publishedEvent, draftEvent]);
 
@@ -207,7 +281,33 @@ describe('Gestión administrativa de eventos HU1', () => {
 
     expect(await screen.findByText('¡Evento publicado correctamente!')).toBeInTheDocument();
     expect(mockPublishDraftEvent).toHaveBeenCalledWith('draft-1', 'user-1');
+    expect(mockPublishDraftEvent).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('link', { name: 'Ver evento' })).toHaveAttribute(
+      'href',
+      '/events/draft-1',
+    );
     expect(screen.getByText('0 borradores')).toBeInTheDocument();
+  });
+
+  it('muestra el rango multiday completo en Borradores y su confirmación', async () => {
+    const multidayDraft = {
+      ...draftEvent,
+      startDate: new Date('2026-10-31T23:59:00').toISOString(),
+      endDate: new Date('2026-11-01T00:01:00').toISOString(),
+    };
+    const expectedSchedule = formatEventSchedule(
+      multidayDraft.startDate,
+      multidayDraft.endDate,
+    );
+    mockGetAdminEvents.mockResolvedValueOnce([multidayDraft]);
+
+    render(<EventDraftsContent userId="user-1" />);
+
+    expect(await screen.findByText(expectedSchedule)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Publicar' }));
+    expect(
+      within(screen.getByRole('dialog')).getByText(expectedSchedule),
+    ).toBeInTheDocument();
   });
 
   it('muestra el error real de la consulta administrativa', async () => {
@@ -218,6 +318,26 @@ describe('Gestión administrativa de eventos HU1', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'Consulta administrativa fallida.',
     );
+  });
+});
+
+describe('Detalle administrativo de evento HU1', () => {
+  it('muestra fecha y hora de inicio y fin de un evento multiday', async () => {
+    const multidayEvent = {
+      ...publishedEvent,
+      startDate: new Date('2026-10-31T23:59:00').toISOString(),
+      endDate: new Date('2026-11-01T00:01:00').toISOString(),
+    };
+    mockApiClient.mockResolvedValueOnce(multidayEvent);
+
+    render(<AdminEventDetailPage />);
+
+    expect(
+      await screen.findByText(formatEventDateTime(multidayEvent.startDate)),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(formatEventDateTime(multidayEvent.endDate)),
+    ).toBeInTheDocument();
   });
 });
 

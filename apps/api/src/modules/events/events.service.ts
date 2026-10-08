@@ -13,8 +13,18 @@ import type {
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import { supabase } from '../../shared/lib/supabase';
-import { CreateEventDto } from './dto/create-event.dto';
+import {
+  CreateEventDto,
+  MAX_EVENT_CAPACITY,
+} from './dto/create-event.dto';
 import { UpdateDraftEventDto } from './dto/update-draft-event.dto';
+import {
+  EVENT_DATE_MAX_YEAR,
+  EVENT_DATE_MIN_YEAR,
+  EVENT_TITLE_HAS_LETTER_PATTERN,
+  EVENT_TITLE_MAX_LENGTH,
+  isEventDateTimeWithinRange,
+} from './event-constraints';
 
 const DRAFT_EVENT_STATUS: Extract<EventStatus, 'BORRADOR'> =
   'BORRADOR';
@@ -48,6 +58,7 @@ export class EventsService {
       endDate,
       maxCapacity,
     );
+    const normalizedTitle = title.trim();
 
     // Si no se envía un estado, se crea como BORRADOR.
     const initialStatus: EventStatus =
@@ -68,7 +79,7 @@ export class EventsService {
       .insert([
         {
           id_usuario: userId,
-          titulo: title,
+          titulo: normalizedTitle,
           descripcion: description ?? null,
           fecha_inicio: startDate,
           fecha_fin: endDate,
@@ -83,7 +94,7 @@ export class EventsService {
 
     if (error) {
       throw new InternalServerErrorException(
-        `Error al guardar el evento: ${error.message}`,
+        'No se pudo guardar el evento. Inténtalo nuevamente.',
       );
     }
 
@@ -195,11 +206,12 @@ export class EventsService {
       endDate,
       maxCapacity,
     );
+    const normalizedTitle = title.trim();
 
     const { data, error } = await authenticatedSupabase
       .from('evento')
       .update({
-        titulo: title,
+        titulo: normalizedTitle,
         descripcion: description ?? null,
         fecha_inicio: startDate,
         fecha_fin: endDate,
@@ -215,7 +227,7 @@ export class EventsService {
 
     if (error) {
       throw new InternalServerErrorException(
-        `Error al actualizar el borrador: ${error.message}`,
+        'No se pudo actualizar el borrador. Inténtalo nuevamente.',
       );
     }
 
@@ -378,17 +390,29 @@ export class EventsService {
       );
     }
 
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-
-    if (
-      Number.isNaN(start.getTime()) ||
-      Number.isNaN(end.getTime())
-    ) {
+    if (!EVENT_TITLE_HAS_LETTER_PATTERN.test(title.trim())) {
       throw new BadRequestException(
-        'Las fechas del evento deben ser válidas',
+        'El título debe contener al menos una letra',
       );
     }
+
+    if (title.trim().length > EVENT_TITLE_MAX_LENGTH) {
+      throw new BadRequestException(
+        `El título no puede superar los ${EVENT_TITLE_MAX_LENGTH} caracteres`,
+      );
+    }
+
+    if (
+      !isEventDateTimeWithinRange(startDate) ||
+      !isEventDateTimeWithinRange(endDate)
+    ) {
+      throw new BadRequestException(
+        `Las fechas deben tener un año de 4 dígitos entre ${EVENT_DATE_MIN_YEAR} y ${EVENT_DATE_MAX_YEAR}`,
+      );
+    }
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
 
     if (end <= start) {
       throw new BadRequestException(
@@ -398,10 +422,11 @@ export class EventsService {
 
     if (
       !Number.isInteger(maxCapacity) ||
-      maxCapacity <= 0
+      maxCapacity < 1 ||
+      maxCapacity > MAX_EVENT_CAPACITY
     ) {
       throw new BadRequestException(
-        'El cupo máximo debe ser un número entero mayor a 0',
+        'El cupo máximo debe ser un número entero entre 1 y 10000',
       );
     }
   }

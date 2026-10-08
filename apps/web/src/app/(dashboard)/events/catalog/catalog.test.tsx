@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { EVENT_STATUS, type EventItem } from '@umsspira/shared-types';
 import EventsCatalogPage from './page';
 import { getEventCatalog } from '@/shared/services/events-service';
+import { getEventMonthKey } from '@/shared/utils/event-date-time';
 
 jest.mock('@/shared/services/events-service', () => ({
   getEventCatalog: jest.fn(),
@@ -71,6 +72,24 @@ describe('catálogo de eventos', () => {
     await waitFor(() => {
       expect(screen.queryAllByText('Taller de tecnología')).toHaveLength(0);
     });
+    expect(screen.getAllByText('Feria de empleo')).not.toHaveLength(0);
+  });
+
+  it('filtra usando el mes local visible en un cruce de mes UTC', async () => {
+    const monthBoundaryEvent = {
+      ...catalogEvents[0],
+      startDate: new Date('2026-10-31T23:59:00').toISOString(),
+      endDate: new Date('2026-11-01T00:01:00').toISOString(),
+    };
+    jest.mocked(getEventCatalog).mockResolvedValueOnce([monthBoundaryEvent]);
+    render(<EventsCatalogPage />);
+    await screen.findAllByText('Feria de empleo');
+
+    fireEvent.change(screen.getByLabelText('Filtrar por mes'), {
+      target: { value: getEventMonthKey(monthBoundaryEvent.startDate) },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Buscar' }));
+
     expect(screen.getAllByText('Feria de empleo')).not.toHaveLength(0);
   });
 });

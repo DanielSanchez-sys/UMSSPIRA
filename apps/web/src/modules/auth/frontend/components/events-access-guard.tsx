@@ -7,17 +7,19 @@ import {
   AuthServiceError,
   getCurrentUserIdentity,
   getRedirectPath,
+  type UserRole,
 } from '../services/auth.service';
 import { AuthenticatedUserProvider } from './authenticated-user-context';
 
 type AccessState = 'checking' | 'allowed' | 'error';
+type UserIdentity = { userId: string; role: UserRole };
 
 export function EventsAccessGuard({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [accessState, setAccessState] = useState<AccessState>('checking');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
+  const [identity, setIdentity] = useState<UserIdentity | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -26,30 +28,17 @@ export function EventsAccessGuard({ children }: { children: ReactNode }) {
 
     async function checkAccess() {
       try {
-        const identity = await getCurrentUserIdentity();
+        const currentIdentity = await getCurrentUserIdentity();
 
         if (!isMounted) {
           return;
         }
 
-        if (!identity) {
+        if (!currentIdentity) {
           router.replace('/login');
           return;
         }
-
-        const isCatalogPath =
-          pathname === '/events/catalog' ||
-          pathname.startsWith('/events/catalog/');
-        const hasAccess =
-          identity.role === 'administrador' ? !isCatalogPath : isCatalogPath;
-
-        if (!hasAccess) {
-          router.replace(getRedirectPath(identity.role));
-          return;
-        }
-
-        setUserId(identity.userId);
-        setAccessState('allowed');
+        setIdentity(currentIdentity);
       } catch (error) {
         if (isMounted) {
           setErrorMessage(
@@ -66,11 +55,30 @@ export function EventsAccessGuard({ children }: { children: ReactNode }) {
     return () => {
       isMounted = false;
     };
-  }, [pathname, router]);
+  }, [router]);
+
+  useEffect(() => {
+    if (!identity) return;
+
+    const isCatalogPath =
+      pathname === '/events/catalog'
+      || pathname.startsWith('/events/catalog/');
+    const hasAccess = identity.role === 'administrador'
+      ? !isCatalogPath
+      : isCatalogPath;
+
+    if (!hasAccess) {
+      setAccessState('checking');
+      router.replace(getRedirectPath(identity.role));
+      return;
+    }
+
+    setAccessState('allowed');
+  }, [identity, pathname, router]);
 
   if (accessState === 'allowed') {
-    return userId ? (
-      <AuthenticatedUserProvider userId={userId}>
+    return identity ? (
+      <AuthenticatedUserProvider userId={identity.userId}>
         {children}
       </AuthenticatedUserProvider>
     ) : null;

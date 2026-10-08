@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import type { EventItem } from '@umsspira/shared-types';
 import { StatusChip } from '@/shared/components/events-ui';
 import { apiClient } from '@/shared/services/api-client';
+import { formatEventDateTime as formatDateTime } from '@/shared/utils/event-date-time';
 
 export default function AdminEventDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -109,15 +110,4 @@ export default function AdminEventDetailPage() {
       ) : null}
     </main>
   );
-}
-
-function formatDateTime(value: string): string {
-  const date = new Date(value);
-
-  return Number.isNaN(date.getTime())
-    ? 'Fecha no disponible'
-    : new Intl.DateTimeFormat('es-BO', {
-        dateStyle: 'medium',
-        timeStyle: 'short',
-      }).format(date);
 }
