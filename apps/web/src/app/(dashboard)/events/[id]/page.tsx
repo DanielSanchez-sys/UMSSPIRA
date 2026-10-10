@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import type { EventItem } from '@umsspira/shared-types';
 import { StatusChip } from '@/shared/components/events-ui';
@@ -10,7 +10,6 @@ import { formatEventDateTime as formatDateTime } from '@/shared/utils/event-date
 
 export default function AdminEventDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const router = useRouter();
   const [event, setEvent] = useState<EventItem | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -48,14 +47,6 @@ export default function AdminEventDetailPage() {
 
   return (
     <main className="events-page admin-event-detail">
-      <button
-        type="button"
-        className="event-button event-button-secondary"
-        onClick={() => router.push('/events')}
-      >
-        ← Volver a gestión
-      </button>
-
       {isLoading ? (
         <p role="status" className="events-list-footer">
           Cargando evento…
@@ -104,7 +95,7 @@ export default function AdminEventDetailPage() {
             </div>
           </dl>
           <Link href="/events" className="event-button event-button-primary">
-            Volver a eventos
+            Volver a gestión
           </Link>
         </article>
       ) : null}

@@ -381,6 +381,21 @@ describe('Edición de borrador HU1', () => {
     expect(mockUpdateDraftEvent.mock.calls[0][1]).not.toHaveProperty('status');
   });
 
+  it('valida inmediatamente al editar y no actualiza un borrador inválido', async () => {
+    mockGetAdminDraft.mockResolvedValueOnce(draftEvent);
+
+    render(<EventDraftEditor eventId="draft-1" userId="user-1" />);
+
+    const titleInput = await screen.findByDisplayValue('Taller Real de Ciberseguridad');
+    fireEvent.change(titleInput, { target: { value: '' } });
+
+    expect(screen.getByText('Este campo es obligatorio.')).toBeInTheDocument();
+    expect(screen.getByText('1 campo por revisar')).toBeInTheDocument();
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Guardar borrador' })[0]);
+    expect(mockUpdateDraftEvent).not.toHaveBeenCalled();
+  });
+
   it('muestra el error de carga y no presenta un formulario vacío', async () => {
     mockGetAdminDraft.mockRejectedValueOnce(new Error('Borrador no encontrado.'));
 

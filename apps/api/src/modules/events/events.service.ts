@@ -21,6 +21,7 @@ import { UpdateDraftEventDto } from './dto/update-draft-event.dto';
 import {
   EVENT_DATE_MAX_YEAR,
   EVENT_DATE_MIN_YEAR,
+  EVENT_LOCATION_MAX_LENGTH,
   EVENT_TITLE_HAS_LETTER_PATTERN,
   EVENT_TITLE_MAX_LENGTH,
   isEventDateTimeWithinRange,
@@ -57,6 +58,7 @@ export class EventsService {
       startDate,
       endDate,
       maxCapacity,
+      location,
     );
     const normalizedTitle = title.trim();
 
@@ -205,6 +207,7 @@ export class EventsService {
       startDate,
       endDate,
       maxCapacity,
+      location,
     );
     const normalizedTitle = title.trim();
 
@@ -257,6 +260,7 @@ export class EventsService {
       currentEvent.fecha_inicio,
       currentEvent.fecha_fin,
       currentEvent.cupo_maximo,
+      currentEvent.ubicacion,
     );
 
     const { data, error } = await authenticatedSupabase
@@ -383,6 +387,7 @@ export class EventsService {
     startDate: string,
     endDate: string,
     maxCapacity: number,
+    location?: string | null,
   ): void {
     if (!title?.trim()) {
       throw new BadRequestException(
@@ -427,6 +432,15 @@ export class EventsService {
     ) {
       throw new BadRequestException(
         'El cupo máximo debe ser un número entero entre 1 y 10000',
+      );
+    }
+
+    if (
+      location
+      && location.trim().length > EVENT_LOCATION_MAX_LENGTH
+    ) {
+      throw new BadRequestException(
+        `La ubicación no puede superar los ${EVENT_LOCATION_MAX_LENGTH} caracteres`,
       );
     }
   }

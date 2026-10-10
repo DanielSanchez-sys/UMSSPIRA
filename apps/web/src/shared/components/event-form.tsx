@@ -44,6 +44,9 @@ interface EventFormErrors {
   location?: string;
 }
 
+type EventFormValidatedField = keyof EventFormErrors;
+type TouchedEventFormFields = Partial<Record<EventFormValidatedField, boolean>>;
+
 interface PendingPublication {
   dto: CreateEventDto;
   summary: EventSummary;
@@ -71,6 +74,16 @@ const initialState: EventFormState = {
 };
 
 const EVENT_TITLE_HAS_LETTER_PATTERN = new RegExp('\\p{L}', 'u');
+const END_AFTER_START_MESSAGE = 'Debe ser posterior al inicio.';
+const VALIDATED_FIELDS: EventFormValidatedField[] = [
+  'title',
+  'startDate',
+  'startTime',
+  'endDate',
+  'endTime',
+  'maxCapacity',
+  'location',
+];
 
 export default function EventForm({
   onSubmit,
@@ -83,11 +96,17 @@ export default function EventForm({
   const [form, setForm] = useState<EventFormState>(() =>
     createInitialState(initialEvent),
   );
-  const [errors, setErrors] = useState<EventFormErrors>({});
+  const [touchedFields, setTouchedFields] = useState<TouchedEventFormFields>({});
+  const [showAllErrors, setShowAllErrors] = useState(false);
   const [pendingPublication, setPendingPublication] = useState<PendingPublication | null>(null);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
 
-  const errorCount = countValidationGroups(errors);
+  const validationErrors = useMemo(() => validateEventForm(form), [form]);
+  const errors = useMemo(
+    () => getVisibleErrors(validationErrors, touchedFields, showAllErrors),
+    [showAllErrors, touchedFields, validationErrors],
+  );
+  const errorCount = countValidationControls(errors);
   const isBusy = isSubmitting || isSavingDraft;
 
   useEffect(() => {
@@ -96,7 +115,8 @@ export default function EventForm({
 
   useEffect(() => {
     setForm(createInitialState(initialEvent));
-    setErrors({});
+    setTouchedFields({});
+    setShowAllErrors(false);
   }, [initialEvent]);
 
   const dateLabel = useMemo(
@@ -105,67 +125,16 @@ export default function EventForm({
   );
 
   const updateField = (field: keyof Omit<EventFormState, 'image'>, value: string) => {
-    setForm((current) => ({ ...current, [field]: value }));
-    setErrors((current) => ({ ...current, [field]: undefined }));
+    const nextForm = { ...form, [field]: value };
+    setForm(nextForm);
+
+    if (field !== 'description') {
+      setTouchedFields((current) => markFieldAsTouched(current, field, nextForm));
+    }
   };
 
-  const validate = (): EventFormErrors => {
-    const nextErrors: EventFormErrors = {};
-    const title = form.title.trim();
-
-    if (!title) {
-      nextErrors.title = 'Este campo es obligatorio.';
-    } else if (title.length > EVENT_TITLE_MAX_LENGTH) {
-      nextErrors.title = `El título no puede superar los ${EVENT_TITLE_MAX_LENGTH} caracteres.`;
-    } else if (!EVENT_TITLE_HAS_LETTER_PATTERN.test(title)) {
-      nextErrors.title = 'El título debe contener al menos una letra.';
-    }
-
-    if (!form.startDate) {
-      nextErrors.startDate = 'Este campo es obligatorio.';
-    } else if (!isEventInputDateValid(form.startDate)) {
-      nextErrors.startDate = `Ingresa una fecha válida entre ${EVENT_DATE_MIN_YEAR} y ${EVENT_DATE_MAX_YEAR}.`;
-    }
-    if (!form.startTime) nextErrors.startTime = 'Este campo es obligatorio.';
-    if (!form.endDate) {
-      nextErrors.endDate = 'Este campo es obligatorio.';
-    } else if (!isEventInputDateValid(form.endDate)) {
-      nextErrors.endDate = `Ingresa una fecha válida entre ${EVENT_DATE_MIN_YEAR} y ${EVENT_DATE_MAX_YEAR}.`;
-    }
-    if (!form.endTime) nextErrors.endTime = 'Este campo es obligatorio.';
-
-    if (form.location.trim().length > EVENT_LOCATION_MAX_LENGTH) {
-      nextErrors.location = `La ubicación no puede superar los ${EVENT_LOCATION_MAX_LENGTH} caracteres.`;
-    }
-
-    const capacity = Number(form.maxCapacity);
-    if (
-      !form.maxCapacity
-      || !/^\d+$/.test(form.maxCapacity)
-      || !Number.isFinite(capacity)
-      || !Number.isInteger(capacity)
-      || capacity < 1
-      || capacity > EVENT_MAX_CAPACITY
-    ) {
-      nextErrors.maxCapacity = 'El cupo máximo debe ser un número entero entre 1 y 10000.';
-    }
-
-    if (
-      !nextErrors.startDate
-      && !nextErrors.startTime
-      && !nextErrors.endDate
-      && !nextErrors.endTime
-    ) {
-      const startDateTime = new Date(`${form.startDate}T${form.startTime}:00`);
-      const endDateTime = new Date(`${form.endDate}T${form.endTime}:00`);
-
-      if (endDateTime <= startDateTime) {
-        nextErrors.endDate = 'Debe ser posterior al inicio.';
-        nextErrors.endTime = 'Debe ser posterior al inicio.';
-      }
-    }
-
-    return nextErrors;
+  const touchField = (field: EventFormValidatedField) => {
+    setTouchedFields((current) => markFieldAsTouched(current, field, form));
   };
 
   const buildEventDto = (status: 'BORRADOR' | 'PUBLICADO'): CreateEventDto => ({
@@ -179,9 +148,8 @@ export default function EventForm({
   });
 
   const validateForm = () => {
-    const validationErrors = validate();
-    setErrors(validationErrors);
-    return Object.keys(validationErrors).length === 0;
+    setShowAllErrors(true);
+    return countValidationControls(validationErrors) === 0;
   };
 
   const saveDraft = async () => {
@@ -247,12 +215,9 @@ export default function EventForm({
             <FormField label="Título del evento" required error={errors.title} full>
               <input
                 type="text"
-                maxLength={EVENT_TITLE_MAX_LENGTH}
                 value={form.title}
-                onChange={(event) => updateField(
-                  'title',
-                  event.target.value.slice(0, EVENT_TITLE_MAX_LENGTH),
-                )}
+                onChange={(event) => updateField('title', event.target.value)}
+                onBlur={() => touchField('title')}
                 placeholder="Ej. Feria de Oportunidades UMSS"
               />
             </FormField>
@@ -269,26 +234,23 @@ export default function EventForm({
           <section className="event-mobile-section">
             <h3 className="event-mobile-section-title">2 Fecha y lugar</h3>
             <FormField label="Fecha de inicio" required error={errors.startDate}>
-              <input type="date" min="1900-01-01" max="2100-12-31" value={form.startDate} onChange={(event) => updateField('startDate', event.target.value)} />
+              <input type="date" min="1900-01-01" max="2100-12-31" value={form.startDate} onChange={(event) => updateField('startDate', event.target.value)} onBlur={() => touchField('startDate')} />
             </FormField>
             <FormField label="Hora de inicio" required error={errors.startTime}>
-              <input type="time" value={form.startTime} onChange={(event) => updateField('startTime', event.target.value)} />
+              <input type="time" value={form.startTime} onChange={(event) => updateField('startTime', event.target.value)} onBlur={() => touchField('startTime')} />
             </FormField>
             <FormField label="Fecha de finalización" required error={errors.endDate}>
-              <input type="date" min="1900-01-01" max="2100-12-31" value={form.endDate} onChange={(event) => updateField('endDate', event.target.value)} />
+              <input type="date" min="1900-01-01" max="2100-12-31" value={form.endDate} onChange={(event) => updateField('endDate', event.target.value)} onBlur={() => touchField('endDate')} />
             </FormField>
             <FormField label="Hora de finalización" required error={errors.endTime}>
-              <input type="time" value={form.endTime} onChange={(event) => updateField('endTime', event.target.value)} />
+              <input type="time" value={form.endTime} onChange={(event) => updateField('endTime', event.target.value)} onBlur={() => touchField('endTime')} />
             </FormField>
             <FormField label="Ubicación" optional error={errors.location} location>
               <input
                 type="text"
-                maxLength={EVENT_LOCATION_MAX_LENGTH}
                 value={form.location}
-                onChange={(event) => updateField(
-                  'location',
-                  event.target.value.slice(0, EVENT_LOCATION_MAX_LENGTH),
-                )}
+                onChange={(event) => updateField('location', event.target.value)}
+                onBlur={() => touchField('location')}
                 placeholder="Ej. Auditorio Central UMSS"
               />
             </FormField>
@@ -298,22 +260,11 @@ export default function EventForm({
             <h3 className="event-mobile-section-title">3 Capacidad y portada</h3>
             <FormField label="Cupo máximo" required error={errors.maxCapacity}>
               <input
-                type="number"
-                min={1}
-                max={EVENT_MAX_CAPACITY}
-                step={1}
+                type="text"
+                inputMode="numeric"
                 value={form.maxCapacity}
-                onKeyDown={(event) => {
-                  if (['e', 'E', '+', '-', '.', ','].includes(event.key)) {
-                    event.preventDefault();
-                  }
-                }}
-                onChange={(event) => {
-                  const value = event.target.value;
-                  if (!value || /^\d+$/.test(value)) {
-                    updateField('maxCapacity', value);
-                  }
-                }}
+                onChange={(event) => updateField('maxCapacity', event.target.value)}
+                onBlur={() => touchField('maxCapacity')}
                 placeholder="Ej. 150"
               />
             </FormField>
@@ -382,7 +333,7 @@ function EventPreview({ form, dateLabel, hasErrors }: { form: EventFormState; da
       <h3>{form.title || 'Título del evento'}</h3>
       <p className="event-preview-detail">{dateLabel}</p>
       <p className="event-preview-detail">Ubicación · {form.location || '—'}</p>
-      <p className="event-preview-detail">Cupo máximo · {form.maxCapacity || '—'}{form.maxCapacity ? ' personas' : ''}</p>
+      <p className="event-preview-detail">Cupo máximo · {form.maxCapacity || '—'}{form.maxCapacity ? ` ${form.maxCapacity === '1' ? 'persona' : 'personas'}` : ''}</p>
       <p className="event-preview-description">{form.description || 'La descripción del evento aparecerá en este espacio.'}</p>
       <p className="event-preview-organizer">Organiza · UMSSPIRA</p>
       <span className="event-preview-status">
@@ -420,13 +371,115 @@ function FormField({
   );
 }
 
-function countValidationGroups(errors: EventFormErrors) {
+function countValidationControls(errors: EventFormErrors) {
   return Number(Boolean(errors.title))
     + Number(Boolean(errors.startDate))
     + Number(Boolean(errors.startTime))
-    + Number(Boolean(errors.endDate || errors.endTime))
+    + Number(Boolean(errors.endDate))
+    + Number(Boolean(errors.endTime))
     + Number(Boolean(errors.maxCapacity))
     + Number(Boolean(errors.location));
+}
+
+function validateEventForm(form: EventFormState): EventFormErrors {
+  const nextErrors: EventFormErrors = {};
+  const title = form.title.trim();
+
+  if (!title) {
+    nextErrors.title = 'Este campo es obligatorio.';
+  } else if (title.length > EVENT_TITLE_MAX_LENGTH) {
+    nextErrors.title = `El título no puede superar los ${EVENT_TITLE_MAX_LENGTH} caracteres.`;
+  } else if (!EVENT_TITLE_HAS_LETTER_PATTERN.test(title)) {
+    nextErrors.title = 'El título debe contener al menos una letra.';
+  }
+
+  if (!form.startDate) {
+    nextErrors.startDate = 'Este campo es obligatorio.';
+  } else if (!isEventInputDateValid(form.startDate)) {
+    nextErrors.startDate = `Ingresa una fecha válida entre ${EVENT_DATE_MIN_YEAR} y ${EVENT_DATE_MAX_YEAR}.`;
+  }
+  if (!form.startTime) nextErrors.startTime = 'Este campo es obligatorio.';
+  if (!form.endDate) {
+    nextErrors.endDate = 'Este campo es obligatorio.';
+  } else if (!isEventInputDateValid(form.endDate)) {
+    nextErrors.endDate = `Ingresa una fecha válida entre ${EVENT_DATE_MIN_YEAR} y ${EVENT_DATE_MAX_YEAR}.`;
+  }
+  if (!form.endTime) nextErrors.endTime = 'Este campo es obligatorio.';
+
+  if (form.location.trim().length > EVENT_LOCATION_MAX_LENGTH) {
+    nextErrors.location = `La ubicación no puede superar los ${EVENT_LOCATION_MAX_LENGTH} caracteres.`;
+  }
+
+  const capacity = Number(form.maxCapacity);
+  if (
+    !form.maxCapacity
+    || !/^\d+$/.test(form.maxCapacity)
+    || !Number.isFinite(capacity)
+    || !Number.isInteger(capacity)
+    || capacity < 1
+    || capacity > EVENT_MAX_CAPACITY
+  ) {
+    nextErrors.maxCapacity = 'El cupo máximo debe ser un número entero entre 1 y 10000.';
+  }
+
+  if (
+    !nextErrors.startDate
+    && !nextErrors.startTime
+    && !nextErrors.endDate
+    && !nextErrors.endTime
+  ) {
+    const startDateTime = new Date(`${form.startDate}T${form.startTime}:00`);
+    const endDateTime = new Date(`${form.endDate}T${form.endTime}:00`);
+
+    if (endDateTime <= startDateTime) {
+      nextErrors.endDate = END_AFTER_START_MESSAGE;
+      nextErrors.endTime = END_AFTER_START_MESSAGE;
+    }
+  }
+
+  return nextErrors;
+}
+
+function getVisibleErrors(
+  validationErrors: EventFormErrors,
+  touchedFields: TouchedEventFormFields,
+  showAllErrors: boolean,
+): EventFormErrors {
+  return VALIDATED_FIELDS.reduce<EventFormErrors>((visibleErrors, field) => {
+    if ((showAllErrors || touchedFields[field]) && validationErrors[field]) {
+      visibleErrors[field] = validationErrors[field];
+    }
+    return visibleErrors;
+  }, {});
+}
+
+function markFieldAsTouched(
+  current: TouchedEventFormFields,
+  field: EventFormValidatedField,
+  form: EventFormState,
+): TouchedEventFormFields {
+  const next = { ...current, [field]: true };
+
+  if (isScheduleField(field) && hasCompleteSchedule(form)) {
+    const scheduleErrors = validateEventForm(form);
+    if (scheduleErrors.endDate === END_AFTER_START_MESSAGE) {
+      next.endDate = true;
+      next.endTime = true;
+    }
+  }
+
+  return next;
+}
+
+function isScheduleField(field: EventFormValidatedField): boolean {
+  return field === 'startDate'
+    || field === 'startTime'
+    || field === 'endDate'
+    || field === 'endTime';
+}
+
+function hasCompleteSchedule(form: EventFormState): boolean {
+  return Boolean(form.startDate && form.startTime && form.endDate && form.endTime);
 }
 
 function formatFileDetails(file: File) {

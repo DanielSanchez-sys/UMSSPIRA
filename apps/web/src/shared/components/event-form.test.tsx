@@ -78,6 +78,24 @@ function clickDesktopDraftButton() {
 }
 
 describe('EventForm HU1', () => {
+  it('no muestra errores antes de que el usuario interactúe', () => {
+    render(<EventForm onSubmit={jest.fn()} />);
+
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.queryByText(/campos? por revisar/)).not.toBeInTheDocument();
+  });
+
+  it('muestra inmediatamente el error al tocar y dejar vacío un obligatorio', () => {
+    render(<EventForm onSubmit={jest.fn()} />);
+    const titleInput = screen.getByPlaceholderText('Ej. Feria de Oportunidades UMSS');
+
+    fireEvent.focus(titleInput);
+    fireEvent.blur(titleInput);
+
+    expect(screen.getByText('Este campo es obligatorio.')).toBeInTheDocument();
+    expect(screen.getByText('1 campo por revisar')).toBeInTheDocument();
+  });
+
   it('bloquea el formulario vacío sin ejecutar onSubmit', () => {
     const onSubmit = jest.fn();
     render(<EventForm onSubmit={onSubmit} />);
@@ -85,7 +103,32 @@ describe('EventForm HU1', () => {
     clickDesktopDraftButton();
 
     expect(onSubmit).not.toHaveBeenCalled();
+    expect(screen.getByText('6 campos por revisar')).toBeInTheDocument();
+  });
+
+  it('reduce inmediatamente el contador por cada control corregido', () => {
+    const { container } = render(<EventForm onSubmit={jest.fn()} />);
+    const titleInput = screen.getByPlaceholderText('Ej. Feria de Oportunidades UMSS');
+    const dateInputs = container.querySelectorAll<HTMLInputElement>('input[type="date"]');
+    const timeInputs = container.querySelectorAll<HTMLInputElement>('input[type="time"]');
+    const capacityInput = screen.getByPlaceholderText('Ej. 150');
+
+    clickDesktopDraftButton();
+    expect(screen.getByText('6 campos por revisar')).toBeInTheDocument();
+
+    fireEvent.change(titleInput, { target: { value: 'Evento válido' } });
     expect(screen.getByText('5 campos por revisar')).toBeInTheDocument();
+    fireEvent.change(dateInputs[0], { target: { value: '2026-10-12' } });
+    expect(screen.getByText('4 campos por revisar')).toBeInTheDocument();
+    fireEvent.change(timeInputs[0], { target: { value: '09:00' } });
+    expect(screen.getByText('3 campos por revisar')).toBeInTheDocument();
+    fireEvent.change(dateInputs[1], { target: { value: '2026-10-12' } });
+    expect(screen.getByText('2 campos por revisar')).toBeInTheDocument();
+    fireEvent.change(timeInputs[1], { target: { value: '17:00' } });
+    expect(screen.getByText('1 campo por revisar')).toBeInTheDocument();
+    fireEvent.change(capacityInput, { target: { value: '1' } });
+
+    expect(screen.queryByText(/campos? por revisar/)).not.toBeInTheDocument();
   });
 
   it.each([
@@ -100,8 +143,6 @@ describe('EventForm HU1', () => {
     const { container } = render(<EventForm onSubmit={onSubmit} />);
 
     fillValidForm(container, { capacity });
-    clickDesktopDraftButton();
-
     expect(onSubmit).not.toHaveBeenCalled();
     expect(
       screen.getByText(
@@ -115,53 +156,49 @@ describe('EventForm HU1', () => {
     const { container } = render(<EventForm onSubmit={onSubmit} />);
 
     fillValidForm(container, { title: '100000' });
+
+    expect(
+      screen.getByText('El título debe contener al menos una letra.'),
+    ).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Publicar evento' }));
 
     expect(onSubmit).not.toHaveBeenCalled();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    expect(
-      screen.getByText('El título debe contener al menos una letra.'),
-    ).toBeInTheDocument();
   });
 
-  it.each([
-    ['Feria 2026', true],
-    ['A'.repeat(45), true],
-  ])('valida el límite y contenido del título %s', async (title, isValid) => {
-    const onSubmit = jest.fn().mockResolvedValue(undefined);
-    const { container } = render(<EventForm onSubmit={onSubmit} />);
-
-    fillValidForm(container, { title });
-    clickDesktopDraftButton();
-
-    if (isValid) {
-      await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
-    }
-  });
-
-  it('bloquea físicamente el carácter 46 del título', () => {
+  it('acepta 45 caracteres y avisa inmediatamente al intentar superarlos', () => {
     render(<EventForm onSubmit={jest.fn()} />);
     const input = screen.getByPlaceholderText('Ej. Feria de Oportunidades UMSS');
 
-    fireEvent.change(input, { target: { value: 'A'.repeat(46) } });
-
-    expect(input).toHaveAttribute('maxLength', '45');
+    fireEvent.change(input, { target: { value: 'A'.repeat(45) } });
     expect(input).toHaveValue('A'.repeat(45));
+    expect(screen.queryByText(/título no puede superar/)).not.toBeInTheDocument();
+
+    fireEvent.change(input, { target: { value: 'A'.repeat(46) } });
+    expect(input).toHaveValue('A'.repeat(46));
+    expect(
+      screen.getByText('El título no puede superar los 45 caracteres.'),
+    ).toBeInTheDocument();
+
+    fireEvent.change(input, { target: { value: 'Título corregido' } });
+    expect(screen.queryByText(/título no puede superar/)).not.toBeInTheDocument();
   });
 
-  it('permite 100 caracteres y bloquea físicamente el 101 en ubicación', async () => {
-    const onSubmit = jest.fn().mockResolvedValue(undefined);
-    const { container } = render(<EventForm onSubmit={onSubmit} />);
+  it('acepta 100 caracteres y avisa inmediatamente al superar ubicación', () => {
+    render(<EventForm onSubmit={jest.fn()} />);
     const locationInput = screen.getByPlaceholderText('Ej. Auditorio Central UMSS');
 
-    fillValidForm(container, { location: 'A'.repeat(100) });
-    clickDesktopDraftButton();
-    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
+    fireEvent.change(locationInput, { target: { value: 'A'.repeat(100) } });
+    expect(screen.queryByText(/ubicación no puede superar/)).not.toBeInTheDocument();
 
     fireEvent.change(locationInput, { target: { value: 'A'.repeat(101) } });
+    expect(locationInput).toHaveValue('A'.repeat(101));
+    expect(
+      screen.getByText('La ubicación no puede superar los 100 caracteres.'),
+    ).toBeInTheDocument();
 
-    expect(locationInput).toHaveAttribute('maxLength', '100');
-    expect(locationInput).toHaveValue('A'.repeat(100));
+    fireEvent.change(locationInput, { target: { value: 'A'.repeat(100) } });
+    expect(screen.queryByText(/ubicación no puede superar/)).not.toBeInTheDocument();
   });
 
   it.each([
@@ -175,6 +212,17 @@ describe('EventForm HU1', () => {
     expect(isEventInputDateValid(date)).toBe(expected);
   });
 
+  it('muestra inmediatamente una fecha fuera del rango permitido', () => {
+    const { container } = render(<EventForm onSubmit={jest.fn()} />);
+    const startDateInput = container.querySelectorAll<HTMLInputElement>('input[type="date"]')[0];
+
+    fireEvent.change(startDateInput, { target: { value: '1899-12-31' } });
+
+    expect(
+      screen.getByText('Ingresa una fecha válida entre 1900 y 2100.'),
+    ).toBeInTheDocument();
+  });
+
   it('expone los límites técnicos en ambos inputs de fecha', () => {
     const { container } = render(<EventForm onSubmit={jest.fn()} />);
     const dateInputs = container.querySelectorAll<HTMLInputElement>('input[type=date]');
@@ -185,16 +233,6 @@ describe('EventForm HU1', () => {
       expect(input).toHaveAttribute('max', '2100-12-31');
     });
   });
-
-  it.each(['e', 'E', '+', '-', '.', ','])(
-    'bloquea la tecla no decimal %s en cupo',
-    (key) => {
-      render(<EventForm onSubmit={jest.fn()} />);
-      const input = screen.getByPlaceholderText('Ej. 150');
-
-      expect(fireEvent.keyDown(input, { key })).toBe(false);
-    },
-  );
 
   it.each(['1', '40', String(EVENT_MAX_CAPACITY)])(
     'acepta el cupo almacenable %s',
@@ -214,15 +252,30 @@ describe('EventForm HU1', () => {
     },
   );
 
+  it.each([
+    ['1', 'Cupo máximo · 1 persona'],
+    ['2', 'Cupo máximo · 2 personas'],
+    [String(EVENT_MAX_CAPACITY), 'Cupo máximo · 10000 personas'],
+  ])('pluraliza el cupo %s en Crear', (capacity, expectedText) => {
+    render(<EventForm onSubmit={jest.fn()} />);
+
+    fireEvent.change(screen.getByPlaceholderText('Ej. 150'), {
+      target: { value: capacity },
+    });
+
+    expect(screen.getByText(expectedText)).toBeInTheDocument();
+  });
+
   it('rechaza una fecha final anterior al inicio', () => {
     const onSubmit = jest.fn();
     const { container } = render(<EventForm onSubmit={onSubmit} />);
 
     fillValidForm(container, { endDate: '2026-10-11' });
-    clickDesktopDraftButton();
 
-    expect(onSubmit).not.toHaveBeenCalled();
     expect(screen.getAllByText('Debe ser posterior al inicio.')).toHaveLength(2);
+
+    clickDesktopDraftButton();
+    expect(onSubmit).not.toHaveBeenCalled();
   });
 
   it('envía BORRADOR, conserva el archivo y muestra loading', async () => {
@@ -321,6 +374,54 @@ describe('EventForm HU1', () => {
       });
     },
   );
+
+  it('valida inmediatamente y pluraliza el cupo al Editar borrador', () => {
+    const onSubmit = jest.fn();
+    const initialEvent: EventItem = {
+      id: 'draft-validation',
+      title: 'Evento editable',
+      description: null,
+      startDate: new Date('2026-11-01T09:00:00').toISOString(),
+      endDate: new Date('2026-11-01T18:00:00').toISOString(),
+      maxCapacity: 1,
+      location: null,
+      status: EVENT_STATUS.BORRADOR,
+      createdBy: 'user-1',
+      createdAt: new Date().toISOString(),
+    };
+
+    render(
+      <EventForm
+        initialEvent={initialEvent}
+        onSubmit={onSubmit}
+        allowPublication={false}
+      />,
+    );
+
+    const titleInput = screen.getByDisplayValue('Evento editable');
+    const capacityInput = screen.getByPlaceholderText('Ej. 150');
+    expect(screen.getByText('Cupo máximo · 1 persona')).toBeInTheDocument();
+
+    fireEvent.change(titleInput, { target: { value: '12345' } });
+    expect(
+      screen.getByText('El título debe contener al menos una letra.'),
+    ).toBeInTheDocument();
+    fireEvent.change(titleInput, { target: { value: 'Evento corregido' } });
+    expect(screen.queryByText(/título debe contener/)).not.toBeInTheDocument();
+
+    fireEvent.change(capacityInput, { target: { value: 'E12' } });
+    expect(
+      screen.getByText('El cupo máximo debe ser un número entero entre 1 y 10000.'),
+    ).toBeInTheDocument();
+    clickDesktopDraftButton();
+    expect(onSubmit).not.toHaveBeenCalled();
+
+    fireEvent.change(capacityInput, { target: { value: '2' } });
+    expect(screen.getByText('Cupo máximo · 2 personas')).toBeInTheDocument();
+    fireEvent.change(capacityInput, { target: { value: String(EVENT_MAX_CAPACITY) } });
+    expect(screen.getByText('Cupo máximo · 10000 personas')).toBeInTheDocument();
+    expect(screen.queryByText(/cupo máximo debe ser/)).not.toBeInTheDocument();
+  });
 
   it('editar y guardar dos veces no acumula desplazamiento horario', async () => {
     const startDate = new Date('2026-11-01T09:00:00').toISOString();
@@ -426,6 +527,11 @@ describe('CreateEventPage HU1', () => {
       screen.getByText('Corrige los campos marcados para continuar.'),
     ).toBeInTheDocument();
     expect(screen.queryByText(/antes de publicar/i)).not.toBeInTheDocument();
+    expect(mockCreateEvent).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Publicar evento' }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(mockCreateEvent).not.toHaveBeenCalled();
   });
 
   it('muestra el error real devuelto por el servicio', async () => {
