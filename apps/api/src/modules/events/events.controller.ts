@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
   UseGuards,
@@ -75,7 +76,7 @@ export class EventsController {
 
   @Get(':id')
   async getEventById(
-    @Param('id') eventId: string,
+    @Param('id', new ParseUUIDPipe()) eventId: string,
   ) {
     return this.eventsService.getEventById(eventId);
   }

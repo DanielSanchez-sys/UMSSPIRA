@@ -330,6 +330,7 @@ export class EventsService {
       .from('evento')
       .select('*')
       .eq('id', eventId)
+      .eq('estado', PUBLISHED_EVENT_STATUS.toLowerCase())
       .maybeSingle();
 
     if (error) {
@@ -340,7 +341,7 @@ export class EventsService {
 
     if (!data) {
       throw new NotFoundException(
-        'No se encontró el evento solicitado',
+        'No se encontró un evento publicado disponible',
       );
     }
 

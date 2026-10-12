@@ -3,16 +3,20 @@ import {
   EVENT_DATE_MIN_YEAR,
 } from '@umsspira/shared-types';
 
+const EVENT_TIME_ZONE = 'America/La_Paz';
+
 const eventDateFormatter = new Intl.DateTimeFormat('es-BO', {
   day: '2-digit',
   month: 'short',
   year: 'numeric',
+  timeZone: EVENT_TIME_ZONE,
 });
 
 const eventTimeFormatter = new Intl.DateTimeFormat('es-BO', {
   hour: '2-digit',
   minute: '2-digit',
   hour12: false,
+  timeZone: EVENT_TIME_ZONE,
 });
 
 const eventDateTimeFormatter = new Intl.DateTimeFormat('es-BO', {
@@ -22,6 +26,7 @@ const eventDateTimeFormatter = new Intl.DateTimeFormat('es-BO', {
   hour: '2-digit',
   minute: '2-digit',
   hour12: false,
+  timeZone: EVENT_TIME_ZONE,
 });
 
 const eventMonthFormatter = new Intl.DateTimeFormat('es-BO', {
@@ -116,11 +121,33 @@ export function formatEventSchedule(
     return 'Horario no disponible';
   }
 
-  if (getLocalDateKey(start) === getLocalDateKey(end)) {
+  if (getEventDateKey(start) === getEventDateKey(end)) {
     return `${eventDateFormatter.format(start)} · ${eventTimeFormatter.format(start)}–${eventTimeFormatter.format(end)}`;
   }
 
   return `${eventDateFormatter.format(start)} · ${eventTimeFormatter.format(start)} / ${eventDateFormatter.format(end)} · ${eventTimeFormatter.format(end)}`;
+}
+
+export function formatEventCardSchedule(
+  startValue: string,
+  endValue: string,
+): string {
+  const start = new Date(startValue);
+  const end = new Date(endValue);
+
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    return 'Horario no disponible';
+  }
+
+  const startDate = formatEventCardDate(start);
+  const startTime = eventTimeFormatter.format(start);
+  const endTime = eventTimeFormatter.format(end);
+
+  if (getEventDateKey(start) === getEventDateKey(end)) {
+    return `${startDate} · ${startTime}–${endTime}`;
+  }
+
+  return `${startDate} · ${startTime} / ${formatEventCardDate(end)} · ${endTime}`;
 }
 
 export function formatEventDate(value: string): string {
@@ -151,18 +178,46 @@ export function getEventMonthKey(value: string): string {
     return value.slice(0, 7);
   }
 
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    year: 'numeric',
+    month: '2-digit',
+    timeZone: EVENT_TIME_ZONE,
+  }).formatToParts(date);
+
+  return `${getDatePart(parts, 'year')}-${getDatePart(parts, 'month')}`;
+}
+
+function getEventDateKey(date: Date): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    timeZone: EVENT_TIME_ZONE,
+  }).formatToParts(date);
+
   return [
-    date.getFullYear(),
-    String(date.getMonth() + 1).padStart(2, '0'),
+    getDatePart(parts, 'year'),
+    getDatePart(parts, 'month'),
+    getDatePart(parts, 'day'),
   ].join('-');
 }
 
-function getLocalDateKey(date: Date): string {
-  return [
-    date.getFullYear(),
-    String(date.getMonth() + 1).padStart(2, '0'),
-    String(date.getDate()).padStart(2, '0'),
-  ].join('-');
+function formatEventCardDate(date: Date): string {
+  const parts = eventDateFormatter.formatToParts(date);
+  const day = getDatePart(parts, 'day');
+  const month = getDatePart(parts, 'month')
+    .replace('.', '')
+    .toLocaleUpperCase('es-BO');
+  const year = getDatePart(parts, 'year');
+
+  return `${day} ${month} ${year}`;
+}
+
+function getDatePart(
+  parts: Intl.DateTimeFormatPart[],
+  type: Intl.DateTimeFormatPartTypes,
+): string {
+  return parts.find((part) => part.type === type)?.value ?? '';
 }
 
 function formatInputDate(value: string): string {

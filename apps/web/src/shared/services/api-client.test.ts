@@ -1,4 +1,4 @@
-import { apiClient } from './api-client';
+import { ApiClientError, apiClient } from './api-client';
 import { getSupabaseClient } from '@/shared/lib/supabase';
 
 jest.mock('@/shared/lib/supabase', () => ({
@@ -46,5 +46,23 @@ describe('apiClient', () => {
       'No se pudo recuperar la sesión de Supabase.',
     );
     expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it('conserva el estado HTTP para manejar recursos no encontrados sin exponer detalles', async () => {
+    mockGetSession.mockResolvedValue({
+      data: { session: null },
+      error: null,
+    });
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: false,
+      status: 404,
+      text: async () => JSON.stringify({ message: 'No encontrado' }),
+    });
+
+    await expect(apiClient('/api/events/missing')).rejects.toMatchObject({
+      name: 'ApiClientError',
+      status: 404,
+      message: 'No encontrado',
+    } satisfies Partial<ApiClientError>);
   });
 });

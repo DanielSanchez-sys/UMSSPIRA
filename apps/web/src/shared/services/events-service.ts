@@ -10,6 +10,12 @@ export function getEventCatalog(): Promise<EventItem[]> {
   return apiClient<EventItem[]>('/api/events/catalog');
 }
 
+export function getPublishedEvent(eventId: string): Promise<EventItem> {
+  return apiClient<EventItem>(
+    `/api/events/${encodeURIComponent(eventId)}`,
+  );
+}
+
 export function createEvent(
   event: CreateEventDto,
   userId?: string,

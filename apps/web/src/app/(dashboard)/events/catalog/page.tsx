@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { CalendarDays, ChevronDown, Search } from 'lucide-react';
+import { CircleAlert, ChevronDown } from 'lucide-react';
 
 import EventCard from '@/shared/components/event-card';
 import { getEventCatalog } from '@/shared/services/events-service';
+import { formatAvailableEventsCount } from '@/shared/utils/event-copy';
 import { getEventMonthKey } from '@/shared/utils/event-date-time';
 import type { EventItem } from '@umsspira/shared-types';
 
@@ -85,63 +86,56 @@ export default function EventsCatalogPage() {
   }, [appliedSearch, catalogEvents, dateFilter, sortOrder]);
 
   return (
-    <main className="min-h-screen w-full overflow-x-hidden bg-[#EEE9DF] px-4 py-7 text-[#2C3B4D] sm:px-6 sm:py-10 lg:px-8 lg:py-12">
-      <div className="mx-auto w-full max-w-[1440px] min-w-0">
-        <div className="mb-6 sm:mb-8">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[#A35139]">
-            Catálogo
-          </p>
-          <h1
-            className="break-words text-3xl font-semibold leading-tight tracking-tight sm:text-4xl lg:text-5xl"
-            style={{ fontFamily: 'Playfair Display, Georgia, serif' }}
-          >
+    <main className="hu2-catalog-page">
+      <div className="hu2-catalog-shell">
+        <header className="hu2-catalog-heading">
+          <h1>
             Eventos universitarios
           </h1>
-          <p className="mt-2 text-sm text-[#2C3B4D]/75 sm:text-base">
-            Descubre actividades, talleres y encuentros de la comunidad UMSS.
-          </p>
-        </div>
+          {!errorMessage && (isLoading || catalogEvents.length > 0) ? (
+            <p>Descubre actividades, talleres y encuentros de la comunidad UMSS.</p>
+          ) : null}
+        </header>
 
-        <form
-          aria-label="Filtros del catálogo"
-          onSubmit={applySearch}
-          className="mb-6 grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(220px,1fr)_minmax(180px,220px)_minmax(180px,220px)_120px]"
-        >
-          <label className="flex h-12 min-w-0 items-center gap-3 rounded-md border border-[#C9C1B1] bg-white/70 px-3 text-sm text-[#2C3B4D]/60 shadow-sm sm:col-span-2 xl:col-span-1">
-            <Search size={17} aria-hidden="true" className="shrink-0" />
+        {!errorMessage ? (
+          <form
+            aria-label="Filtros del catálogo"
+            onSubmit={applySearch}
+            className="hu2-catalog-filters"
+          >
+          <label className="hu2-catalog-control hu2-search-control">
             <span className="sr-only">Buscar eventos</span>
             <input
               type="search"
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
               placeholder="Buscar eventos..."
-              className="w-full min-w-0 bg-transparent text-sm outline-none placeholder:text-[#2C3B4D]/50"
+              className="hu2-control-input"
             />
           </label>
 
-          <label className="relative flex h-12 min-w-0 items-center gap-2 rounded-md border border-[#C9C1B1] bg-white/70 px-3 text-sm text-[#2C3B4D]/75 shadow-sm">
-            <CalendarDays size={17} aria-hidden="true" className="shrink-0 text-[#A35139]" />
+          <label className="hu2-catalog-control hu2-date-control">
             <span className="sr-only">Filtrar por mes</span>
             <input
               type="month"
               aria-label="Filtrar por mes"
               value={selectedMonth}
               onChange={(event) => setSelectedMonth(event.target.value)}
-              className="w-full min-w-0 bg-transparent text-sm outline-none"
+              className="hu2-control-input"
             />
           </label>
 
-          <label className="relative flex h-12 min-w-0 items-center gap-2 rounded-md border border-[#C9C1B1] bg-white/70 px-3 text-sm text-[#2C3B4D]/75 shadow-sm">
+          <label className="hu2-catalog-control hu2-sort-control">
             <span className="sr-only">Ordenar eventos</span>
             <select
               value={sortOrder}
               onChange={(event) => setSortOrder(event.target.value as SortOrder)}
-              className="w-full min-w-0 appearance-none bg-transparent pr-5 text-sm outline-none"
+              className="hu2-control-input hu2-sort-select"
             >
-              <option value="nearest">Fecha más próxima</option>
-              <option value="furthest">Fecha más lejana</option>
+              <option value="nearest">Ordenar: fecha más próxima</option>
+              <option value="furthest">Ordenar: fecha más lejana</option>
             </select>
-            <ChevronDown size={15} className="pointer-events-none absolute right-3 shrink-0" aria-hidden="true" />
+            <ChevronDown size={15} className="hu2-sort-icon" aria-hidden="true" />
           </label>
 
           <button
@@ -150,42 +144,48 @@ export default function EventsCatalogPage() {
               setAppliedSearch(searchTerm.trim());
               setDateFilter(selectedMonth || 'all');
             }}
-            className="inline-flex h-12 w-full min-w-0 items-center justify-center gap-2 whitespace-nowrap rounded-md bg-[#FFB162] px-4 text-sm font-semibold text-[#2C3B4D] shadow-sm transition-colors hover:bg-[#f5a351]"
+            className="hu2-search-button"
           >
-            <Search size={16} aria-hidden="true" />
-            <span>Buscar</span>
+            Buscar
           </button>
-        </form>
+          </form>
+        ) : null}
 
         {isLoading ? (
-          <p className="py-16 text-center text-sm text-[#2C3B4D]/70" role="status">
+          <p className="hu2-catalog-loading" role="status">
             Cargando eventos...
           </p>
         ) : errorMessage ? (
-          <div
-            className="rounded-xl border border-[#A35139]/30 bg-white/50 px-6 py-16 text-center"
-            role="alert"
-          >
-            <p className="text-sm font-semibold text-[#A35139]">{errorMessage}</p>
-          </div>
-        ) : visibleEvents.length > 0 ? (
-          <>
-            <p className="mb-7 text-xs font-semibold text-[#2C3B4D]/70">
-              {visibleEvents.length} eventos disponibles
-            </p>
-            <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 xl:grid-cols-3 xl:gap-6">
-              {visibleEvents.map((event) => (
-                <EventCard key={event.id} event={event} />
-              ))}
-            </div>
-          </>
+          <section className="hu2-catalog-state hu2-error-state" role="alert">
+            <span className="hu2-state-icon" aria-hidden="true"><CircleAlert size={52} /></span>
+            <h2>No pudimos cargar los eventos</h2>
+            <p>{errorMessage}</p>
+            <button type="button" onClick={() => window.location.reload()}>
+              Reintentar
+            </button>
+          </section>
         ) : (
-          <div className="rounded-xl border border-dashed border-[#C9C1B1] bg-white/40 px-6 py-16 text-center">
-            <p className="text-sm font-semibold">No encontramos eventos</p>
-            <p className="mt-2 text-sm text-[#2C3B4D]/65">
-              El catálogo estará disponible cuando existan eventos publicados.
+          <>
+            <p className="hu2-results-count">
+              {formatAvailableEventsCount(visibleEvents.length)}
             </p>
-          </div>
+            {visibleEvents.length > 0 ? (
+              <div className="hu2-event-grid">
+                {visibleEvents.map((event) => (
+                  <EventCard key={event.id} event={event} />
+                ))}
+              </div>
+            ) : (
+              <section className="hu2-catalog-state hu2-empty-state" role="status">
+                <h2>{catalogEvents.length === 0 ? 'No hay eventos disponibles' : 'No encontramos eventos'}</h2>
+                <p>
+                  {catalogEvents.length === 0
+                    ? 'El catálogo estará disponible cuando existan eventos publicados.'
+                    : 'No hay coincidencias con los filtros actuales. Modifica la búsqueda o el mes seleccionado.'}
+                </p>
+              </section>
+            )}
+          </>
         )}
       </div>
     </main>

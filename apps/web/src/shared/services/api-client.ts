@@ -8,6 +8,16 @@ interface ApiClientOptions
   body?: unknown;
 }
 
+export class ApiClientError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+  ) {
+    super(message);
+    this.name = 'ApiClientError';
+  }
+}
+
 export async function apiClient<TResponse>(
   path: string,
   options: ApiClientOptions = {},
@@ -52,9 +62,10 @@ export async function apiClient<TResponse>(
   if (!response.ok) {
     const message = getErrorMessage(responseData);
 
-    throw new Error(
+    throw new ApiClientError(
       message ??
         `La solicitud falló con el estado ${response.status}.`,
+      response.status,
     );
   }
 

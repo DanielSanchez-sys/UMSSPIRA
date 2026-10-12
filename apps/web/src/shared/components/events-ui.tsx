@@ -24,7 +24,10 @@ import {
   getAdminEvents,
   publishDraftEvent,
 } from '@/shared/services/events-service';
-import { useAuthenticatedUserId } from '@/modules/auth/frontend/components/authenticated-user-context';
+import {
+  useAuthenticatedUserId,
+  useAuthenticatedUserRole,
+} from '@/modules/auth/frontend/components/authenticated-user-context';
 import { getSupabaseClient } from '@/shared/lib/supabase';
 import {
   formatEventDate,
@@ -38,21 +41,34 @@ type AdminSection = 'management' | 'create' | 'drafts';
 
 export function EventsHeader({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const authenticatedRole = useAuthenticatedUserRole();
   const eventsMenuRef = useRef<HTMLDivElement>(null);
   const [isEventsMenuOpen, setIsEventsMenuOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState<string | null>(null);
   const router = useRouter();
-  const eventMenuItems = [
-    { href: '/events', label: 'Gestión de eventos' },
-    { href: '/events/create', label: 'Crear evento' },
-    { href: '/events/drafts', label: 'Borradores' },
-  ];
-  const activeEventHref = pathname.startsWith('/events/create')
-    ? '/events/create'
-    : pathname.startsWith('/events/drafts')
-      ? '/events/drafts'
-      : '/events';
+  const isGraduate = authenticatedRole === 'titulado'
+    || authenticatedRole === 'egresado';
+  const profile = authenticatedRole === 'titulado'
+    ? { initials: 'TI', label: 'Titulado' }
+    : authenticatedRole === 'egresado'
+      ? { initials: 'EG', label: 'Egresado' }
+      : { initials: 'AD', label: 'Administración' };
+  const eventMenuItems = isGraduate
+    ? [{ href: '/events/catalog', label: 'Catálogo de eventos' }]
+    : [
+        { href: '/events', label: 'Gestión de eventos' },
+        { href: '/events/create', label: 'Crear evento' },
+        { href: '/events/drafts', label: 'Borradores' },
+      ];
+  const activeEventHref = isGraduate
+    ? '/events/catalog'
+    : pathname.startsWith('/events/create')
+      ? '/events/create'
+      : pathname.startsWith('/events/drafts')
+        ? '/events/drafts'
+        : '/events';
+  const homeHref = isGraduate ? '/events/catalog' : '/events';
 
   useEffect(() => {
     setIsEventsMenuOpen(false);
@@ -106,7 +122,7 @@ export function EventsHeader({ children }: { children: React.ReactNode }) {
   return (
     <div className="events-app">
       <header className="events-desktop-header">
-        <Link href="/events" className="events-logo-link" aria-label="UMSSPIRA - Eventos">
+        <Link href={homeHref} className="events-logo-link" aria-label="UMSSPIRA - Eventos">
           <Image
             src="/assets/events/umsspira-logo-desktop.png"
             alt="UMSSPIRA"
@@ -160,9 +176,9 @@ export function EventsHeader({ children }: { children: React.ReactNode }) {
             <Bell size={22} />
           </span>
           <span className="events-profile-separator" />
-          <span className="events-avatar">AD</span>
+          <span className="events-avatar">{profile.initials}</span>
           <span className="events-profile-copy">
-            <strong>Administración</strong>
+            <strong>{profile.label}</strong>
             <small>Sesión activa</small>
           </span>
           <button
@@ -180,7 +196,7 @@ export function EventsHeader({ children }: { children: React.ReactNode }) {
 
       <header className="events-mobile-header">
         <Menu size={24} aria-hidden="true" />
-        <Link href="/events" aria-label="UMSSPIRA - Eventos">
+        <Link href={homeHref} aria-label="UMSSPIRA - Eventos">
           <Image
             src="/assets/events/umsspira-logo-2.png"
             alt="UMSSPIRA"
@@ -189,7 +205,9 @@ export function EventsHeader({ children }: { children: React.ReactNode }) {
             priority
           />
         </Link>
-        <span className="events-mobile-avatar" aria-label="Administración">AD</span>
+        <span className="events-mobile-avatar" aria-label={profile.label}>
+          {profile.initials}
+        </span>
         <button
           type="button"
           className="events-signout-button events-signout-button-mobile"

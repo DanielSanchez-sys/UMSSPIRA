@@ -57,7 +57,7 @@ describe('catálogo de eventos', () => {
 
     expect(screen.getAllByText('Taller de tecnología')).not.toHaveLength(0);
     expect(screen.queryAllByText('Feria de empleo')).toHaveLength(0);
-    expect(screen.getByText('1 eventos disponibles')).toBeInTheDocument();
+    expect(screen.getByText('1 evento disponible')).toBeInTheDocument();
   });
 
   it('envía los filtros al presionar Enter en la búsqueda', async () => {
@@ -91,5 +91,47 @@ describe('catálogo de eventos', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Buscar' }));
 
     expect(screen.getAllByText('Feria de empleo')).not.toHaveLength(0);
+  });
+
+  it('pluraliza el contador para cero, uno y varios resultados', async () => {
+    const { rerender } = render(<EventsCatalogPage />);
+
+    expect(await screen.findByText('2 eventos disponibles')).toBeInTheDocument();
+
+    jest.mocked(getEventCatalog).mockResolvedValueOnce([catalogEvents[0]]);
+    rerender(<EventsCatalogPage key="one" />);
+    expect(await screen.findByText('1 evento disponible')).toBeInTheDocument();
+
+    jest.mocked(getEventCatalog).mockResolvedValueOnce([]);
+    rerender(<EventsCatalogPage key="zero" />);
+    expect(await screen.findByText('0 eventos disponibles')).toBeInTheDocument();
+  });
+
+  it('muestra el estado global cuando no existen eventos publicados', async () => {
+    jest.mocked(getEventCatalog).mockResolvedValueOnce([]);
+    render(<EventsCatalogPage />);
+
+    expect(await screen.findByText('0 eventos disponibles')).toBeInTheDocument();
+    expect(screen.getByText(
+      'El catálogo estará disponible cuando existan eventos publicados.',
+    )).toBeInTheDocument();
+  });
+
+  it('distingue una búsqueda sin coincidencias de un catálogo vacío', async () => {
+    render(<EventsCatalogPage />);
+    await screen.findByText('2 eventos disponibles');
+
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Buscar eventos' }), {
+      target: { value: 'sin coincidencias' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Buscar' }));
+
+    expect(screen.getByText('0 eventos disponibles')).toBeInTheDocument();
+    expect(screen.getByText(
+      'No hay coincidencias con los filtros actuales. Modifica la búsqueda o el mes seleccionado.',
+    )).toBeInTheDocument();
+    expect(screen.queryByText(
+      'El catálogo estará disponible cuando existan eventos publicados.',
+    )).not.toBeInTheDocument();
   });
 });

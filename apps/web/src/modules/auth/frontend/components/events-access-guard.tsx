@@ -78,7 +78,7 @@ export function EventsAccessGuard({ children }: { children: ReactNode }) {
 
   if (accessState === 'allowed') {
     return identity ? (
-      <AuthenticatedUserProvider userId={identity.userId}>
+      <AuthenticatedUserProvider userId={identity.userId} role={identity.role}>
         {children}
       </AuthenticatedUserProvider>
     ) : null;
