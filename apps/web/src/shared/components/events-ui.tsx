@@ -736,7 +736,8 @@ export function EventConfirmDialog({
           <div>
             <strong>{event.title}</strong>
             <span>{event.dateLabel}</span>
-            <span>{event.location || 'Ubicación por definir'} · Cupo {event.maxCapacity}</span>
+            <span>Ubicación: {event.location || 'Por definir'}</span>
+            <span>Cupo máximo: {event.maxCapacity}</span>
           </div>
         </div>
         <div className="event-dialog-actions">

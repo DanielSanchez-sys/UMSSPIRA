@@ -84,4 +84,9 @@ export class UpdateDraftEventDto implements UpdateDraftEventContract {
     message: 'La ubicación no puede superar los 100 caracteres',
   })
   location?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2048)
+  imageUrl?: string;
 }

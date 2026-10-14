@@ -98,6 +98,11 @@ export class CreateEventDto implements CreateEventContract {
   location?: string;
 
   @IsOptional()
+  @IsString()
+  @MaxLength(2048)
+  imageUrl?: string;
+
+  @IsOptional()
   @IsIn(CREATE_ALLOWED_STATUSES, {
     message: 'El estado debe ser BORRADOR o PUBLICADO',
   })

@@ -21,6 +21,7 @@ export interface EventItem {
   maxCapacity: number;
   currentCapacity?: number;
   location: string | null;
+  imageUrl?: string | null;
   status: EventStatus;
   createdBy: string;
   creatorName?: string;
@@ -34,6 +35,7 @@ export interface CreateEventDto {
   endDate: string;
   maxCapacity: number;
   location?: string;
+  imageUrl?: string;
   status?: Extract<EventStatus, 'BORRADOR' | 'PUBLICADO'>;
 }
 

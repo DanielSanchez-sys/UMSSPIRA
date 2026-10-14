@@ -11,6 +11,7 @@ import type {
   EventStatus,
 } from '@umsspira/shared-types';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { randomUUID } from 'crypto';
 
 import { supabase } from '../../shared/lib/supabase';
 import {
@@ -18,6 +19,7 @@ import {
   MAX_EVENT_CAPACITY,
 } from './dto/create-event.dto';
 import { UpdateDraftEventDto } from './dto/update-draft-event.dto';
+import type { EventCoverFile } from './event-cover-file';
 import {
   EVENT_DATE_MAX_YEAR,
   EVENT_DATE_MIN_YEAR,
@@ -34,6 +36,68 @@ const PUBLISHED_EVENT_STATUS: Extract<EventStatus, 'PUBLICADO'> =
 
 @Injectable()
 export class EventsService {
+  async uploadEventCover(
+    file: EventCoverFile,
+    userId: string,
+    authenticatedSupabase: SupabaseClient,
+  ): Promise<string> {
+    const allowedTypes: Record<string, string> = {
+      'image/jpeg': 'jpg',
+      'image/png': 'png',
+      'image/webp': 'webp',
+    };
+    const extension = allowedTypes[file.mimetype];
+    if (!extension || file.size > 5 * 1024 * 1024) {
+      throw new BadRequestException(
+        'La portada debe ser JPG, PNG o WebP y no superar los 5 MB.',
+      );
+    }
+
+    const safeName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '-');
+    const objectPath = `${userId}/${randomUUID()}-${safeName || `portada.${extension}`}`;
+    const { data, error } = await authenticatedSupabase.storage
+      .from('event-covers')
+      .upload(objectPath, file.buffer, {
+        contentType: file.mimetype,
+        cacheControl: '3600',
+        upsert: false,
+      });
+
+    if (error) {
+      throw new InternalServerErrorException(
+        `No se pudo guardar la portada: ${error.message}`,
+      );
+    }
+
+    return authenticatedSupabase.storage
+      .from('event-covers')
+      .getPublicUrl(data.path).data.publicUrl;
+  }
+
+  async removeEventCover(
+    imageUrl: string,
+    userId: string,
+    authenticatedSupabase: SupabaseClient,
+  ): Promise<void> {
+    const marker = '/storage/v1/object/public/event-covers/';
+    let objectPath: string;
+    try {
+      objectPath = decodeURIComponent(new URL(imageUrl).pathname.split(marker)[1] ?? '');
+    } catch {
+      throw new BadRequestException('La URL de portada no es válida.');
+    }
+    if (!objectPath.startsWith(`${userId}/`)) {
+      throw new BadRequestException('La portada no pertenece al administrador autenticado.');
+    }
+
+    const { error } = await authenticatedSupabase.storage
+      .from('event-covers')
+      .remove([objectPath]);
+    if (error) {
+      throw new InternalServerErrorException('No se pudo limpiar la portada temporal.');
+    }
+  }
+
   /**
    * T4
    * Crea un nuevo evento.
@@ -50,6 +114,7 @@ export class EventsService {
       endDate,
       maxCapacity,
       location,
+      imageUrl,
       status,
     } = createEventDto;
 
@@ -87,6 +152,7 @@ export class EventsService {
           fecha_fin: endDate,
           cupo_maximo: maxCapacity,
           ubicacion: location ?? null,
+          imagen_url: imageUrl ?? null,
           estado: databaseStatus,
           fecha_creacion: createdAt,
         },
@@ -200,6 +266,7 @@ export class EventsService {
       endDate,
       maxCapacity,
       location,
+      imageUrl,
     } = updateEventDto;
 
     this.validateEventData(
@@ -220,6 +287,7 @@ export class EventsService {
         fecha_fin: endDate,
         cupo_maximo: maxCapacity,
         ubicacion: location ?? null,
+        ...(imageUrl ? { imagen_url: imageUrl } : {}),
         estado: DRAFT_EVENT_STATUS.toLowerCase(),
       })
       .eq('id', eventId)
@@ -238,6 +306,11 @@ export class EventsService {
       throw new ConflictException(
         'No se pudo actualizar el borrador porque dejó de estar disponible.',
       );
+    }
+
+    if (imageUrl && currentEvent.imagen_url && currentEvent.imagen_url !== imageUrl) {
+      await this.removeEventCover(currentEvent.imagen_url, userId, authenticatedSupabase)
+        .catch(() => undefined);
     }
 
     return this.mapEventRow(data);
@@ -320,9 +393,11 @@ export class EventsService {
       );
     }
 
-    return (data ?? []).map((row) =>
-      this.mapEventRow(row),
-    );
+    return (data ?? [])
+      .filter((row) => Number.isInteger(row.cupo_maximo)
+        && row.cupo_maximo >= 1
+        && row.cupo_maximo <= MAX_EVENT_CAPACITY)
+      .map((row) => this.mapEventRow(row));
   }
 
   async getEventById(eventId: string): Promise<EventItem> {
@@ -339,7 +414,13 @@ export class EventsService {
       );
     }
 
-    if (!data) {
+    if (
+      !data
+      || data.estado.toUpperCase() !== PUBLISHED_EVENT_STATUS
+      || !Number.isInteger(data.cupo_maximo)
+      || data.cupo_maximo < 1
+      || data.cupo_maximo > MAX_EVENT_CAPACITY
+    ) {
       throw new NotFoundException(
         'No se encontró un evento publicado disponible',
       );
@@ -459,6 +540,7 @@ export class EventsService {
       endDate: row.fecha_fin,
       maxCapacity: row.cupo_maximo,
       location: row.ubicacion ?? null,
+      imageUrl: row.imagen_url ?? null,
       status: row.estado.toUpperCase() as EventStatus,
       createdBy: row.id_usuario,
       ...(creatorName ? { creatorName } : {}),

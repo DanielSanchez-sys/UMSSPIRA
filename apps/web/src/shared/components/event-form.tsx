@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, ReactNode, useEffect, useMemo, useState } from 'react';
+import { FormEvent, ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import {
   EVENT_DATE_MAX_YEAR,
   EVENT_DATE_MIN_YEAR,
@@ -32,6 +32,7 @@ interface EventFormState {
   maxCapacity: string;
   location: string;
   image: File | null;
+  imageUrl: string | null;
 }
 
 interface EventFormErrors {
@@ -71,6 +72,7 @@ const initialState: EventFormState = {
   maxCapacity: '',
   location: '',
   image: null,
+  imageUrl: null,
 };
 
 const EVENT_TITLE_HAS_LETTER_PATTERN = new RegExp('\\p{L}', 'u');
@@ -100,6 +102,8 @@ export default function EventForm({
   const [showAllErrors, setShowAllErrors] = useState(false);
   const [pendingPublication, setPendingPublication] = useState<PendingPublication | null>(null);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   const validationErrors = useMemo(() => validateEventForm(form), [form]);
   const errors = useMemo(
@@ -117,6 +121,8 @@ export default function EventForm({
     setForm(createInitialState(initialEvent));
     setTouchedFields({});
     setShowAllErrors(false);
+    setImageError(null);
+    if (imageInputRef.current) imageInputRef.current.value = '';
   }, [initialEvent]);
 
   const dateLabel = useMemo(
@@ -124,7 +130,7 @@ export default function EventForm({
     [form.endDate, form.endTime, form.startDate, form.startTime],
   );
 
-  const updateField = (field: keyof Omit<EventFormState, 'image'>, value: string) => {
+  const updateField = (field: keyof Omit<EventFormState, 'image' | 'imageUrl'>, value: string) => {
     const nextForm = { ...form, [field]: value };
     setForm(nextForm);
 
@@ -149,7 +155,7 @@ export default function EventForm({
 
   const validateForm = () => {
     setShowAllErrors(true);
-    return countValidationControls(validationErrors) === 0;
+    return countValidationControls(validationErrors) === 0 && !imageError;
   };
 
   const saveDraft = async () => {
@@ -272,16 +278,26 @@ export default function EventForm({
             <div className="event-field event-image-field">
               <label htmlFor="event-image">Imagen de portada (opcional)</label>
               <label className="event-image-control" htmlFor="event-image">
-                <strong>{form.image ? form.image.name : 'Seleccionar imagen'}</strong>
-                <span>{form.image ? `Imagen seleccionada · ${formatFileDetails(form.image)}` : 'PNG o JPG · máximo 5 MB'}</span>
+                <strong>{form.image ? form.image.name : form.imageUrl ? getStoredImageName(form.imageUrl) : 'Seleccionar imagen'}</strong>
+                <span>{form.image ? `Imagen seleccionada · ${formatFileDetails(form.image)}` : form.imageUrl ? 'Portada guardada' : 'JPG, PNG o WebP · máximo 5 MB'}</span>
               </label>
+              {imageError ? <p className="event-error" role="alert">{imageError}</p> : null}
               <input
                 id="event-image"
+                ref={imageInputRef}
                 type="file"
                 accept="image/png,image/jpeg,image/webp"
                 hidden
                 onChange={(event) => {
                   const image = event.target.files?.[0] ?? null;
+                  const error = getImageValidationError(image);
+                  if (error) {
+                    event.target.value = '';
+                    setImageError(error);
+                    setForm((current) => ({ ...current, image: null }));
+                    return;
+                  }
+                  setImageError(null);
                   setForm((current) => ({ ...current, image }));
                 }}
               />
@@ -504,5 +520,24 @@ function createInitialState(event?: EventItem): EventFormState {
     maxCapacity: String(event.maxCapacity),
     location: event.location ?? '',
     image: null,
+    imageUrl: event.imageUrl ?? null,
   };
+}
+
+function getImageValidationError(file: File | null): string | null {
+  if (!file) return null;
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+    return 'Formato no admitido. Solo se permiten imágenes JPG, PNG o WebP.';
+  }
+  if (file.size > 5 * 1024 * 1024) return 'La imagen no puede superar los 5 MB.';
+  return null;
+}
+
+function getStoredImageName(imageUrl: string): string {
+  try {
+    const filename = new URL(imageUrl).pathname.split('/').pop();
+    return decodeURIComponent(filename ?? 'Portada guardada').replace(/^[0-9a-f-]{36}-/i, '');
+  } catch {
+    return 'Portada guardada';
+  }
 }

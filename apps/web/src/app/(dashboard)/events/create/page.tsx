@@ -9,7 +9,7 @@ import {
   EventManagementContent,
   EventSuccessDialog,
 } from '@/shared/components/events-ui';
-import { createEvent } from '@/shared/services/events-service';
+import { createEvent, removeEventCover, uploadEventCover } from '@/shared/services/events-service';
 import { useAuthenticatedUserId } from '@/modules/auth/frontend/components/authenticated-user-context';
 
 export default function CreateEventPage() {
@@ -25,7 +25,7 @@ export default function CreateEventPage() {
     setValidationCount(count);
   }, []);
 
-  const handleSubmit = async (event: CreateEventDto, _image: File | null) => {
+  const handleSubmit = async (event: CreateEventDto, image: File | null) => {
     setIsSubmitting(true);
     setErrorMessage(null);
     setDraftSaved(false);
@@ -37,7 +37,14 @@ export default function CreateEventPage() {
         );
       }
 
-      const savedEvent = await createEvent(event, userId);
+      const imageUrl = image ? await uploadEventCover(image) : undefined;
+      let savedEvent;
+      try {
+        savedEvent = await createEvent({ ...event, imageUrl }, userId);
+      } catch (error) {
+        if (imageUrl) await removeEventCover(imageUrl).catch(() => undefined);
+        throw error;
+      }
 
       if (event.status === EVENT_STATUS.PUBLICADO) {
         setPublishedEventId(savedEvent.id);
