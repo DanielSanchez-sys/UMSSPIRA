@@ -105,7 +105,14 @@ export default function EventDetailPage({ params }: EventDetailPageProps) {
 
         <div className="hu2-detail-grid">
           <article className="hu2-detail-hero">
-            <header className="hu2-detail-cover">
+            <header
+              className={`hu2-detail-cover ${event.imageUrl ? 'has-image' : ''}`}
+              style={event.imageUrl ? {
+                backgroundImage: `linear-gradient(90deg, rgba(22, 32, 44, .46), rgba(22, 32, 44, .1)), url("${event.imageUrl}")`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+              } : undefined}
+            >
               <span className="hu2-cover-accent" aria-hidden="true" />
               <span className="hu2-cover-circle hu2-cover-circle-large" aria-hidden="true" />
               <span className="hu2-cover-circle hu2-cover-circle-small" aria-hidden="true" />

@@ -64,6 +64,16 @@ export default function AdminEventDetailPage() {
             </div>
             <StatusChip status={event.status} />
           </header>
+          <div
+            className={`admin-event-detail-cover ${event.imageUrl ? 'has-image' : ''}`}
+            style={event.imageUrl ? {
+              backgroundImage: `linear-gradient(90deg, rgba(22, 32, 44, .46), rgba(22, 32, 44, .1)), url("${event.imageUrl}")`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+            } : undefined}
+          >
+            {!event.imageUrl ? <span>{event.title}</span> : null}
+          </div>
           <section>
             <h2>Descripción</h2>
             <p>{event.description || 'Sin descripción disponible.'}</p>

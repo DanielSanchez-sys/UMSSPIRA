@@ -14,7 +14,14 @@ export function EventCard({ event }: EventCardProps) {
 
   return (
     <article className="hu2-event-card">
-      <header className="hu2-event-cover">
+      <header
+        className={`hu2-event-cover ${event.imageUrl ? 'has-image' : ''}`}
+        style={event.imageUrl ? {
+          backgroundImage: `linear-gradient(90deg, rgba(22, 32, 44, .46), rgba(22, 32, 44, .1)), url("${event.imageUrl}")`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        } : undefined}
+      >
         <span
           aria-hidden="true"
           className="hu2-cover-accent"

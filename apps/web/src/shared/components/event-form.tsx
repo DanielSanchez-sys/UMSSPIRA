@@ -103,6 +103,7 @@ export default function EventForm({
   const [pendingPublication, setPendingPublication] = useState<PendingPublication | null>(null);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
   const validationErrors = useMemo(() => validateEventForm(form), [form]);
@@ -124,6 +125,17 @@ export default function EventForm({
     setImageError(null);
     if (imageInputRef.current) imageInputRef.current.value = '';
   }, [initialEvent]);
+
+  useEffect(() => {
+    if (!form.image) {
+      setImagePreviewUrl(null);
+      return;
+    }
+
+    const previewUrl = URL.createObjectURL(form.image);
+    setImagePreviewUrl(previewUrl);
+    return () => URL.revokeObjectURL(previewUrl);
+  }, [form.image]);
 
   const dateLabel = useMemo(
     () => formatEventInputSchedule(form.startDate, form.startTime, form.endDate, form.endTime),
@@ -316,7 +328,12 @@ export default function EventForm({
         </div>
       </form>
 
-      <EventPreview form={form} dateLabel={dateLabel} hasErrors={errorCount > 0} />
+      <EventPreview
+        form={form}
+        dateLabel={dateLabel}
+        hasErrors={errorCount > 0}
+        imagePreviewUrl={imagePreviewUrl}
+      />
 
       <div className="event-form-actions event-form-actions-mobile">
         <button type="button" className="event-button event-button-secondary" onClick={onCancel} disabled={isBusy}>Cancelar</button>
@@ -340,12 +357,25 @@ export default function EventForm({
   );
 }
 
-function EventPreview({ form, dateLabel, hasErrors }: { form: EventFormState; dateLabel: string; hasErrors: boolean }) {
+function EventPreview({ form, dateLabel, hasErrors, imagePreviewUrl }: { form: EventFormState; dateLabel: string; hasErrors: boolean; imagePreviewUrl: string | null }) {
+  const coverSrc = imagePreviewUrl ?? form.imageUrl;
+
   return (
     <aside className="event-preview-card" aria-label="Vista previa del evento">
       <h2>Vista previa</h2>
       <p>Así se verá al publicarlo</p>
-      <div className="event-preview-cover"><span>{form.title || 'Evento universitario'}</span></div>
+      <div
+        className={`event-preview-cover ${coverSrc ? 'has-image' : ''}`}
+        role={coverSrc ? 'img' : undefined}
+        aria-label={coverSrc ? `Portada de ${form.title || 'evento'}` : undefined}
+        style={coverSrc ? {
+          backgroundImage: `url("${coverSrc}")`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        } : undefined}
+      >
+        <span>{form.title || 'Evento universitario'}</span>
+      </div>
       <h3>{form.title || 'Título del evento'}</h3>
       <p className="event-preview-detail">{dateLabel}</p>
       <p className="event-preview-detail">Ubicación · {form.location || '—'}</p>

@@ -564,9 +564,12 @@
   background: #2c3b4d;
   color: #fff;
 }
+.event-preview-cover.has-image::before,
+.event-preview-cover.has-image::after { display: none; }
+.event-preview-cover.has-image { height: 140px; }
 .event-preview-cover::before { position: absolute; right: 36px; top: 18px; width: 54px; height: 54px; border-radius: 50%; background: #ffb162; content: ""; }
 .event-preview-cover::after { position: absolute; right: 0; bottom: 14px; left: 0; height: 8px; background: #ffb162; content: ""; }
-.event-preview-cover span { position: absolute; top: 36px; left: 24px; max-width: 190px; font-size: 14px; line-height: 18px; font-weight: 700; text-transform: uppercase; }
+.event-preview-cover > span { position: absolute; z-index: 2; top: 36px; left: 24px; max-width: 190px; font-size: 14px; line-height: 18px; font-weight: 700; text-transform: uppercase; text-shadow: 0 1px 4px rgba(0, 0, 0, .7); }
 .event-preview-card h3 { margin: 14px 0 14px; font-size: 18px; line-height: 23px; }
 .event-preview-detail { margin: 0 0 6px; color: #2c3b4d; font-size: 12px; line-height: 18px; }
 .event-preview-description { min-height: 45px; margin: 12px 0 10px; border-top: 1px solid #c9c1b1; padding-top: 8px; color: #2c3b4d; font-size: 11px; line-height: 18px; }
@@ -1104,6 +1107,25 @@
   font-size: 30px;
 }
 
+.admin-event-detail-cover {
+  position: relative;
+  display: grid;
+  min-height: 210px;
+  place-items: center;
+  overflow: hidden;
+  margin-top: 20px;
+  border-radius: 12px;
+  background: #2c3b4d;
+  color: #fff;
+  font-size: 20px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.admin-event-detail-cover.has-image { background-repeat: no-repeat; }
+
+.admin-event-detail-cover span { padding: 24px; }
+
 .admin-event-detail-card section {
   padding: 20px 0;
 }
@@ -1313,7 +1335,20 @@
   color: #fff;
 }
 
-.hu2-event-cover { height: 126px; padding: 22px 48px; }
+.hu2-event-cover { height: 180px; padding: 22px 48px; }
+.hu2-event-cover.has-image,
+.hu2-detail-cover.has-image { background-repeat: no-repeat; }
+.hu2-event-cover.has-image,
+.hu2-detail-cover.has-image { padding: 22px 48px; }
+.hu2-event-cover.has-image .hu2-cover-accent,
+.hu2-event-cover.has-image .hu2-cover-circle,
+.hu2-detail-cover.has-image .hu2-cover-accent,
+.hu2-detail-cover.has-image .hu2-cover-circle { display: none; }
+
+.hu2-event-cover.has-image .hu2-cover-copy,
+.hu2-detail-cover.has-image > p,
+.hu2-detail-cover.has-image > strong,
+.hu2-detail-cover.has-image > .hu2-detail-status { z-index: 2; }
 
 .hu2-cover-accent {
   position: absolute;
@@ -1469,7 +1504,7 @@
 }
 
 .hu2-detail-hero { min-height: 330px; }
-.hu2-detail-cover { height: 190px; padding: 22px 40px; }
+.hu2-detail-cover { height: 280px; padding: 22px 40px; }
 .hu2-detail-cover .hu2-cover-accent { left: 20px; }
 .hu2-detail-cover .hu2-cover-circle-large { right: -18px; }
 .hu2-detail-cover .hu2-cover-circle-small { right: 90px; bottom: -28px; }
@@ -1565,7 +1600,8 @@
   .hu2-results-count { margin: 12px 0 14px; }
   .hu2-event-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
   .hu2-event-card { min-height: 323px; }
-  .hu2-event-cover { height: 118px; padding-right: 34px; }
+  .hu2-event-cover { height: 165px; padding-right: 34px; }
+  .hu2-event-cover.has-image { padding: 18px 24px; }
   .hu2-event-card-body { min-height: 204px; padding: 14px; }
   .hu2-event-card-actions { right: 14px; bottom: 14px; }
   .hu2-event-meta p:last-child { padding-right: 150px; }
@@ -1580,7 +1616,8 @@
   .hu2-back-link { width: auto; min-width: 176px; height: 44px; padding: 0 16px; }
   .hu2-detail-grid { grid-template-columns: 1fr; gap: 14px; margin-top: 14px; }
   .hu2-detail-hero { min-height: 0; }
-  .hu2-detail-cover { height: 180px; padding: 22px 34px; }
+  .hu2-detail-cover { height: 250px; padding: 22px 34px; }
+  .hu2-detail-cover.has-image { padding: 18px 24px; }
   .hu2-detail-cover .hu2-cover-accent { left: 16px; }
   .hu2-detail-status { top: auto; right: auto; bottom: 14px; left: 16px; width: 92px; height: 28px; }
   .hu2-detail-cover > strong { max-width: calc(100% - 50px); }
@@ -1596,6 +1633,7 @@
 
 @media (max-width: 767px) {
   .hu2-event-grid { grid-template-columns: 1fr; }
+  .hu2-detail-cover { height: 220px; }
 }
 
 @media (max-width: 430px) {
