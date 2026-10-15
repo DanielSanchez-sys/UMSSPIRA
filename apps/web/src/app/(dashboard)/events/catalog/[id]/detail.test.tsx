@@ -83,6 +83,7 @@ describe('detalle público de eventos', () => {
     expect(screen.getByText(formatEventDateTime(publishedEvent.endDate)))
       .toBeInTheDocument();
     expect(screen.getByText('1 persona')).toBeInTheDocument();
+    expect(screen.getAllByText(publishedEvent.description!)).toHaveLength(1);
     expect(screen.queryByText(/Mock|Supabase|Tarea 11/i)).not.toBeInTheDocument();
   });
 

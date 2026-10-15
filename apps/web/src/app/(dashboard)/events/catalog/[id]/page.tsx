@@ -124,7 +124,6 @@ export default function EventDetailPage({ params }: EventDetailPageProps) {
               <h1 className="min-w-0 max-w-full break-words">
                 {event.title}
               </h1>
-              <p>{event.description || 'Sin descripción disponible.'}</p>
             </div>
           </article>
 

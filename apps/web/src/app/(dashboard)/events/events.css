@@ -572,7 +572,7 @@
 .event-preview-cover > span { position: absolute; z-index: 2; top: 36px; left: 24px; max-width: 190px; font-size: 14px; line-height: 18px; font-weight: 700; text-transform: uppercase; text-shadow: 0 1px 4px rgba(0, 0, 0, .7); }
 .event-preview-card h3 { margin: 14px 0 14px; font-size: 18px; line-height: 23px; }
 .event-preview-detail { margin: 0 0 6px; color: #2c3b4d; font-size: 12px; line-height: 18px; }
-.event-preview-description { min-height: 45px; margin: 12px 0 10px; border-top: 1px solid #c9c1b1; padding-top: 8px; color: #2c3b4d; font-size: 11px; line-height: 18px; }
+.event-preview-description { min-height: 45px; margin: 12px 0 10px; border-top: 1px solid #c9c1b1; padding-top: 8px; color: #2c3b4d; font-size: 11px; line-height: 18px; overflow-wrap: anywhere; }
 .event-preview-organizer { margin: 0 0 12px; color: #2c3b4d; font-size: 12px; font-weight: 500; }
 .event-preview-status { display: inline-flex; height: 28px; align-items: center; border: 1px solid #c9c1b1; border-radius: 14px; background: #eee9df; padding: 0 13px; color: #2c3b4d; font-size: 10px; font-weight: 600; }
 .preview-status-mobile { display: none; }
@@ -1547,14 +1547,6 @@
   line-height: 40px;
   font-weight: 700;
 }
-.hu2-detail-hero-copy p {
-  margin: 4px 0 0;
-  overflow-wrap: anywhere;
-  color: #2c3b4d;
-  font-size: 15px;
-  line-height: 22px;
-}
-
 .hu2-detail-info {
   min-height: 330px;
   border-color: #2c3b4d;
@@ -1623,7 +1615,6 @@
   .hu2-detail-cover > strong { max-width: calc(100% - 50px); }
   .hu2-detail-hero-copy { padding: 16px; }
   .hu2-detail-hero-copy h1 { font-size: 28px; line-height: 39px; }
-  .hu2-detail-hero-copy p { font-size: 14px; line-height: 20px; }
   .hu2-detail-info { min-height: 0; padding: 15px; }
   .hu2-detail-info dl { gap: 10px; }
   .hu2-detail-description { min-height: 0; margin-top: 14px; padding: 15px; }
