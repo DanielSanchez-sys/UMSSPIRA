@@ -554,7 +554,7 @@
   padding: 16px 20px 24px;
   box-shadow: 0 6px 18px rgba(27, 38, 50, .12);
 }
-.event-preview-card h2 { margin: 0; font-size: 24px; line-height: 32px; }
+.event-preview-card h2 { min-width: 0; margin: 0; font-size: 24px; line-height: 32px; overflow-wrap: anywhere; }
 .event-preview-card > p:first-of-type { margin: -2px 0 12px; color: #2c3b4d; font-size: 12px; }
 .event-preview-cover {
   position: relative;
@@ -569,9 +569,9 @@
 .event-preview-cover.has-image { height: 140px; }
 .event-preview-cover::before { position: absolute; right: 36px; top: 18px; width: 54px; height: 54px; border-radius: 50%; background: #ffb162; content: ""; }
 .event-preview-cover::after { position: absolute; right: 0; bottom: 14px; left: 0; height: 8px; background: #ffb162; content: ""; }
-.event-preview-cover > span { position: absolute; z-index: 2; top: 36px; left: 24px; max-width: 190px; font-size: 14px; line-height: 18px; font-weight: 700; text-transform: uppercase; text-shadow: 0 1px 4px rgba(0, 0, 0, .7); }
-.event-preview-card h3 { margin: 14px 0 14px; font-size: 18px; line-height: 23px; }
-.event-preview-detail { margin: 0 0 6px; color: #2c3b4d; font-size: 12px; line-height: 18px; }
+.event-preview-cover > span { position: absolute; z-index: 2; top: 36px; left: 24px; max-width: calc(100% - 48px); font-size: 14px; line-height: 18px; font-weight: 700; text-transform: uppercase; text-shadow: 0 1px 4px rgba(0, 0, 0, .7); overflow-wrap: anywhere; }
+.event-preview-card h3 { min-width: 0; margin: 14px 0; font-size: 18px; line-height: 23px; overflow-wrap: anywhere; }
+.event-preview-detail { min-width: 0; margin: 0 0 6px; color: #2c3b4d; font-size: 12px; line-height: 18px; overflow-wrap: anywhere; }
 .event-preview-description { min-height: 45px; margin: 12px 0 10px; border-top: 1px solid #c9c1b1; padding-top: 8px; color: #2c3b4d; font-size: 11px; line-height: 18px; overflow-wrap: anywhere; }
 .event-preview-organizer { margin: 0 0 12px; color: #2c3b4d; font-size: 12px; font-weight: 500; }
 .event-preview-status { display: inline-flex; height: 28px; align-items: center; border: 1px solid #c9c1b1; border-radius: 14px; background: #eee9df; padding: 0 13px; color: #2c3b4d; font-size: 10px; font-weight: 600; }
